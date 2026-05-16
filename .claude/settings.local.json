@@ -4,7 +4,25 @@
       "Bash(git init *)",
       "Bash(git remote *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(aws sts *)",
+      "Bash(aws configure *)",
+      "Bash(aws route53 *)",
+      "Bash(aws cloudformation *)",
+      "Bash(aws acm *)",
+      "Bash(aws iam *)",
+      "Bash(npm install *)",
+      "Bash(npx cdk *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const l=require\\('./infrastructure/package-lock.json'\\); console.log\\(Object.keys\\(l.packages\\).filter\\(k=>k.includes\\('jsonschema'\\)\\)\\)\")",
+      "Bash(node -e \"const l=require\\('c:/Users/cbgun/projects/golf-app/infrastructure/package-lock.json'\\); const keys=Object.keys\\(l.packages\\).filter\\(k=>k.includes\\('jsonschema'\\)\\); console.log\\(keys\\)\")",
+      "Bash(node -e \"const l=require\\('c:/Users/cbgun/projects/golf-app/infrastructure/package-lock.json'\\); console.log\\(l.lockfileVersion\\); console.log\\(l.packages['node_modules/aws-cdk-lib/node_modules/jsonschema']\\)\")",
+      "Bash(node -e \"const l=require\\('c:/Users/cbgun/projects/golf-app/infrastructure/package-lock.json'\\); console.log\\(l.packages['node_modules/@aws-cdk/cloud-assembly-schema/node_modules/jsonschema']\\)\")",
+      "WebFetch(domain:api.golfcourseapi.com)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://api.golfcourseapi.com/v1/courses?search=pebble\" -H \"Authorization: Key XVLDHAXQTPLCZOXG2XWUWKM2LM\")",
+      "Bash(curl -s \"https://api.golfcourseapi.com/v1/courses?search=pebble\" -H \"Authorization: Key XVLDHAXQTPLCZOXG2XWUWKM2LM\")",
+      "Bash(xargs sed -i -e s/fairway-/sage-/g -e s/gold-/sand-/g -e s/text-gray-/text-stone-/g -e s/bg-gray-/bg-stone-/g -e s/border-gray-/border-stone-/g -e s/hover:bg-gray-/hover:bg-stone-/g -e s/hover:text-gray-/hover:text-stone-/g)"
     ]
   }
 }

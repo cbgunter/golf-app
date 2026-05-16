@@ -21,19 +21,19 @@ export default function History() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-500">Loading...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-stone-500">Loading...</div>;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">History</h1>
-        <p className="text-gray-500 mt-1">Completed and archived tournaments</p>
+        <h1 className="text-3xl font-bold text-stone-900">History</h1>
+        <p className="text-stone-500 mt-1">Completed and archived tournaments</p>
       </div>
 
       {tournaments.length === 0 ? (
         <div className="card p-12 text-center">
           <span className="text-4xl mb-3 block">📋</span>
-          <h2 className="text-lg font-semibold text-gray-700">No completed tournaments yet</h2>
+          <h2 className="text-lg font-semibold text-stone-700">No completed tournaments yet</h2>
         </div>
       ) : (
         <div className="space-y-3">
@@ -45,8 +45,8 @@ export default function History() {
                   <div className="flex items-center gap-2 mb-1">
                     <StatusBadge status={t.status} />
                   </div>
-                  <h2 className="font-semibold text-gray-900 truncate">{t.name}</h2>
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-500">
+                  <h2 className="font-semibold text-stone-900 truncate">{t.name}</h2>
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-stone-500">
                     <span className="flex items-center gap-1">
                       <Calendar size={12} />
                       {new Date(t.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -57,7 +57,7 @@ export default function History() {
                     </span>
                     <span>{t.roundIds.length} rounds</span>
                     {totalPot > 0 && (
-                      <span className="text-gold-600 font-medium">${totalPot.toFixed(0)} pot</span>
+                      <span className="text-sand-600 font-medium">${totalPot.toFixed(0)} pot</span>
                     )}
                   </div>
                 </div>

@@ -16,7 +16,7 @@ export default function TournamentResultsPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-500">Loading results...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-stone-500">Loading results...</div>;
   if (!results) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Results not found.</div>;
 
   const { tournament, leaderboard, payouts, totalPot, closestToPin, longestDrive } = results;
@@ -24,34 +24,34 @@ export default function TournamentResultsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link to={`/tournament/${id}`} className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4">
+      <Link to={`/tournament/${id}`} className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-4">
         <ArrowLeft size={14} /> Back to tournament
       </Link>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">{tournament.name}</h1>
-        <p className="text-gray-500 mt-1">Final Results</p>
+        <h1 className="text-3xl font-bold text-stone-900">{tournament.name}</h1>
+        <p className="text-stone-500 mt-1">Final Results</p>
       </div>
 
       {/* Payouts */}
       {payouts.length > 0 && totalPot > 0 && (
-        <div className="card p-5 mb-6 border-l-4 border-gold-400">
-          <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Trophy size={18} className="text-gold-500" /> Payouts — ${totalPot.toFixed(0)} Total Pot
+        <div className="card p-5 mb-6 border-l-4 border-sand-400">
+          <h2 className="font-bold text-stone-800 mb-4 flex items-center gap-2">
+            <Trophy size={18} className="text-sand-500" /> Payouts — ${totalPot.toFixed(0)} Total Pot
           </h2>
           <div className="space-y-3">
             {payouts.map(p => (
               <div key={p.place} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${p.place === 1 ? 'bg-gold-100 text-gold-700' : p.place === 2 ? 'bg-gray-100 text-gray-700' : 'bg-orange-50 text-orange-700'}`}>
+                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${p.place === 1 ? 'bg-sand-100 text-sand-700' : p.place === 2 ? 'bg-stone-100 text-stone-700' : 'bg-orange-50 text-orange-700'}`}>
                     {p.place}
                   </span>
                   <div>
-                    <div className="font-medium text-gray-900">{p.player?.name ?? 'TBD'}</div>
-                    <div className="text-xs text-gray-400">{p.label}</div>
+                    <div className="font-medium text-stone-900">{p.player?.name ?? 'TBD'}</div>
+                    <div className="text-xs text-stone-400">{p.label}</div>
                   </div>
                 </div>
-                <span className="text-lg font-bold text-fairway-700">${p.amount.toFixed(0)}</span>
+                <span className="text-lg font-bold text-sage-700">${p.amount.toFixed(0)}</span>
               </div>
             ))}
           </div>
@@ -60,14 +60,14 @@ export default function TournamentResultsPage() {
 
       {/* Leaderboard */}
       <div className="card mb-6">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-bold text-gray-800">Leaderboard</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Sorted by {isNet ? 'net' : 'gross'} score (lowest wins)</p>
+        <div className="px-5 py-4 border-b border-stone-100">
+          <h2 className="font-bold text-stone-800">Leaderboard</h2>
+          <p className="text-xs text-stone-400 mt-0.5">Sorted by {isNet ? 'net' : 'gross'} score (lowest wins)</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-gray-500 text-xs">
+              <tr className="bg-stone-50 text-stone-500 text-xs">
                 <th className="text-left px-5 py-2.5 font-medium">Rank</th>
                 <th className="text-left px-3 py-2.5 font-medium">Player</th>
                 <th className="text-center px-3 py-2.5 font-medium">HCP Idx</th>
@@ -86,25 +86,25 @@ export default function TournamentResultsPage() {
                   <>
                     <tr
                       key={entry.player.id}
-                      className={`${idx === 0 ? 'bg-gold-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} cursor-pointer hover:bg-gray-50`}
+                      className={`${idx === 0 ? 'bg-sand-50' : idx % 2 === 0 ? 'bg-white' : 'bg-stone-50/50'} cursor-pointer hover:bg-stone-50`}
                       onClick={() => setExpandedPlayer(isExpanded ? null : entry.player.id)}
                     >
-                      <td className="px-5 py-3 font-bold text-gray-700">
+                      <td className="px-5 py-3 font-bold text-stone-700">
                         {idx === 0 ? '🏆' : entry.rank}
                       </td>
-                      <td className="px-3 py-3 font-medium text-gray-900">{entry.player.name}</td>
-                      <td className="px-3 py-3 text-center text-gray-500">{entry.player.handicapIndex.toFixed(1)}</td>
+                      <td className="px-3 py-3 font-medium text-stone-900">{entry.player.name}</td>
+                      <td className="px-3 py-3 text-center text-stone-500">{entry.player.handicapIndex.toFixed(1)}</td>
                       {tournament.isGross && <td className="px-3 py-3 text-center">{entry.totalGross}</td>}
                       {tournament.isNet && <td className="px-3 py-3 text-center font-semibold">{entry.totalNet}</td>}
-                      <td className="px-3 py-3 text-center text-gray-500">{entry.scores.length}</td>
-                      <td className="px-3 py-3 text-center font-semibold text-fairway-700">
+                      <td className="px-3 py-3 text-center text-stone-500">{entry.scores.length}</td>
+                      <td className="px-3 py-3 text-center font-semibold text-sage-700">
                         {payout ? `$${payout.amount.toFixed(0)}` : '—'}
                       </td>
-                      <td className="px-3 py-3 text-gray-400 text-xs">{isExpanded ? '▲' : '▼'}</td>
+                      <td className="px-3 py-3 text-stone-400 text-xs">{isExpanded ? '▲' : '▼'}</td>
                     </tr>
                     {isExpanded && (
                       <tr key={`${entry.player.id}-detail`}>
-                        <td colSpan={8} className="px-5 py-4 bg-gray-50 border-t border-gray-100">
+                        <td colSpan={8} className="px-5 py-4 bg-stone-50 border-t border-stone-100">
                           <ScoreBreakdown entry={entry} rounds={results.rounds} isNet={isNet} />
                         </td>
                       </tr>
@@ -120,14 +120,14 @@ export default function TournamentResultsPage() {
       {/* Special contests */}
       {((closestToPin?.length ?? 0) > 0 || (longestDrive?.length ?? 0) > 0) && (
         <div className="card p-5 mb-6">
-          <h2 className="font-bold text-gray-800 mb-4">Special Contests</h2>
+          <h2 className="font-bold text-stone-800 mb-4">Special Contests</h2>
           <div className="space-y-3">
             {closestToPin?.map((c, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-blue-500">📍</span>
                 <div>
                   <div className="text-sm font-medium">Closest to Pin — Hole {c.hole}</div>
-                  <div className="text-xs text-gray-500">{c.player?.name ?? 'TBD'}</div>
+                  <div className="text-xs text-stone-500">{c.player?.name ?? 'TBD'}</div>
                 </div>
               </div>
             ))}
@@ -136,7 +136,7 @@ export default function TournamentResultsPage() {
                 <span>🏌️</span>
                 <div>
                   <div className="text-sm font-medium">Longest Drive — Hole {l.hole}</div>
-                  <div className="text-xs text-gray-500">{l.player?.name ?? 'TBD'}</div>
+                  <div className="text-xs text-stone-500">{l.player?.name ?? 'TBD'}</div>
                 </div>
               </div>
             ))}
@@ -156,27 +156,27 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
 
   return (
     <div>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Round Breakdown</p>
+      <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Round Breakdown</p>
       <div className="space-y-2">
         {entry.scores.map(score => {
           const round = rounds.find(r => r.id === score.roundId);
           const showAdj = expandedAdjustments === score.id;
           return (
-            <div key={score.id} className="bg-white rounded-lg border border-gray-200 p-3">
+            <div key={score.id} className="bg-white rounded-lg border border-stone-200 p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-sm text-gray-800">{round?.courseName ?? 'Unknown Course'}</div>
-                  <div className="text-xs text-gray-400">
+                  <div className="font-medium text-sm text-stone-800">{round?.courseName ?? 'Unknown Course'}</div>
+                  <div className="text-xs text-stone-400">
                     {round ? new Date(round.date).toLocaleDateString() : ''} · Par {round?.par} · Course HCP {score.courseHandicap}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-semibold">
                     {isNet ? `Net ${score.netTotal}` : `Gross ${score.grossTotal}`}
-                    {isNet && <span className="text-xs text-gray-400 ml-2">(Gross {score.grossTotal})</span>}
+                    {isNet && <span className="text-xs text-stone-400 ml-2">(Gross {score.grossTotal})</span>}
                   </div>
                   {score.handicapDifferential !== undefined && (
-                    <div className="text-xs text-gray-400">Differential: {score.handicapDifferential}</div>
+                    <div className="text-xs text-stone-400">Differential: {score.handicapDifferential}</div>
                   )}
                 </div>
               </div>
@@ -184,7 +184,7 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
               {score.adjustments.length > 0 && (
                 <button
                   onClick={() => setExpandedAdjustments(showAdj ? null : score.id)}
-                  className="mt-2 text-xs text-fairway-600 hover:underline flex items-center gap-1"
+                  className="mt-2 text-xs text-sage-600 hover:underline flex items-center gap-1"
                 >
                   <Info size={11} />
                   {showAdj ? 'Hide' : 'Show'} score adjustments ({score.adjustments.length})
@@ -194,11 +194,11 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
               {showAdj && (
                 <div className="mt-2 space-y-1.5">
                   {score.adjustments.map((adj, i) => (
-                    <div key={i} className="text-xs bg-gray-50 rounded p-2 text-gray-600">
-                      <span className="font-medium text-gray-700">[{adj.type.toUpperCase()}]</span>
+                    <div key={i} className="text-xs bg-stone-50 rounded p-2 text-stone-600">
+                      <span className="font-medium text-stone-700">[{adj.type.toUpperCase()}]</span>
                       {adj.hole ? ` Hole ${adj.hole}:` : ''} {adj.reason}
                       {adj.originalValue !== adj.adjustedValue && (
-                        <span className="ml-1 text-gray-400">({adj.originalValue} → {adj.adjustedValue})</span>
+                        <span className="ml-1 text-stone-400">({adj.originalValue} → {adj.adjustedValue})</span>
                       )}
                     </div>
                   ))}

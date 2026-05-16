@@ -19,11 +19,15 @@ export async function getCourse(id: string) {
   return ok(course);
 }
 
+function apiHeaders() {
+  return { 'Authorization': `Key ${API_KEY}` };
+}
+
 export async function searchCourses(query: string) {
   if (!query || query.length < 2) return error('Query must be at least 2 characters');
   try {
-    const url = `${BASE_URL}/courses?search=${encodeURIComponent(query)}&key=${API_KEY}`;
-    const res = await fetch(url);
+    const url = `${BASE_URL}/courses?search=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { headers: apiHeaders() });
     if (!res.ok) throw new Error(`API returned ${res.status}`);
     const data = await res.json() as any;
     return ok(data);
@@ -34,8 +38,8 @@ export async function searchCourses(query: string) {
 
 export async function getCourseFromApi(apiId: string) {
   try {
-    const url = `${BASE_URL}/courses/${apiId}?key=${API_KEY}`;
-    const res = await fetch(url);
+    const url = `${BASE_URL}/courses/${apiId}`;
+    const res = await fetch(url, { headers: apiHeaders() });
     if (!res.ok) throw new Error(`API returned ${res.status}`);
     const data = await res.json() as any;
     return ok(data);

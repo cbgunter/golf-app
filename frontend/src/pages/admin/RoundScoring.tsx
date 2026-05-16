@@ -116,7 +116,7 @@ export default function AdminRoundScoring() {
 
   function calcGross() { return holeInputs.reduce((s, h) => s + Number(h.strokes || 0), 0); }
 
-  if (loading) return <div className="text-gray-500">Loading...</div>;
+  if (loading) return <div className="text-stone-500">Loading...</div>;
   if (!round || !tournament) return <div className="text-red-500">Round not found.</div>;
 
   const scoredPlayerIds = new Set(scores.map(s => s.playerId));
@@ -128,12 +128,12 @@ export default function AdminRoundScoring() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Link to={`/admin/tournaments/${round.tournamentId}`} className="text-xs text-gray-400 hover:text-gray-600">← Tournament</Link>
-        <h1 className="text-2xl font-bold text-gray-900 mt-1">Round Scoring</h1>
-        <div className="text-sm text-gray-500 mt-1">
+        <Link to={`/admin/tournaments/${round.tournamentId}`} className="text-xs text-stone-400 hover:text-stone-600">← Tournament</Link>
+        <h1 className="text-2xl font-bold text-stone-900 mt-1">Round Scoring</h1>
+        <div className="text-sm text-stone-500 mt-1">
           {round.courseName} · {round.tee} tees · Par {round.par} · {new Date(round.date).toLocaleDateString()}
         </div>
-        <div className="text-xs text-gray-400 mt-0.5">
+        <div className="text-xs text-stone-400 mt-0.5">
           Rating {round.courseRating} / Slope {round.slopeRating}
         </div>
       </div>
@@ -143,10 +143,10 @@ export default function AdminRoundScoring() {
         <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-semibold text-gray-800">Entering score for {activePlayer.name}</h2>
-              <div className="text-xs text-gray-500 mt-0.5">HCP Index: {activePlayer.handicapIndex.toFixed(1)}</div>
+              <h2 className="font-semibold text-stone-800">Entering score for {activePlayer.name}</h2>
+              <div className="text-xs text-stone-500 mt-0.5">HCP Index: {activePlayer.handicapIndex.toFixed(1)}</div>
             </div>
-            <button onClick={() => setActivePlayer(null)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            <button onClick={() => setActivePlayer(null)} className="text-stone-400 hover:text-stone-600"><X size={18} /></button>
           </div>
 
           <form onSubmit={handleSubmitScore} className="space-y-4">
@@ -167,12 +167,12 @@ export default function AdminRoundScoring() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="text-xs text-gray-500 bg-gray-50">
+                  <tr className="text-xs text-stone-500 bg-stone-50">
                     <th className="text-left px-2 py-2">Hole</th>
                     <th className="px-2 py-2">Par</th>
                     <th className="px-2 py-2">SI</th>
                     <th className="px-2 py-2 w-20">Strokes</th>
-                    <th className="px-2 py-2 text-gray-400">+/-</th>
+                    <th className="px-2 py-2 text-stone-400">+/-</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -180,12 +180,12 @@ export default function AdminRoundScoring() {
                     const strokes = Number(h.strokes) || 0;
                     const diff = strokes ? strokes - h.par : null;
                     return (
-                      <tr key={h.hole} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                        <td className="px-2 py-1 font-medium text-gray-700">{h.hole}</td>
+                      <tr key={h.hole} className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50/50'}>
+                        <td className="px-2 py-1 font-medium text-stone-700">{h.hole}</td>
                         <td className="px-2 py-1 text-center">
                           <input
                             type="number" min="3" max="6"
-                            className="w-10 text-center border border-gray-200 rounded px-1 py-0.5 text-xs"
+                            className="w-10 text-center border border-stone-200 rounded px-1 py-0.5 text-xs"
                             value={h.par}
                             onChange={e => setHoleInputs(hs => hs.map((x, j) => j === i ? { ...x, par: Number(e.target.value) } : x))}
                           />
@@ -193,7 +193,7 @@ export default function AdminRoundScoring() {
                         <td className="px-2 py-1 text-center">
                           <input
                             type="number" min="1" max="18"
-                            className="w-10 text-center border border-gray-200 rounded px-1 py-0.5 text-xs"
+                            className="w-10 text-center border border-stone-200 rounded px-1 py-0.5 text-xs"
                             value={h.handicap}
                             onChange={e => setHoleInputs(hs => hs.map((x, j) => j === i ? { ...x, handicap: Number(e.target.value) } : x))}
                           />
@@ -206,16 +206,16 @@ export default function AdminRoundScoring() {
                             onChange={e => setHoleInputs(hs => hs.map((x, j) => j === i ? { ...x, strokes: Number(e.target.value) } : x))}
                           />
                         </td>
-                        <td className={`px-2 py-1 text-center text-xs font-medium ${diff === null ? 'text-gray-300' : diff < 0 ? 'text-red-500' : diff === 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                        <td className={`px-2 py-1 text-center text-xs font-medium ${diff === null ? 'text-stone-300' : diff < 0 ? 'text-red-500' : diff === 0 ? 'text-green-600' : 'text-stone-600'}`}>
                           {diff === null ? '—' : diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
                         </td>
                       </tr>
                     );
                   })}
-                  <tr className="bg-fairway-50 font-semibold">
+                  <tr className="bg-sage-50 font-semibold">
                     <td className="px-2 py-2" colSpan={3}>Total</td>
                     <td className="px-2 py-2 text-center text-lg">{calcGross()}</td>
-                    <td className="px-2 py-2 text-center text-xs text-gray-500">
+                    <td className="px-2 py-2 text-center text-xs text-stone-500">
                       {calcGross() ? (calcGross() > 0 ? `+${calcGross() - holeInputs.reduce((s, h) => s + h.par, 0)}` : 'E') : '—'}
                     </td>
                   </tr>
@@ -236,13 +236,13 @@ export default function AdminRoundScoring() {
       {/* Players needing scores */}
       {!activePlayer && needsScoring.length > 0 && (
         <div className="card p-5">
-          <h2 className="font-semibold text-gray-800 mb-3">Enter Scores</h2>
+          <h2 className="font-semibold text-stone-800 mb-3">Enter Scores</h2>
           <div className="space-y-2">
             {needsScoring.map(p => (
-              <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={p.id} className="flex items-center justify-between p-3 bg-stone-50 rounded-lg">
                 <div>
-                  <div className="font-medium text-sm text-gray-900">{p.name}</div>
-                  <div className="text-xs text-gray-400">HCP Index {p.handicapIndex.toFixed(1)}</div>
+                  <div className="font-medium text-sm text-stone-900">{p.name}</div>
+                  <div className="text-xs text-stone-400">HCP Index {p.handicapIndex.toFixed(1)}</div>
                 </div>
                 <button onClick={() => startScoring(p)} className="btn-primary text-xs">
                   Enter Score
@@ -256,35 +256,35 @@ export default function AdminRoundScoring() {
       {/* Existing scores */}
       {scores.length > 0 && (
         <div className="card">
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">Entered Scores</h2>
+          <div className="px-5 py-4 border-b border-stone-100">
+            <h2 className="font-semibold text-stone-800">Entered Scores</h2>
           </div>
           <div className="divide-y divide-gray-50">
             {scores.sort((a, b) => tournament.isNet ? a.netTotal - b.netTotal : a.grossTotal - b.grossTotal).map((s, i) => (
               <div key={s.id}>
                 <div className="flex items-center justify-between px-5 py-3.5">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-gray-400 w-5">{i + 1}</span>
+                    <span className="text-sm font-bold text-stone-400 w-5">{i + 1}</span>
                     <div>
-                      <div className="font-medium text-gray-900">{s.playerName}</div>
-                      <div className="text-xs text-gray-400">Course HCP {s.courseHandicap} · Diff {s.handicapDifferential}</div>
+                      <div className="font-medium text-stone-900">{s.playerName}</div>
+                      <div className="text-xs text-stone-400">Course HCP {s.courseHandicap} · Diff {s.handicapDifferential}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="text-sm font-semibold">Net {s.netTotal}</div>
-                      <div className="text-xs text-gray-400">Gross {s.grossTotal}</div>
+                      <div className="text-xs text-stone-400">Gross {s.grossTotal}</div>
                     </div>
                     <div className="flex gap-1">
                       <button
                         onClick={() => startScoring(players.find(p => p.id === s.playerId)!)}
-                        className="text-xs text-fairway-600 hover:underline"
+                        className="text-xs text-sage-600 hover:underline"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => setExpandedScore(expandedScore === s.id ? null : s.id)}
-                        className="text-gray-400 p-1"
+                        className="text-stone-400 p-1"
                       >
                         {expandedScore === s.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </button>
@@ -293,15 +293,15 @@ export default function AdminRoundScoring() {
                 </div>
 
                 {expandedScore === s.id && (
-                  <div className="px-5 pb-4 bg-gray-50 border-t border-gray-100">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 mt-3">Score Adjustments & Transparency</p>
+                  <div className="px-5 pb-4 bg-stone-50 border-t border-stone-100">
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2 mt-3">Score Adjustments & Transparency</p>
                     <div className="space-y-1.5">
                       {s.adjustments.map((adj, j) => (
-                        <div key={j} className="text-xs bg-white rounded p-2.5 border border-gray-200 text-gray-600">
-                          <span className="font-semibold text-gray-700">[{adj.type.replace('_', ' ').toUpperCase()}]</span>
+                        <div key={j} className="text-xs bg-white rounded p-2.5 border border-stone-200 text-stone-600">
+                          <span className="font-semibold text-stone-700">[{adj.type.replace('_', ' ').toUpperCase()}]</span>
                           {adj.hole ? ` Hole ${adj.hole}:` : ''} {adj.reason}
                           {adj.originalValue !== adj.adjustedValue && (
-                            <span className="text-gray-400 ml-1">({adj.originalValue} → {adj.adjustedValue})</span>
+                            <span className="text-stone-400 ml-1">({adj.originalValue} → {adj.adjustedValue})</span>
                           )}
                         </div>
                       ))}
@@ -317,7 +317,7 @@ export default function AdminRoundScoring() {
       {/* Special contests */}
       {(hasCTP || hasLD) && (
         <div className="card p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">Special Contests</h2>
+          <h2 className="font-semibold text-stone-800 mb-4">Special Contests</h2>
           <div className="space-y-4">
             {hasCTP && (
               <div>
@@ -343,9 +343,9 @@ export default function AdminRoundScoring() {
 
       {/* Complete round */}
       {round.status !== 'completed' && scores.length === players.length && players.length > 0 && (
-        <div className="card p-5 border-l-4 border-fairway-500">
-          <h2 className="font-semibold text-gray-800 mb-1">All scores entered!</h2>
-          <p className="text-sm text-gray-500 mb-4">Mark this round as complete to finalize scores and update the leaderboard.</p>
+        <div className="card p-5 border-l-4 border-sage-500">
+          <h2 className="font-semibold text-stone-800 mb-1">All scores entered!</h2>
+          <p className="text-sm text-stone-500 mb-4">Mark this round as complete to finalize scores and update the leaderboard.</p>
           <button onClick={handleCompleteRound} className="btn-primary">
             <Check size={15} /> Complete Round
           </button>

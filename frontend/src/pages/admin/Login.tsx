@@ -23,12 +23,12 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-fairway-700 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-sage-700 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm">
         <div className="text-center mb-8">
           <span className="text-5xl">⛳</span>
-          <h1 className="text-2xl font-bold text-gray-900 mt-3">Admin Login</h1>
-          <p className="text-sm text-gray-500 mt-1">Golf Tournament Manager</p>
+          <h1 className="text-2xl font-bold text-stone-900 mt-3">Admin Login</h1>
+          <p className="text-sm text-stone-500 mt-1">Golf Tournament Manager</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

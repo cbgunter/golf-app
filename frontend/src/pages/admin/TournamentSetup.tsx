@@ -73,16 +73,17 @@ export default function AdminTournamentSetup() {
   }
 
   function selectCourseResult(c: any) {
-    const tees = c.tees ?? c.ratings ?? [];
-    const first = tees[0] ?? {};
+    // API returns tees as {male: [...], female: [...]}
+    const teeLists = c.tees ?? {};
+    const first = (teeLists.male ?? teeLists.female ?? [])[0] ?? {};
     setRoundForm(f => ({
       ...f,
-      courseId: String(c.id ?? c.course_id ?? ''),
-      courseName: c.club_name ?? c.name ?? c.course_name ?? '',
-      tee: first.tee_name ?? first.name ?? 'White',
-      courseRating: String(first.course_rating ?? first.rating ?? ''),
-      slopeRating: String(first.bogey_rating ? Math.round(first.bogey_rating) : first.slope ?? ''),
-      par: String(first.par ?? 72),
+      courseId: String(c.id ?? ''),
+      courseName: c.club_name ?? c.course_name ?? '',
+      tee: first.tee_name ?? 'White',
+      courseRating: String(first.course_rating ?? ''),
+      slopeRating: String(first.slope_rating ?? (first.bogey_rating ? Math.round(Number(first.bogey_rating)) : '') ),
+      par: String(first.par_total ?? 72),
     }));
     setCourseResults([]);
     setCourseSearch('');
@@ -150,7 +151,7 @@ export default function AdminTournamentSetup() {
     }
   }
 
-  if (loading) return <div className="text-gray-500">Loading...</div>;
+  if (loading) return <div className="text-stone-500">Loading...</div>;
 
   const payoutTotal = payoutRows.reduce((s, r) => s + Number(r.percentage || 0), 0);
 
@@ -159,8 +160,8 @@ export default function AdminTournamentSetup() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <Link to="/admin/tournaments" className="text-xs text-gray-400 hover:text-gray-600">← Tournaments</Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-1">
+          <Link to="/admin/tournaments" className="text-xs text-stone-400 hover:text-stone-600">← Tournaments</Link>
+          <h1 className="text-2xl font-bold text-stone-900 mt-1">
             {creating ? 'New Tournament' : tournament?.name}
           </h1>
           {tournament && <StatusBadge status={tournament.status} />}
@@ -175,12 +176,12 @@ export default function AdminTournamentSetup() {
 
       {/* Tabs (only when editing) */}
       {!creating && (
-        <div className="flex border-b border-gray-200 gap-6">
+        <div className="flex border-b border-stone-200 gap-6">
           {(['details', 'players', 'rounds'] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`pb-2 text-sm font-medium capitalize border-b-2 transition-colors ${tab === t ? 'border-fairway-600 text-fairway-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              className={`pb-2 text-sm font-medium capitalize border-b-2 transition-colors ${tab === t ? 'border-sage-600 text-sage-700' : 'border-transparent text-stone-500 hover:text-stone-700'}`}
             >
               {t}
             </button>
@@ -192,7 +193,7 @@ export default function AdminTournamentSetup() {
       {(creating || tab === 'details') && (
         <form onSubmit={handleSaveDetails} className="space-y-5">
           <div className="card p-5 space-y-4">
-            <h2 className="font-semibold text-gray-800">Tournament Details</h2>
+            <h2 className="font-semibold text-stone-800">Tournament Details</h2>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Tournament Name *</label>
@@ -226,7 +227,7 @@ export default function AdminTournamentSetup() {
                   { key: 'hasClosestToPin', label: 'Closest to Pin' },
                   { key: 'hasLongestDrive', label: 'Longest Drive' },
                 ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                  <label key={key} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer">
                     <input
                       type="checkbox"
                       className="rounded"
@@ -247,7 +248,7 @@ export default function AdminTournamentSetup() {
           {/* Payout structure */}
           <div className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-gray-800">Payout Structure</h2>
+              <h2 className="font-semibold text-stone-800">Payout Structure</h2>
               <button
                 type="button"
                 onClick={() => setPayoutRows(r => [...r, { place: r.length + 1, label: `${r.length + 1}st Place`, percentage: '' }])}
@@ -257,21 +258,21 @@ export default function AdminTournamentSetup() {
               </button>
             </div>
             {payoutRows.length === 0 ? (
-              <p className="text-sm text-gray-400">No payouts configured. Add places above.</p>
+              <p className="text-sm text-stone-400">No payouts configured. Add places above.</p>
             ) : (
               <div className="space-y-2">
                 {payoutRows.map((row, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <span className="w-6 text-sm text-gray-500 text-center">{row.place}</span>
+                    <span className="w-6 text-sm text-stone-500 text-center">{row.place}</span>
                     <input className="input flex-1" value={row.label} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} placeholder="1st Place" />
                     <div className="relative w-28">
                       <input className="input pr-6" type="number" min="0" max="100" step="0.5" value={row.percentage} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, percentage: e.target.value } : x))} placeholder="50" />
-                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 text-sm">%</span>
                     </div>
                     {Number(form.entryFee) > 0 && (
-                      <span className="text-xs text-gold-600 w-16 text-right">${((Number(row.percentage || 0) / 100) * Number(form.entryFee) * selectedPlayerIds.length).toFixed(0)}</span>
+                      <span className="text-xs text-sand-600 w-16 text-right">${((Number(row.percentage || 0) / 100) * Number(form.entryFee) * selectedPlayerIds.length).toFixed(0)}</span>
                     )}
-                    <button type="button" onClick={() => setPayoutRows(r => r.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400">
+                    <button type="button" onClick={() => setPayoutRows(r => r.filter((_, j) => j !== i))} className="text-stone-300 hover:text-red-400">
                       <X size={15} />
                     </button>
                   </div>
@@ -286,13 +287,13 @@ export default function AdminTournamentSetup() {
           {/* Players (inline on create) */}
           {creating && (
             <div className="card p-5">
-              <h2 className="font-semibold text-gray-800 mb-3">Players ({selectedPlayerIds.length})</h2>
+              <h2 className="font-semibold text-stone-800 mb-3">Players ({selectedPlayerIds.length})</h2>
               {players.length === 0 ? (
-                <p className="text-sm text-gray-400">No players yet. <Link to="/admin/players" className="text-fairway-600 hover:underline">Add players first.</Link></p>
+                <p className="text-sm text-stone-400">No players yet. <Link to="/admin/players" className="text-sage-600 hover:underline">Add players first.</Link></p>
               ) : (
                 <div className="grid sm:grid-cols-2 gap-2">
                   {players.map(p => (
-                    <label key={p.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
+                    <label key={p.id} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer p-2 rounded-lg hover:bg-stone-50">
                       <input
                         type="checkbox"
                         className="rounded"
@@ -300,7 +301,7 @@ export default function AdminTournamentSetup() {
                         onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))}
                       />
                       <span className="flex-1">{p.name}</span>
-                      <span className="text-xs text-gray-400">HCP {p.handicapIndex.toFixed(1)}</span>
+                      <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
                     </label>
                   ))}
                 </div>
@@ -318,7 +319,7 @@ export default function AdminTournamentSetup() {
       {!creating && tab === 'players' && (
         <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800">Tournament Players ({selectedPlayerIds.length})</h2>
+            <h2 className="font-semibold text-stone-800">Tournament Players ({selectedPlayerIds.length})</h2>
             <button
               onClick={async () => {
                 try {
@@ -333,7 +334,7 @@ export default function AdminTournamentSetup() {
           </div>
           <div className="grid sm:grid-cols-2 gap-2">
             {players.map(p => (
-              <label key={p.id} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer p-2.5 rounded-lg hover:bg-gray-50 border border-gray-100">
+              <label key={p.id} className="flex items-center gap-2 text-sm text-stone-700 cursor-pointer p-2.5 rounded-lg hover:bg-stone-50 border border-stone-100">
                 <input
                   type="checkbox"
                   className="rounded"
@@ -341,7 +342,7 @@ export default function AdminTournamentSetup() {
                   onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))}
                 />
                 <span className="flex-1 font-medium">{p.name}</span>
-                <span className="text-xs text-gray-400">HCP {p.handicapIndex.toFixed(1)}</span>
+                <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
               </label>
             ))}
           </div>
@@ -352,7 +353,7 @@ export default function AdminTournamentSetup() {
       {!creating && tab === 'rounds' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-800">Rounds ({rounds.length})</h2>
+            <h2 className="font-semibold text-stone-800">Rounds ({rounds.length})</h2>
             <button onClick={() => setShowRoundForm(!showRoundForm)} className="btn-primary">
               <Plus size={15} /> Add Round
             </button>
@@ -362,8 +363,8 @@ export default function AdminTournamentSetup() {
           {showRoundForm && (
             <div className="card p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-800">New Round</h3>
-                <button onClick={() => setShowRoundForm(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+                <h3 className="font-semibold text-stone-800">New Round</h3>
+                <button onClick={() => setShowRoundForm(false)} className="text-stone-400 hover:text-stone-600"><X size={18} /></button>
               </div>
               <form onSubmit={handleAddRound} className="space-y-4">
                 {/* Course search */}
@@ -382,16 +383,16 @@ export default function AdminTournamentSetup() {
                     </button>
                   </div>
                   {courseResults.length > 0 && (
-                    <div className="mt-1 border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-48 overflow-y-auto shadow-sm">
+                    <div className="mt-1 border border-stone-200 rounded-lg divide-y divide-gray-100 max-h-48 overflow-y-auto shadow-sm">
                       {courseResults.slice(0, 10).map((c, i) => (
                         <button
                           key={i}
                           type="button"
                           onClick={() => selectCourseResult(c)}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-fairway-50 transition-colors"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-sage-50 transition-colors"
                         >
                           <div className="font-medium">{c.club_name ?? c.name ?? c.course_name}</div>
-                          <div className="text-xs text-gray-400">{c.location ?? c.city ?? ''}</div>
+                          <div className="text-xs text-stone-400">{c.location ?? c.city ?? ''}</div>
                         </button>
                       ))}
                     </div>
@@ -447,26 +448,26 @@ export default function AdminTournamentSetup() {
 
           {/* Rounds list */}
           {rounds.length === 0 ? (
-            <div className="card p-8 text-center text-gray-400 text-sm">No rounds yet.</div>
+            <div className="card p-8 text-center text-stone-400 text-sm">No rounds yet.</div>
           ) : (
             <div className="card divide-y divide-gray-100">
               {rounds.map(r => (
                 <Link
                   key={r.id}
                   to={`/admin/rounds/${r.id}/scoring`}
-                  className="flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors group"
+                  className="flex items-center justify-between px-5 py-4 hover:bg-stone-50 transition-colors group"
                 >
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
                       <StatusBadge status={r.status} />
-                      <span className="text-xs text-gray-400">{r.tee} tees</span>
+                      <span className="text-xs text-stone-400">{r.tee} tees</span>
                     </div>
-                    <div className="font-medium text-gray-900 group-hover:text-fairway-700">{r.courseName}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">
+                    <div className="font-medium text-stone-900 group-hover:text-sage-700">{r.courseName}</div>
+                    <div className="text-xs text-stone-400 mt-0.5">
                       {new Date(r.date).toLocaleDateString()} · Par {r.par} · Rating {r.courseRating} / Slope {r.slopeRating}
                     </div>
                   </div>
-                  <ChevronRight size={16} className="text-gray-300" />
+                  <ChevronRight size={16} className="text-stone-300" />
                 </Link>
               ))}
             </div>
