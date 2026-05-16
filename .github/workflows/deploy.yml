@@ -38,6 +38,10 @@ jobs:
         working-directory: infrastructure
         run: npm install --prefer-offline
 
+      - name: Build backend (required by CDK asset bundling)
+        working-directory: backend
+        run: npm install --prefer-offline && npm run build
+
       - name: CDK Deploy
         working-directory: infrastructure
         run: npx cdk deploy --require-approval never --outputs-file cdk-outputs.json
