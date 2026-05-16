@@ -7,10 +7,14 @@ import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
-import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import * as iam from 'aws-cdk-lib/aws-iam';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as path from 'path';
+
+const DOMAIN = 'golf.caseyhunter.net';
+const HOSTED_ZONE_NAME = 'caseyhunter.net';
 
 export class GolfAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -139,6 +143,17 @@ export class GolfAppStack extends cdk.Stack {
       integration: lambdaIntegration,
     });
 
+    // ─── Route 53 Hosted Zone (lookup existing) ──────────────────────────────
+    const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+      domainName: HOSTED_ZONE_NAME,
+    });
+
+    // ─── ACM Certificate (must be in us-east-1 for CloudFront) ──────────────
+    const certificate = new acm.Certificate(this, 'Certificate', {
+      domainName: DOMAIN,
+      validation: acm.CertificateValidation.fromDns(hostedZone),
+    });
+
     // ─── S3 Frontend Bucket ─────────────────────────────────────────────────
     const frontendBucket = new s3.Bucket(this, 'FrontendBucket', {
       bucketName: `golf-app-frontend-${this.account}`,
@@ -153,6 +168,8 @@ export class GolfAppStack extends cdk.Stack {
     });
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
+      domainNames: [DOMAIN],
+      certificate,
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(frontendBucket, {
           originAccessControl: oac,
@@ -186,6 +203,13 @@ export class GolfAppStack extends cdk.Stack {
       ],
     });
 
+    // ─── Route 53 Alias Record ───────────────────────────────────────────────
+    new route53.ARecord(this, 'AliasRecord', {
+      zone: hostedZone,
+      recordName: 'golf',
+      target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
+    });
+
     // ─── Outputs ─────────────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: httpApi.apiEndpoint,
@@ -193,10 +217,15 @@ export class GolfAppStack extends cdk.Stack {
       exportName: 'GolfAppApiUrl',
     });
 
+    new cdk.CfnOutput(this, 'AppUrl', {
+      value: `https://${DOMAIN}`,
+      description: 'Your Golf App URL',
+      exportName: 'GolfAppUrl',
+    });
+
     new cdk.CfnOutput(this, 'CloudFrontUrl', {
       value: `https://${distribution.distributionDomainName}`,
-      description: 'CloudFront Distribution URL (your app URL)',
-      exportName: 'GolfAppUrl',
+      description: 'CloudFront Distribution URL (fallback)',
     });
 
     new cdk.CfnOutput(this, 'FrontendBucketName', {

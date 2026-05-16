@@ -5,6 +5,7 @@
     "exclude": ["README.md", "cdk*.json", "**/*.js", "tsconfig.json", "package*.json", "yarn.lock", "node_modules", "test"]
   },
   "context": {
+    "availability-zones:account=dummy:region=us-east-1": ["us-east-1a", "us-east-1b"],
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/aws-codepipeline-actions:useNewDefaultBranchForCodeCommitSource": true,
