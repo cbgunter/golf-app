@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { playersApi, PlayerProfile } from '../api/client';
+import { playersApi, tournamentsApi, PlayerProfile, Tournament } from '../api/client';
 import { parseLocalDate } from '../lib/dates';
-import { ArrowLeft, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { ArrowLeft, TrendingDown, TrendingUp, Minus, Calendar } from 'lucide-react';
 
 export default function PlayerProfilePage() {
   const { id } = useParams<{ id: string }>();
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const [upcomingTournaments, setUpcomingTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
-    playersApi.profile(id)
-      .then(setProfile)
-      .catch(e => setError(e.message ?? 'Failed to load player'))
+    Promise.all([
+      playersApi.profile(id),
+      tournamentsApi.list(),
+    ]).then(([prof, allTournaments]) => {
+      setProfile(prof);
+      setUpcomingTournaments(
+        allTournaments.filter(t =>
+          (t.status === 'upcoming' || t.status === 'active') && t.playerIds.includes(id)
+        )
+      );
+    }).catch(e => setError(e.message ?? 'Failed to load player'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -97,6 +106,37 @@ export default function PlayerProfilePage() {
       )}
 
       {/* Round history */}
+      {/* Upcoming / active tournaments */}
+      {upcomingTournaments.length > 0 && (
+        <div className="card mb-6">
+          <div className="px-5 py-4 border-b border-stone-100">
+            <h2 className="font-semibold text-stone-800">Tournaments</h2>
+            <p className="text-xs text-stone-400 mt-0.5">Currently enrolled</p>
+          </div>
+          <div className="divide-y divide-stone-50">
+            {upcomingTournaments.map(t => (
+              <Link
+                key={t.id}
+                to={`/tournament/${t.id}`}
+                className="flex items-center gap-4 px-5 py-3.5 hover:bg-stone-50 transition-colors"
+              >
+                <div className={`w-2 h-2 rounded-full shrink-0 ${t.status === 'active' ? 'bg-green-500' : 'bg-stone-300'}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-stone-900 text-sm">{t.name}</div>
+                  <div className="text-xs text-stone-400 flex items-center gap-1 mt-0.5">
+                    <Calendar size={11} />
+                    {parseLocalDate(t.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
+                </div>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${t.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-stone-100 text-stone-500'}`}>
+                  {t.status === 'active' ? 'Live' : 'Upcoming'}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {roundScores.length > 0 ? (
         <div className="card">
           <div className="px-5 py-4 border-b border-stone-100">

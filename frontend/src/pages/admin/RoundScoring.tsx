@@ -38,6 +38,8 @@ export default function AdminRoundScoring() {
 
   const [ctpWinner, setCtpWinner] = useState('');
   const [ldWinner, setLdWinner] = useState('');
+  const [savingWinners, setSavingWinners] = useState(false);
+  const [winnersSaved, setWinnersSaved] = useState(false);
 
   // True when course hole data came from GHIN — lock par/SI columns
   const courseDataLoaded = Boolean(round?.holes && round.holes.length === 18);
@@ -107,13 +109,34 @@ export default function AdminRoundScoring() {
     }
   }
 
-  async function handleCompleteRound() {
+  async function saveWinners(newCtp: string, newLd: string) {
     if (!round) return;
+    setSavingWinners(true);
+    setWinnersSaved(false);
     try {
       await roundsApi.update(round.id, {
-        closestToPinWinnerId: ctpWinner || undefined,
-        longestDriveWinnerId: ldWinner || undefined,
+        closestToPinWinnerId: newCtp || undefined,
+        longestDriveWinnerId: newLd || undefined,
       });
+      setWinnersSaved(true);
+      setTimeout(() => setWinnersSaved(false), 2000);
+    } catch (e: any) {
+      toast.error('Failed to save winner');
+    } finally {
+      setSavingWinners(false);
+    }
+  }
+
+  async function handleCompleteRound() {
+    if (!round) return;
+    if (scores.length < players.length) {
+      const missing = players.length - scores.length;
+      const ok = window.confirm(
+        `${missing} player${missing > 1 ? 's are' : ' is'} missing a score. Complete the round anyway?`
+      );
+      if (!ok) return;
+    }
+    try {
       await roundsApi.complete(round.id);
       toast.success('Round completed');
       navigate(`/admin/tournaments/${round.tournamentId}`);
@@ -331,30 +354,73 @@ export default function AdminRoundScoring() {
         </div>
       ) : (
         /* Player picker — shown when not actively entering a score */
-        players.length > 0 && (
-          <div className="card p-4">
-            <h2 className="font-semibold text-stone-700 mb-3 text-sm uppercase tracking-wide">
-              {needsScoring.length > 0 ? 'Enter Score For' : 'Edit Scores'}
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(needsScoring.length > 0 ? needsScoring : players).map(p => {
-                const hasScore = scoredPlayerIds.has(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => startScoring(p)}
-                    className="flex flex-col items-start p-3 bg-stone-50 hover:bg-sage-50 border border-stone-200 hover:border-sage-300 rounded-lg transition-colors text-left"
-                  >
-                    <span className="font-medium text-stone-900 text-sm">{p.name}</span>
-                    <span className="text-xs text-stone-400 mt-0.5">
-                      {hasScore ? 'Edit score' : `HCP ${p.handicapIndex.toFixed(1)}`}
-                    </span>
-                  </button>
-                );
-              })}
+        players.length > 0 && (() => {
+          const displayPlayers = needsScoring.length > 0 ? needsScoring : players;
+          const groups = round.teeTimeGroups ?? [];
+          const hasGroups = groups.length > 0;
+
+          function PlayerBtn({ p }: { p: Player }) {
+            const hasScore = scoredPlayerIds.has(p.id);
+            return (
+              <button
+                key={p.id}
+                onClick={() => startScoring(p)}
+                className="flex flex-col items-start p-3 bg-stone-50 hover:bg-sage-50 border border-stone-200 hover:border-sage-300 rounded-lg transition-colors text-left"
+              >
+                <span className="font-medium text-stone-900 text-sm">{p.name}</span>
+                <span className="text-xs text-stone-400 mt-0.5">
+                  {hasScore ? 'Edit score' : `HCP ${p.handicapIndex.toFixed(1)}`}
+                </span>
+              </button>
+            );
+          }
+
+          if (hasGroups) {
+            const assignedIds = new Set(groups.flatMap(g => g.playerIds));
+            const ungrouped = displayPlayers.filter(p => !assignedIds.has(p.id));
+            return (
+              <div className="card p-4 space-y-4">
+                <h2 className="font-semibold text-stone-700 text-sm uppercase tracking-wide">
+                  {needsScoring.length > 0 ? 'Enter Score For' : 'Edit Scores'}
+                </h2>
+                {groups.map(g => {
+                  const groupPlayers = displayPlayers.filter(p => g.playerIds.includes(p.id));
+                  if (groupPlayers.length === 0) return null;
+                  return (
+                    <div key={g.groupNumber}>
+                      <div className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">
+                        Group {g.groupNumber} · {g.teeTime}
+                        {g.startingHole ? ` · Hole ${g.startingHole}` : ''}
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {groupPlayers.map(p => <PlayerBtn key={p.id} p={p} />)}
+                      </div>
+                    </div>
+                  );
+                })}
+                {ungrouped.length > 0 && (
+                  <div>
+                    <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Unassigned</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {ungrouped.map(p => <PlayerBtn key={p.id} p={p} />)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <div className="card p-4">
+              <h2 className="font-semibold text-stone-700 mb-3 text-sm uppercase tracking-wide">
+                {needsScoring.length > 0 ? 'Enter Score For' : 'Edit Scores'}
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {displayPlayers.map(p => <PlayerBtn key={p.id} p={p} />)}
+              </div>
             </div>
-          </div>
-        )
+          );
+        })()
       )}
 
       {/* Live leaderboard — always visible, updates after each score */}
@@ -450,12 +516,20 @@ export default function AdminRoundScoring() {
       {/* Special contests */}
       {(hasCTP || hasLD) && !activePlayer && (
         <div className="card p-5">
-          <h2 className="font-semibold text-stone-800 mb-4">Special Contests</h2>
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="font-semibold text-stone-800">Special Contests</h2>
+            {savingWinners && <span className="text-xs text-stone-400">Saving…</span>}
+            {winnersSaved && <span className="text-xs text-green-600 font-medium">Saved ✓</span>}
+          </div>
           <div className="space-y-4">
             {hasCTP && (
               <div>
                 <label className="label">Closest to Pin Winner (Hole {round.closestToPinHole})</label>
-                <select className="input" value={ctpWinner} onChange={e => setCtpWinner(e.target.value)}>
+                <select className="input" value={ctpWinner} onChange={e => {
+                  const v = e.target.value;
+                  setCtpWinner(v);
+                  saveWinners(v, ldWinner);
+                }}>
                   <option value="">— Select winner —</option>
                   {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
@@ -464,7 +538,11 @@ export default function AdminRoundScoring() {
             {hasLD && (
               <div>
                 <label className="label">Longest Drive Winner (Hole {round.longestDriveHole})</label>
-                <select className="input" value={ldWinner} onChange={e => setLdWinner(e.target.value)}>
+                <select className="input" value={ldWinner} onChange={e => {
+                  const v = e.target.value;
+                  setLdWinner(v);
+                  saveWinners(ctpWinner, v);
+                }}>
                   <option value="">— Select winner —</option>
                   {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { tournamentsApi, playersApi, Tournament, Round, Score, Player } from '../api/client';
 import { roundsApi } from '../api/client';
@@ -73,6 +73,26 @@ export default function TournamentView() {
   });
   leaderboard.sort((a, b) => tournament.isNet ? a.totalNet - b.totalNet : a.totalGross - b.totalGross);
   const showLeaderboard = leaderboard.length > 0;
+
+  // Round progress + rank movement
+  const scoredRoundsList = [...rounds]
+    .filter(r => (scoresByRound[r.id] ?? []).length > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const completedRoundsCount = scoredRoundsList.length;
+  const lastScoredRound = scoredRoundsList[scoredRoundsList.length - 1];
+  const prevRankMap = new Map<string, number>();
+  if (lastScoredRound && scoredRoundsList.length > 1) {
+    const prevScores = Object.entries(scoresByRound)
+      .filter(([rid]) => rid !== lastScoredRound.id)
+      .flatMap(([, ss]) => ss);
+    const prevTotals = new Map<string, number>();
+    for (const s of prevScores) {
+      prevTotals.set(s.playerId, (prevTotals.get(s.playerId) ?? 0) + (tournament.isNet ? s.netTotal : s.grossTotal));
+    }
+    [...prevTotals.entries()]
+      .sort((a, b) => a[1] - b[1])
+      .forEach(([pid], i) => prevRankMap.set(pid, i + 1));
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -173,10 +193,17 @@ export default function TournamentView() {
       {showLeaderboard && tournament.status !== 'completed' && (
         <div className="card mb-6">
           <div className="px-5 py-3.5 border-b border-stone-100 flex items-center justify-between">
-            <h2 className="font-semibold text-stone-800 flex items-center gap-2">
-              <Trophy size={15} className="text-sand-500" />
-              {tournament.status === 'active' ? 'Live Leaderboard' : 'Leaderboard'}
-            </h2>
+            <div>
+              <h2 className="font-semibold text-stone-800 flex items-center gap-2">
+                <Trophy size={15} className="text-sand-500" />
+                {tournament.status === 'active' ? 'Live Leaderboard' : 'Leaderboard'}
+              </h2>
+              {completedRoundsCount > 0 && rounds.length > 0 && (
+                <p className="text-xs text-stone-400 mt-0.5">
+                  After {completedRoundsCount} of {rounds.length} round{rounds.length !== 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
             <span className="text-xs text-stone-400">{tournament.isNet ? 'Net' : 'Gross'}</span>
           </div>
           <div className="overflow-x-auto">
@@ -187,6 +214,7 @@ export default function TournamentView() {
                   <th className="text-left px-3 py-2 font-medium">Player</th>
                   {tournament.isGross && <th className="text-center px-3 py-2 font-medium">Gross</th>}
                   {tournament.isNet && <th className="text-center px-3 py-2 font-medium">Net</th>}
+                  <th className="text-center px-3 py-2 font-medium hidden sm:table-cell">Back</th>
                   <th className="text-center px-3 py-2 font-medium">Rounds</th>
                   {totalPot > 0 && <th className="text-center px-3 py-2 font-medium">Projected $</th>}
                 </tr>
@@ -195,10 +223,24 @@ export default function TournamentView() {
                 {leaderboard.map((entry, idx) => {
                   const payout = tournament.payoutStructure[idx];
                   const projectedPayout = payout ? Math.round((payout.percentage / 100) * totalPot) : null;
+                  const prevRank = entry.player ? prevRankMap.get(entry.player.id) : undefined;
+                  const movement = prevRank !== undefined ? prevRank - (idx + 1) : null;
+                  const leaderTotal = tournament.isNet ? leaderboard[0].totalNet : leaderboard[0].totalGross;
+                  const entryTotal = tournament.isNet ? entry.totalNet : entry.totalGross;
+                  const back = entryTotal - leaderTotal;
                   return (
                     <tr key={entry.playerName} className={idx === 0 ? 'bg-sand-50' : ''}>
                       <td className="px-5 py-2.5 font-bold text-stone-500">
-                        {idx === 0 ? '🏆' : idx + 1}
+                        <span className="flex items-center gap-1">
+                          {idx === 0 ? '🏆' : idx + 1}
+                          {movement !== null && (
+                            movement > 0
+                              ? <span className="text-xs text-green-600 font-normal">▲</span>
+                              : movement < 0
+                              ? <span className="text-xs text-red-500 font-normal">▼</span>
+                              : <span className="text-xs text-stone-300 font-normal">—</span>
+                          )}
+                        </span>
                       </td>
                       <td className="px-3 py-2.5 font-medium text-stone-900">
                         {entry.player
@@ -207,6 +249,11 @@ export default function TournamentView() {
                       </td>
                       {tournament.isGross && <td className="px-3 py-2.5 text-center">{entry.totalGross}</td>}
                       {tournament.isNet && <td className="px-3 py-2.5 text-center font-semibold">{entry.totalNet}</td>}
+                      <td className="px-3 py-2.5 text-center text-xs hidden sm:table-cell">
+                        {idx === 0
+                          ? <span className="text-sage-600 font-medium">Leader</span>
+                          : <span className="text-stone-500">+{back}</span>}
+                      </td>
                       <td className="px-3 py-2.5 text-center text-stone-400">{entry.rounds}</td>
                       {totalPot > 0 && (
                         <td className="px-3 py-2.5 text-center font-semibold text-sage-700">
@@ -261,6 +308,7 @@ function RoundCard({
   onToggle: () => void;
   isNet: boolean;
 }) {
+  const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
   const sorted = [...scores].sort((a, b) =>
     isNet ? a.netTotal - b.netTotal : a.grossTotal - b.grossTotal
   );
@@ -285,6 +333,26 @@ function RoundCard({
             <span>Par {round.par}</span>
             <span>Rating {round.courseRating} / Slope {round.slopeRating}</span>
           </div>
+          {(round.closestToPinHole || round.longestDriveHole) && (
+            <div className="flex flex-wrap gap-3 mt-1 text-xs text-stone-400">
+              {round.closestToPinHole && (
+                <span>
+                  📍 CTP hole {round.closestToPinHole}
+                  {round.closestToPinWinnerId
+                    ? ` — ${players.find(p => p.id === round.closestToPinWinnerId)?.name ?? 'TBD'}`
+                    : ''}
+                </span>
+              )}
+              {round.longestDriveHole && (
+                <span>
+                  🏌️ LD hole {round.longestDriveHole}
+                  {round.longestDriveWinnerId
+                    ? ` — ${players.find(p => p.id === round.longestDriveWinnerId)?.name ?? 'TBD'}`
+                    : ''}
+                </span>
+              )}
+            </div>
+          )}
         </div>
         {expanded ? <ChevronUp size={18} className="text-stone-400 shrink-0" /> : <ChevronDown size={18} className="text-stone-400 shrink-0" />}
       </button>
@@ -342,19 +410,51 @@ function RoundCard({
                 <tbody className="divide-y divide-gray-50">
                   {sorted.map((score, idx) => {
                     const toPar = (isNet ? score.netTotal : score.grossTotal) - round.par;
+                    const playerObj = players.find(p => p.id === score.playerId);
+                    const isPlayerExpanded = expandedPlayer === score.id;
+                    const histEntry = playerObj?.handicapHistory.find(h => h.roundId === round.id);
+                    const histIdx = histEntry ? (playerObj?.handicapHistory.indexOf(histEntry) ?? -1) : -1;
+                    const prevHcpEntry = histIdx > 0 ? playerObj?.handicapHistory[histIdx - 1] : null;
+                    const hcpDelta = histEntry && prevHcpEntry
+                      ? histEntry.handicapIndex - prevHcpEntry.handicapIndex
+                      : null;
                     return (
-                      <tr key={score.id} className={idx === 0 ? 'bg-sand-50' : ''}>
-                        <td className="px-4 py-2.5 font-medium text-stone-900">
-                          {idx === 0 && <Trophy size={12} className="text-sand-500 inline mr-1" />}
-                          {score.playerName}
-                        </td>
-                        <td className="px-3 py-2.5 text-center text-stone-500">{score.courseHandicap}</td>
-                        <td className="px-3 py-2.5 text-center">{score.grossTotal}</td>
-                        {isNet && <td className="px-3 py-2.5 text-center font-medium">{score.netTotal}</td>}
-                        <td className={`px-3 py-2.5 text-center font-medium ${toPar < 0 ? 'text-red-600' : toPar === 0 ? 'text-green-600' : 'text-stone-700'}`}>
-                          {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}
-                        </td>
-                      </tr>
+                      <Fragment key={score.id}>
+                        <tr
+                          className={`cursor-pointer hover:bg-stone-50 transition-colors ${idx === 0 ? 'bg-sand-50' : ''}`}
+                          onClick={() => setExpandedPlayer(isPlayerExpanded ? null : score.id)}
+                        >
+                          <td className="px-4 py-2.5 font-medium text-stone-900">
+                            {idx === 0 && <Trophy size={12} className="text-sand-500 inline mr-1" />}
+                            {playerObj
+                              ? <Link to={`/players/${playerObj.id}`} onClick={e => e.stopPropagation()} className="hover:text-sage-600 hover:underline">{score.playerName}</Link>
+                              : score.playerName}
+                            {histEntry && (
+                              <span className="ml-2 text-xs text-stone-400">
+                                → {histEntry.handicapIndex.toFixed(1)}
+                                {hcpDelta !== null && (
+                                  <span className={hcpDelta < 0 ? 'text-green-600' : 'text-stone-400'}>
+                                    {' '}({hcpDelta > 0 ? '+' : ''}{hcpDelta.toFixed(1)})
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 text-center text-stone-500">{score.courseHandicap}</td>
+                          <td className="px-3 py-2.5 text-center">{score.grossTotal}</td>
+                          {isNet && <td className="px-3 py-2.5 text-center font-medium">{score.netTotal}</td>}
+                          <td className={`px-3 py-2.5 text-center font-medium ${toPar < 0 ? 'text-red-600' : toPar === 0 ? 'text-green-600' : 'text-stone-700'}`}>
+                            {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}
+                          </td>
+                        </tr>
+                        {isPlayerExpanded && score.holeScores.length > 0 && (
+                          <tr className="bg-stone-50">
+                            <td colSpan={isNet ? 5 : 4} className="px-4 py-3 border-t border-stone-100">
+                              <HoleScorecard holeScores={score.holeScores} />
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
                   })}
                 </tbody>
@@ -535,6 +635,62 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
 
         </div>
       </div>
+    </div>
+  );
+}
+
+function HoleScorecard({ holeScores }: { holeScores: { hole: number; par: number; strokes: number }[] }) {
+  const front = holeScores.filter(h => h.hole <= 9).sort((a, b) => a.hole - b.hole);
+  const back = holeScores.filter(h => h.hole > 9).sort((a, b) => a.hole - b.hole);
+  const outGross = front.reduce((s, h) => s + h.strokes, 0);
+  const outPar = front.reduce((s, h) => s + h.par, 0);
+  const inGross = back.reduce((s, h) => s + h.strokes, 0);
+  const inPar = back.reduce((s, h) => s + h.par, 0);
+
+  function cellColor(strokes: number, par: number) {
+    const d = strokes - par;
+    if (d <= -2) return 'bg-yellow-100 font-bold';
+    if (d === -1) return 'bg-red-100';
+    if (d === 0) return 'bg-green-50';
+    return '';
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="text-xs border-collapse min-w-max">
+        <thead>
+          <tr className="text-stone-400">
+            <th className="pr-3 py-1 text-left font-medium w-10">Hole</th>
+            {front.map(h => <th key={h.hole} className="w-7 text-center">{h.hole}</th>)}
+            <th className="w-8 text-center font-semibold text-stone-500 px-1">OUT</th>
+            {back.map(h => <th key={h.hole} className="w-7 text-center">{h.hole}</th>)}
+            <th className="w-8 text-center font-semibold text-stone-500 px-1">IN</th>
+            <th className="w-8 text-center font-semibold text-stone-700 px-1">TOT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="text-stone-400">
+            <td className="pr-3 py-0.5 text-left">Par</td>
+            {front.map(h => <td key={h.hole} className="text-center">{h.par}</td>)}
+            <td className="text-center font-semibold text-stone-500">{outPar}</td>
+            {back.map(h => <td key={h.hole} className="text-center">{h.par}</td>)}
+            <td className="text-center font-semibold text-stone-500">{inPar}</td>
+            <td className="text-center font-semibold text-stone-600">{outPar + inPar}</td>
+          </tr>
+          <tr>
+            <td className="pr-3 py-0.5 text-left font-semibold text-stone-700">Score</td>
+            {front.map(h => (
+              <td key={h.hole} className={`text-center rounded ${cellColor(h.strokes, h.par)}`}>{h.strokes}</td>
+            ))}
+            <td className="text-center font-semibold text-stone-700">{outGross}</td>
+            {back.map(h => (
+              <td key={h.hole} className={`text-center rounded ${cellColor(h.strokes, h.par)}`}>{h.strokes}</td>
+            ))}
+            <td className="text-center font-semibold text-stone-700">{inGross}</td>
+            <td className="text-center font-bold text-stone-900">{outGross + inGross}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }

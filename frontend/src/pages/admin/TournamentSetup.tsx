@@ -341,6 +341,33 @@ export default function AdminTournamentSetup() {
         </div>
       )}
 
+      {/* Next-steps guidance banner */}
+      {!creating && tournament && tournament.status !== 'completed' && tournament.status !== 'archived' && (() => {
+        const allComplete = rounds.length > 0 && rounds.every(r => r.status === 'completed');
+        const allScheduled = rounds.length > 0 && rounds.every(r => r.status === 'scheduled');
+        const msg = selectedPlayerIds.length === 0
+          ? { text: 'Add players to the tournament before adding rounds.', tab: 'players' as const, label: 'Go to Players' }
+          : rounds.length === 0
+          ? { text: 'Add at least one round to get started.', tab: 'rounds' as const, label: 'Go to Rounds' }
+          : allComplete
+          ? { text: 'All rounds are complete — mark the tournament as completed above.', tab: null, label: null }
+          : allScheduled
+          ? { text: `${rounds.length} round${rounds.length > 1 ? 's' : ''} ready. Click a round to enter scores.`, tab: 'rounds' as const, label: 'Go to Rounds' }
+          : null;
+        if (!msg) return null;
+        return (
+          <div className="flex items-center gap-3 bg-sage-50 border border-sage-200 rounded-lg px-4 py-2.5 text-sm text-sage-800">
+            <span className="text-sage-500">→</span>
+            <span className="flex-1">{msg.text}</span>
+            {msg.tab && (
+              <button onClick={() => setTab(msg.tab!)} className="text-sage-700 font-medium hover:underline text-xs shrink-0">
+                {msg.label}
+              </button>
+            )}
+          </div>
+        );
+      })()}
+
       {/* ── Details ── */}
       {(creating || tab === 'details') && (
         <form onSubmit={handleSaveDetails} className="space-y-4">
