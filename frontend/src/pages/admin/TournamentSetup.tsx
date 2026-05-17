@@ -8,19 +8,19 @@ import { Plus, Save, ChevronRight, X, Check, Search, Loader2 } from 'lucide-reac
 
 const isNew = (id: string) => id === 'new';
 
-// Map API tees object {male:[...], female:[...]} to a flat list with gender prefix
-function flattenTees(raw: any): { label: string; courseRating: number; slopeRating: number; par: number }[] {
-  if (!raw || typeof raw !== 'object') return [];
+// Map GHIN TeeSets array to flat tee list
+function flattenTees(teeSets: any[]): { label: string; courseRating: number; slopeRating: number; par: number }[] {
+  if (!Array.isArray(teeSets)) return [];
   const out: { label: string; courseRating: number; slopeRating: number; par: number }[] = [];
-  for (const gender of ['male', 'female']) {
-    for (const t of raw[gender] ?? []) {
-      out.push({
-        label: `${t.tee_name} (${gender === 'female' ? 'Women' : 'Men'})`,
-        courseRating: Number(t.course_rating ?? 0),
-        slopeRating: Number(t.slope_rating ?? (t.bogey_rating ? Math.round(Number(t.bogey_rating)) : 113)),
-        par: Number(t.par_total ?? 72),
-      });
-    }
+  for (const ts of teeSets) {
+    const totalRating = (ts.Ratings ?? []).find((r: any) => r.RatingType === 'Total' || r.RatingType === 'Eighteen');
+    if (!totalRating) continue;
+    out.push({
+      label: ts.TeeSetRatingName ?? ts.TeeColorName ?? 'Unknown',
+      courseRating: Number(totalRating.CourseRating ?? 0),
+      slopeRating: Number(totalRating.SlopeRating ?? 113),
+      par: Number(ts.TotalPar ?? 72),
+    });
   }
   return out;
 }
@@ -93,16 +93,16 @@ export default function AdminTournamentSetup() {
   }
 
   async function selectCourseResult(c: any) {
-    const name = c.club_name ?? c.course_name ?? '';
+    const name = c.CourseName ?? c.FacilityName ?? c.club_name ?? c.course_name ?? '';
+    const courseId = String(c.CourseID ?? c.id ?? '');
     setCourseResults([]);
     setCourseQuery('');
-    // Pre-fill name immediately; fetch full details for tees
-    setRoundForm(f => ({ ...f, courseId: String(c.id ?? ''), courseName: name }));
+    setRoundForm(f => ({ ...f, courseId, courseName: name }));
     setCourseSearching(true);
     try {
-      const full = await coursesApi.getFromApi(String(c.id));
+      const full = await coursesApi.getFromApi(String(c.CourseID ?? c.id));
       const course = full.course ?? full;
-      const tees = flattenTees(course.tees);
+      const tees = flattenTees(course.TeeSets ?? course.tees ?? []);
       setCourseTees(tees);
       const first = tees[0];
       if (first) {
@@ -417,8 +417,8 @@ export default function AdminTournamentSetup() {
                       {courseResults.slice(0, 15).map((c, i) => (
                         <button key={i} type="button" onClick={() => selectCourseResult(c)}
                           className="w-full text-left px-3 py-2.5 hover:bg-sage-50 transition-colors">
-                          <div className="text-sm font-medium text-stone-800">{c.club_name ?? c.course_name}</div>
-                          <div className="text-xs text-stone-400">{[c.location?.city, c.location?.state].filter(Boolean).join(', ')}</div>
+                          <div className="text-sm font-medium text-stone-800">{c.CourseName ?? c.FacilityName ?? c.club_name ?? c.course_name}</div>
+                          <div className="text-xs text-stone-400">{[c.City ?? c.location?.city, c.State ?? c.location?.state].filter(Boolean).join(', ')}</div>
                         </button>
                       ))}
                     </div>

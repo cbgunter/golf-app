@@ -2,10 +2,28 @@ import { v4 as uuidv4 } from 'uuid';
 import { getItem, putItem, scanTable } from '../lib/dynamo';
 import { ok, error, notFound } from '../lib/response';
 import { Course } from '../types';
+import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { GhinClient } from '@spicygolf/ghin';
 
 const TABLE = process.env.COURSES_TABLE!;
-const API_KEY = process.env.GOLF_COURSE_API_KEY!;
-const BASE_URL = 'https://api.golfcourseapi.com/v1';
+const ssmClient = new SSMClient({ region: process.env.AWS_REGION ?? 'us-east-1' });
+
+let ghinClient: GhinClient | null = null;
+
+async function getSSMParam(name: string): Promise<string> {
+  const res = await ssmClient.send(new GetParameterCommand({ Name: name, WithDecryption: true }));
+  return res.Parameter?.Value ?? '';
+}
+
+async function getGhinClient(): Promise<GhinClient> {
+  if (ghinClient) return ghinClient;
+  const [username, password] = await Promise.all([
+    getSSMParam(process.env.GHIN_USERNAME_PARAM!),
+    getSSMParam(process.env.GHIN_PASSWORD_PARAM!),
+  ]);
+  ghinClient = new GhinClient({ username, password });
+  return ghinClient;
+}
 
 export async function listCourses() {
   const courses = await scanTable<Course>(TABLE);
@@ -19,31 +37,25 @@ export async function getCourse(id: string) {
   return ok(course);
 }
 
-function apiHeaders() {
-  return { 'Authorization': `Key ${API_KEY}` };
-}
-
 export async function searchCourses(query: string) {
   if (!query || query.length < 2) return error('Query must be at least 2 characters');
   try {
-    const url = `${BASE_URL}/courses?search=${encodeURIComponent(query)}`;
-    const res = await fetch(url, { headers: apiHeaders() });
-    if (!res.ok) throw new Error(`API returned ${res.status}`);
-    const data = await res.json() as any;
-    return ok(data);
+    const client = await getGhinClient();
+    const courses = await client.courses.search({ name: query });
+    return ok({ courses: courses ?? [] });
   } catch (e: any) {
+    ghinClient = null; // reset on auth failure so next call re-authenticates
     return error(`Course search failed: ${e.message}`, 500);
   }
 }
 
-export async function getCourseFromApi(apiId: string) {
+export async function getCourseFromApi(courseId: string) {
   try {
-    const url = `${BASE_URL}/courses/${apiId}`;
-    const res = await fetch(url, { headers: apiHeaders() });
-    if (!res.ok) throw new Error(`API returned ${res.status}`);
-    const data = await res.json() as any;
-    return ok(data);
+    const client = await getGhinClient();
+    const details = await client.courses.getDetails({ course_id: Number(courseId) });
+    return ok({ course: details });
   } catch (e: any) {
+    ghinClient = null;
     return error(`Course lookup failed: ${e.message}`, 500);
   }
 }

@@ -8,6 +8,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
@@ -101,7 +102,8 @@ export class GolfAppStack extends cdk.Stack {
         COURSES_TABLE: coursesTable.tableName,
         ADMIN_PASSWORD_PARAM: adminPasswordParam.parameterName,
         JWT_SECRET_PARAM: jwtSecretParam.parameterName,
-        GOLF_COURSE_API_KEY: 'XVLDHAXQTPLCZOXG2XWUWKM2LM',
+        GHIN_USERNAME_PARAM: '/golf-app/ghin-username',
+        GHIN_PASSWORD_PARAM: '/golf-app/ghin-password',
         NODE_ENV: 'production',
       },
     });
@@ -114,6 +116,19 @@ export class GolfAppStack extends cdk.Stack {
     coursesTable.grantReadWriteData(apiLambda);
     adminPasswordParam.grantRead(apiLambda);
     jwtSecretParam.grantRead(apiLambda);
+    // Grant access to GHIN SecureString params (created outside CDK)
+    apiLambda.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [
+        `arn:aws:ssm:${this.region}:${this.account}:parameter/golf-app/ghin-username`,
+        `arn:aws:ssm:${this.region}:${this.account}:parameter/golf-app/ghin-password`,
+      ],
+    }));
+    apiLambda.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['kms:Decrypt'],
+      resources: ['*'],
+      conditions: { StringEquals: { 'kms:ViaService': `ssm.${this.region}.amazonaws.com` } },
+    }));
 
     // ─── API Gateway ────────────────────────────────────────────────────────
     const httpApi = new apigateway.HttpApi(this, 'HttpApi', {
