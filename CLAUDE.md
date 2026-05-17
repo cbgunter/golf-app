@@ -48,37 +48,83 @@ Custom domain `golf.caseyhunter.net` → CloudFront → routes `/api/*` to API G
 ### Backend: single Lambda, manual routing
 `backend/src/index.ts` is the entire API. It splits `rawPath` into `segments[]` and pattern-matches on `[method, segments[0], segments[1], segments[2]]`. There is no framework — adding a new endpoint means adding an `if` branch to the router.
 
-Route ordering matters: more-specific conditions (`segments[2] === 'rounds'`) must come before catch-alls (`segments[1]` truthy). The fix for `POST /tournaments` vs `POST /tournaments/:id/rounds` was adding `&& !segments[1]` guard.
+Route ordering matters: more-specific paths (`segments[2] === 'profile'`, `segments[2] === 'rounds'`) must come before catch-alls (`segments[1]` truthy). The `POST /tournaments` vs `POST /tournaments/:id/rounds` ambiguity is resolved with a `&& !segments[1]` guard.
 
 Admin-only routes are wrapped in `adminOnly(() => handler())` which short-circuits with 401 if the JWT is absent or invalid.
 
 ### Backend: handlers + DynamoDB
 Five tables (all PAY_PER_REQUEST, RemovalPolicy RETAIN):
-- `golf-players` — handicap history stored inline on the player record
-- `golf-tournaments` — stores `playerIds[]` and `roundIds[]` as denormalized arrays
-- `golf-rounds` — stores `teeTimeGroups[]` and `holes[]` inline (no separate tables)
-- `golf-scores` — GSIs on both `roundId` and `playerId`
-- `golf-courses` — cached GHIN course data
+- `golf-players` — `handicapIndex` + `handicapHistory[]` stored inline; updated on every score submission
+- `golf-tournaments` — stores `playerIds[]`, `roundIds[]`, `payoutStructure[]`, `closestToPinFee?`, `longestDriveFee?`
+- `golf-rounds` — stores `teeTimeGroups[]`, `holes[]`, `closestToPinWinnerId?`, `longestDriveWinnerId?` inline
+- `golf-scores` — GSIs on both `roundId` and `playerId`; includes `holeScores[]`, `adjustments[]`, `handicapDifferential`
+- `golf-courses` — cached GHIN course data (not cleared with other data resets)
 
 `updateRound` spreads the request body onto the existing record, so any field sent is automatically persisted — no explicit field handling needed for new round properties.
 
-Submitting the first score auto-transitions a round from `scheduled` → `in_progress`. Completing the last round in a tournament auto-transitions the tournament to `completed`.
+`scanTable` and `queryIndex` both paginate via `LastEvaluatedKey` loop to handle tables larger than one DynamoDB page.
+
+Submitting the first score auto-transitions a round from `scheduled` → `in_progress`. Completing the last round auto-transitions the tournament to `completed`. Reopening a completed round sets it back to `in_progress` and reopens the tournament if it was `completed`.
+
+Score submission is idempotent: re-submitting for the same player+round reuses the existing score's `id` and `createdAt`, so DynamoDB `putItem` overwrites rather than appending. The old score is excluded when recalculating the handicap differential list to avoid double-counting.
+
+Deleting a tournament cascades: queries all rounds by `tournamentId`, then all scores by `roundId`, deletes scores → rounds → tournament.
 
 ### GHIN integration
 `backend/src/handlers/courses.ts` uses `@spicygolf/ghin` (USGA GHIN API) for course search and hole data. The client is cached as a module-level variable and reset to `null` on auth failure to force re-initialization. Credentials come from SSM SecureStrings (`/golf-app/ghin-username`, `/golf-app/ghin-password`). The Lambda IAM role has explicit `ssm:GetParameter` and `kms:Decrypt` permissions for these paths.
 
 GHIN response shape for holes: `TeeSets[].Holes[{ Number, Par, Allocation (stroke index), Length }]`.
 
-### Frontend: API client
-`frontend/src/api/client.ts` is the single source of truth for all types and API calls. Types here must stay in sync with `backend/src/types/index.ts`. The `Round` interface includes `holes?`, `startFormat?`, and `teeTimeGroups?` for inline group management.
-
-### Frontend: admin vs public
-- Public pages (`/`, `/history`, `/tournament/:id`, `/tournament/:id/results`) require no auth
-- Admin pages (`/admin/*`) check JWT stored in `localStorage` under `golf_admin_token`
-- `AdminLayout` wraps all admin pages; `Layout` wraps public pages
-
 ### Handicap system
-`backend/src/lib/handicap.ts` implements USGA World Handicap System: ESC (Equitable Stroke Control), course handicap formula, differential calculation, and handicap index from best differentials. Course handicap = `handicapIndex × (slope / 113) + (courseRating − par)`.
+`backend/src/lib/handicap.ts` implements USGA World Handicap System:
+- `calcDifferential` — `(adjustedGross − courseRating) × 113 / slope`, rounded to 1 decimal
+- `calcHandicapIndex` — uses best N differentials from last 20 rounds (count-based table: 1 round → lowest 1 with −2 adj, up to 20+ → best 8 of last 20 × 0.96)
+- `calcCourseHandicap` — `handicapIndex × (slope / 113) + (courseRating − par)`, rounded
+- `applyESC` — per-hole stroke cap by course handicap bracket (≤9 → double bogey, 10–19 → 7, 20–29 → 8, 30–39 → 9, 40+ → 10)
+- `computeHoleScores` — applies handicap strokes hole-by-hole by stroke index
+
+Player `handicapIndex` is **manually entered** at creation (admin sets it from GHIN or known index). It is automatically recalculated and overwritten after every scored round. The starting value is not separately stored; the `handicapHistory[]` array shows the progression from round 1 onward.
+
+### Side contests (CTP / LD)
+Tournaments have `hasClosestToPin` / `hasLongestDrive` boolean flags and optional `closestToPinFee` / `longestDriveFee` per-player ante amounts. The hole for each contest is set per-round (`closestToPinHole`, `longestDriveHole`). Winners are selected on the RoundScoring admin page and saved when the round is completed (`closestToPinWinnerId`, `longestDriveWinnerId` on the round). Prize pots (`fee × playerCount`) are shown on the public tournament view and results page.
+
+### Tee time groups
+Rounds store `startFormat?: 'sequential' | 'shotgun'` and `teeTimeGroups?: TeeTimeGroup[]` inline. Groups are managed from the TournamentSetup admin page (accordion panel per round). Each group has `groupNumber`, `teeTime` (display string e.g. "8:00 AM"), `playerIds[]`, and optional `startingHole` for shotgun starts. The public tournament view shows the tee sheet above the scores table when groups exist.
+
+### Frontend: routing and pages
+Public routes (no auth):
+- `/` — active/upcoming tournaments
+- `/history` — completed and archived tournaments
+- `/tournament/:id` — live tournament view with leaderboard, tee sheet, and round scores
+- `/tournament/:id/results` — final results with payouts
+- `/players` — alphabetical player list
+- `/players/:id` — player profile: handicap trend chart, stats, round history
+
+Admin routes (JWT required, stored in `localStorage` as `golf_admin_token`):
+- `/admin` — dashboard with stat cards linking to filtered tournament lists
+- `/admin/tournaments` — tournament list with status filter tabs
+- `/admin/tournaments/:id` — tournament setup (Details / Players / Rounds tabs)
+- `/admin/rounds/:id/scoring` — horizontal scorecard entry + live leaderboard
+- `/admin/players` — global player roster (full CRUD + handicap history)
+
+`AdminLayout` wraps all admin pages and verifies the JWT on mount. `Layout` wraps public pages.
+
+### Frontend: API client
+`frontend/src/api/client.ts` is the single source of truth for all types and API calls. Types here must stay in sync with `backend/src/types/index.ts`. Key exported types: `Player`, `Tournament`, `Round`, `Score`, `Course`, `TournamentResults`, `PlayerProfile`.
+
+### Frontend: key utilities
+- `frontend/src/lib/dates.ts` — `parseLocalDate(dateStr)` parses `YYYY-MM-DD` as local midnight (not UTC) to prevent off-by-one-day display bugs. Use this everywhere dates are displayed.
+- `frontend/src/components/ErrorBoundary.tsx` — class component wrapping the entire app; shows a reload prompt on render errors.
+- `frontend/src/components/StatusBadge.tsx` — colored badge for tournament/round status values.
+
+### Player profile endpoint
+`GET /players/:id/profile` (public) returns `{ player, roundScores[] }`. It batch-fetches all scores via `player-index` GSI, then batch-fetches the associated rounds and tournaments via `Promise.all` to enrich each score with `courseName`, `tournamentName`, `date`, and `par`. The frontend renders a handicap trend SVG chart (inline, no chart library) and a round history table.
+
+### Score entry UI
+`frontend/src/pages/admin/RoundScoring.tsx` renders a horizontal golf scorecard: holes 1–9 across the top, OUT subtotal, holes 10–18, IN subtotal, TOT. Par and HCP (stroke index) rows are read-only when course data was loaded from GHIN, editable otherwise. Score cells are color-coded by +/- par (yellow = eagle+, red = birdie, green = par). The sticky left column keeps row labels visible while scrolling on small screens.
+
+### Tournament setup: inline player creation
+The Players tab in `TournamentSetup.tsx` allows creating new players inline without navigating away. Players is demoted to a secondary "All Players" link in the admin sidebar (below a divider), not a primary nav item.
 
 ### Styling conventions
-Tailwind CSS with a custom palette: `sage` (greens), `sand` (gold/tan), `stone` (neutrals). Shared utility classes (`btn-primary`, `btn-secondary`, `btn-gold`, `card`, `badge-*`, `label`, `input`, `page-header`) are defined in `frontend/src/index.css`. Use these rather than raw Tailwind for consistency.
+Tailwind CSS with a custom palette: `sage` (greens), `sand` (gold/tan), `stone` (neutrals). Shared utility classes (`btn-primary`, `btn-secondary`, `btn-gold`, `card`, `badge-*`, `label`, `input`, `page-header`, `section-title`) are defined in `frontend/src/index.css`. Use these rather than raw Tailwind for consistency.
