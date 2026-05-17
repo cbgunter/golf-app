@@ -92,6 +92,7 @@ export interface Round {
   closestToPinWinnerId?: string;
   longestDriveHole?: number;
   longestDriveWinnerId?: string;
+  holes?: Hole[]; // per-hole par and stroke index from GHIN
   notes?: string;
   createdAt: string;
   updatedAt: string;

@@ -7,9 +7,16 @@ import { Save, Check, Info, X, ChevronDown, ChevronUp } from 'lucide-react';
 const DEFAULT_HOLES = Array.from({ length: 18 }, (_, i) => ({
   hole: i + 1,
   par: 4,
-  handicap: i + 1, // default stroke index
+  handicap: i + 1,
   strokes: 0,
 }));
+
+function buildHoleInputs(round: Round) {
+  if (round.holes && round.holes.length === 18) {
+    return round.holes.map(h => ({ hole: h.number, par: h.par, handicap: h.handicap, strokes: 0 }));
+  }
+  return DEFAULT_HOLES.map(h => ({ ...h }));
+}
 
 export default function AdminRoundScoring() {
   const { id } = useParams<{ id: string }>();
@@ -65,7 +72,7 @@ export default function AdminRoundScoring() {
       setManualHCP(String(existing.courseHandicap));
     } else {
       setEditingScore(null);
-      setHoleInputs(DEFAULT_HOLES.map(h => ({ ...h })));
+      setHoleInputs(buildHoleInputs(round!));
       setManualHCP('');
     }
     setActivePlayer(player);

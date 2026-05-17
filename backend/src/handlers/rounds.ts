@@ -44,6 +44,7 @@ export async function createRound(tournamentId: string, body: Partial<Round>) {
     status: 'scheduled',
     closestToPinHole: body.closestToPinHole,
     longestDriveHole: body.longestDriveHole,
+    holes: body.holes,
     notes: body.notes,
     createdAt: now,
     updatedAt: now,

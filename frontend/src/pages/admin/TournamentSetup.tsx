@@ -8,18 +8,22 @@ import { Plus, Save, ChevronRight, X, Check, Search, Loader2 } from 'lucide-reac
 
 const isNew = (id: string) => id === 'new';
 
-// Map GHIN TeeSets array to flat tee list
-function flattenTees(teeSets: any[]): { label: string; courseRating: number; slopeRating: number; par: number }[] {
+// Map GHIN TeeSets array to flat tee list with hole data
+function flattenTees(teeSets: any[]): { label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[] {
   if (!Array.isArray(teeSets)) return [];
-  const out: { label: string; courseRating: number; slopeRating: number; par: number }[] = [];
+  const out: { label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[] = [];
   for (const ts of teeSets) {
     const totalRating = (ts.Ratings ?? []).find((r: any) => r.RatingType === 'Total' || r.RatingType === 'Eighteen');
     if (!totalRating) continue;
+    const holes = (ts.Holes ?? [])
+      .sort((a: any, b: any) => a.Number - b.Number)
+      .map((h: any) => ({ number: h.Number, par: h.Par, handicap: h.Allocation, yardage: h.Length }));
     out.push({
       label: ts.TeeSetRatingName ?? ts.TeeColorName ?? 'Unknown',
       courseRating: Number(totalRating.CourseRating ?? 0),
       slopeRating: Number(totalRating.SlopeRating ?? 113),
       par: Number(ts.TotalPar ?? 72),
+      holes,
     });
   }
   return out;
@@ -50,10 +54,11 @@ export default function AdminTournamentSetup() {
   const [roundForm, setRoundForm] = useState({
     courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72',
     date: '', closestToPinHole: '', longestDriveHole: '', notes: '',
+    holes: [] as { number: number; par: number; handicap: number; yardage?: number }[],
   });
   const [courseQuery, setCourseQuery] = useState('');
   const [courseResults, setCourseResults] = useState<any[]>([]);
-  const [courseTees, setCourseTees] = useState<{ label: string; courseRating: number; slopeRating: number; par: number }[]>([]);
+  const [courseTees, setCourseTees] = useState<{ label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[]>([]);
   const [courseSearching, setCourseSearching] = useState(false);
 
   useEffect(() => {
@@ -112,6 +117,7 @@ export default function AdminTournamentSetup() {
           courseRating: String(first.courseRating),
           slopeRating: String(first.slopeRating),
           par: String(first.par),
+          holes: first.holes,
         }));
       }
     } catch {
@@ -130,6 +136,7 @@ export default function AdminTournamentSetup() {
       courseRating: String(tee.courseRating),
       slopeRating: String(tee.slopeRating),
       par: String(tee.par),
+      holes: tee.holes,
     }));
   }
 
@@ -173,11 +180,12 @@ export default function AdminTournamentSetup() {
         date: roundForm.date,
         closestToPinHole: roundForm.closestToPinHole ? Number(roundForm.closestToPinHole) : undefined,
         longestDriveHole: roundForm.longestDriveHole ? Number(roundForm.longestDriveHole) : undefined,
+        holes: roundForm.holes.length > 0 ? roundForm.holes : undefined,
         notes: roundForm.notes || undefined,
       } as any);
       setRounds(rs => [...rs, r]);
       setShowRoundForm(false);
-      setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', closestToPinHole: '', longestDriveHole: '', notes: '' });
+      setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', closestToPinHole: '', longestDriveHole: '', notes: '', holes: [] });
       setCourseTees([]);
       setCourseQuery('');
       toast.success('Round added');

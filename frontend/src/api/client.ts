@@ -144,6 +144,7 @@ interface Round {
   closestToPinWinnerId?: string;
   longestDriveHole?: number;
   longestDriveWinnerId?: string;
+  holes?: { number: number; par: number; handicap: number; yardage?: number }[];
   notes?: string;
   createdAt: string;
   updatedAt: string;
