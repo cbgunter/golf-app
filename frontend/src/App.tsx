@@ -16,7 +16,6 @@ import AdminPlayers from './pages/admin/Players';
 import AdminTournaments from './pages/admin/Tournaments';
 import AdminTournamentSetup from './pages/admin/TournamentSetup';
 import AdminRoundScoring from './pages/admin/RoundScoring';
-import AdminCourses from './pages/admin/Courses';
 
 export default function App() {
   return (
@@ -39,7 +38,6 @@ export default function App() {
           <Route path="tournaments" element={<AdminTournaments />} />
           <Route path="tournaments/:id" element={<AdminTournamentSetup />} />
           <Route path="rounds/:id/scoring" element={<AdminRoundScoring />} />
-          <Route path="courses" element={<AdminCourses />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

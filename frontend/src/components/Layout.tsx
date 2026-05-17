@@ -7,7 +7,7 @@ export default function Layout() {
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-xl">⛳</span>
-            <span className="font-semibold tracking-tight">Golf Trips</span>
+            <span className="font-semibold tracking-tight">CH Tournaments</span>
           </Link>
           <nav className="flex items-center gap-5 text-sm">
             <NavLink to="/" end className={({ isActive }) => isActive ? 'text-sand-300 font-medium' : 'text-white/70 hover:text-white transition-colors'}>
@@ -28,7 +28,7 @@ export default function Layout() {
       </main>
 
       <footer className="bg-stone-100 border-t border-stone-200 text-stone-400 text-xs text-center py-4 mt-12">
-        Golf Trips · Personal Tournament Tracker
+        CH Tournaments · Casey Hunter Golf
       </footer>
     </div>
   );

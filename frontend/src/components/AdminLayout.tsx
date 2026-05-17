@@ -1,7 +1,7 @@
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { authApi } from '../api/client';
-import { LayoutDashboard, Users, Trophy, MapPin, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Trophy, LogOut, Menu, X } from 'lucide-react';
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -32,7 +32,6 @@ export default function AdminLayout() {
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/admin/players', label: 'Players', icon: Users },
     { to: '/admin/tournaments', label: 'Tournaments', icon: Trophy },
-    { to: '/admin/courses', label: 'Courses', icon: MapPin },
   ];
 
   const navCls = ({ isActive }: { isActive: boolean }) =>
@@ -46,7 +45,7 @@ export default function AdminLayout() {
       <header className="bg-sage-700 text-white sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 text-sm">
-            <Link to="/" className="text-white/50 hover:text-white/80 transition-colors">⛳ Golf Trips</Link>
+            <Link to="/" className="text-white/50 hover:text-white/80 transition-colors">⛳ CH Tournaments</Link>
             <span className="text-white/30">/</span>
             <span className="font-medium">Admin</span>
           </div>
