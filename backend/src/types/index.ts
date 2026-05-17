@@ -59,6 +59,8 @@ export interface Tournament {
   isGross: boolean;
   hasClosestToPin: boolean;
   hasLongestDrive: boolean;
+  closestToPinFee?: number;
+  longestDriveFee?: number;
   entryFee: number;
   payoutStructure: PayoutEntry[];
   playerIds: string[];
@@ -150,6 +152,8 @@ export interface TournamentResults {
   longestDrive?: LdResult[];
   payouts: PayoutResult[];
   totalPot: number;
+  ctpPot: number;
+  ldPot: number;
 }
 
 export interface LeaderboardEntry {

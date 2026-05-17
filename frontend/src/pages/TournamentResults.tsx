@@ -22,7 +22,7 @@ export default function TournamentResultsPage() {
   if (error) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">{error}</div>;
   if (!results) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Results not found.</div>;
 
-  const { tournament, leaderboard, payouts, totalPot, closestToPin, longestDrive } = results;
+  const { tournament, leaderboard, payouts, totalPot, ctpPot, ldPot, closestToPin, longestDrive } = results;
   const isNet = tournament.isNet;
 
   return (
@@ -37,10 +37,11 @@ export default function TournamentResultsPage() {
       </div>
 
       {/* Payouts */}
-      {payouts.length > 0 && totalPot > 0 && (
+      {(payouts.length > 0 && totalPot > 0) || ctpPot > 0 || ldPot > 0 ? (
         <div className="card p-5 mb-6 border-l-4 border-sand-400">
           <h2 className="font-bold text-stone-800 mb-4 flex items-center gap-2">
-            <Trophy size={18} className="text-sand-500" /> Payouts — ${totalPot.toFixed(0)} Total Pot
+            <Trophy size={18} className="text-sand-500" /> Payouts
+            {totalPot > 0 && <span className="text-sm font-normal text-stone-400">— ${totalPot.toFixed(0)} pot</span>}
           </h2>
           <div className="space-y-3">
             {payouts.map(p => (
@@ -57,9 +58,37 @@ export default function TournamentResultsPage() {
                 <span className="text-lg font-bold text-sage-700">${p.amount.toFixed(0)}</span>
               </div>
             ))}
+            {ctpPot > 0 && (
+              <div className="flex items-center justify-between pt-1 border-t border-stone-100">
+                <div className="flex items-center gap-3">
+                  <span className="w-7 h-7 flex items-center justify-center text-lg">📍</span>
+                  <div>
+                    <div className="font-medium text-stone-900">
+                      {closestToPin?.[0]?.player?.name ?? 'TBD'}
+                    </div>
+                    <div className="text-xs text-stone-400">Closest to Pin</div>
+                  </div>
+                </div>
+                <span className="text-lg font-bold text-sage-700">${ctpPot.toFixed(0)}</span>
+              </div>
+            )}
+            {ldPot > 0 && (
+              <div className="flex items-center justify-between pt-1 border-t border-stone-100">
+                <div className="flex items-center gap-3">
+                  <span className="w-7 h-7 flex items-center justify-center text-lg">🏌️</span>
+                  <div>
+                    <div className="font-medium text-stone-900">
+                      {longestDrive?.[0]?.player?.name ?? 'TBD'}
+                    </div>
+                    <div className="text-xs text-stone-400">Longest Drive</div>
+                  </div>
+                </div>
+                <span className="text-lg font-bold text-sage-700">${ldPot.toFixed(0)}</span>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Leaderboard */}
       <div className="card mb-6">

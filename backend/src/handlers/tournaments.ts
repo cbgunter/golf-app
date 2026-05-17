@@ -43,6 +43,8 @@ export async function createTournament(body: Partial<Tournament>) {
     isGross: body.isGross ?? true,
     hasClosestToPin: body.hasClosestToPin ?? false,
     hasLongestDrive: body.hasLongestDrive ?? false,
+    closestToPinFee: body.closestToPinFee !== undefined ? Number(body.closestToPinFee) : undefined,
+    longestDriveFee: body.longestDriveFee !== undefined ? Number(body.longestDriveFee) : undefined,
     entryFee: Number(body.entryFee ?? 0),
     payoutStructure: body.payoutStructure ?? [],
     playerIds: body.playerIds ?? [],
@@ -141,7 +143,12 @@ export async function getTournamentResults(id: string) {
   leaderboard.forEach((e, i) => (e.rank = i + 1));
 
   // Calculate payouts
-  const totalPot = tournament.entryFee * tournament.playerIds.length;
+  const playerCount = tournament.playerIds.length;
+  const totalPot = tournament.entryFee * playerCount;
+  const ctpPot = tournament.hasClosestToPin && tournament.closestToPinFee
+    ? tournament.closestToPinFee * playerCount : 0;
+  const ldPot = tournament.hasLongestDrive && tournament.longestDriveFee
+    ? tournament.longestDriveFee * playerCount : 0;
   const payouts: PayoutResult[] = tournament.payoutStructure.map(p => ({
     place: p.place,
     label: p.label,
@@ -175,6 +182,8 @@ export async function getTournamentResults(id: string) {
     longestDrive: longestDrive.length ? longestDrive : undefined,
     payouts,
     totalPot,
+    ctpPot,
+    ldPot,
   };
 
   return ok(results);

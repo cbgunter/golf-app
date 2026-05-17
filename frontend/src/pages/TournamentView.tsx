@@ -49,7 +49,10 @@ export default function TournamentView() {
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-stone-500">Loading...</div>;
   if (!tournament) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Tournament not found.</div>;
 
-  const totalPot = tournament.entryFee * tournament.playerIds.length;
+  const playerCount = tournament.playerIds.length;
+  const totalPot = tournament.entryFee * playerCount;
+  const ctpPot = tournament.hasClosestToPin && tournament.closestToPinFee ? tournament.closestToPinFee * playerCount : 0;
+  const ldPot = tournament.hasLongestDrive && tournament.longestDriveFee ? tournament.longestDriveFee * playerCount : 0;
 
   // Build projected leaderboard from current scores across all rounds
   const allScores = Object.values(scoresByRound).flat();
@@ -100,7 +103,17 @@ export default function TournamentView() {
           {totalPot > 0 && (
             <span className="flex items-center gap-1 text-sand-600 font-semibold">
               <Trophy size={15} />
-              ${totalPot.toFixed(0)} total pot
+              ${totalPot.toFixed(0)} pot
+            </span>
+          )}
+          {ctpPot > 0 && (
+            <span className="flex items-center gap-1 text-stone-500 text-xs font-medium">
+              📍 CTP ${ctpPot.toFixed(0)}
+            </span>
+          )}
+          {ldPot > 0 && (
+            <span className="flex items-center gap-1 text-stone-500 text-xs font-medium">
+              🏌️ LD ${ldPot.toFixed(0)}
             </span>
           )}
         </div>
@@ -115,10 +128,10 @@ export default function TournamentView() {
       </div>
 
       {/* Payout structure — only shown when there's an actual pot */}
-      {tournament.payoutStructure.length > 0 && totalPot > 0 && (
+      {(tournament.payoutStructure.length > 0 && totalPot > 0) || ctpPot > 0 || ldPot > 0 ? (
         <div className="card p-4 mb-6">
           <h2 className="font-semibold text-stone-800 mb-3 flex items-center gap-2">
-            <Trophy size={16} className="text-sand-500" /> Payout Structure
+            <Trophy size={16} className="text-sand-500" /> Prize Breakdown
           </h2>
           <div className="divide-y divide-gray-100">
             {tournament.payoutStructure.map(p => (
@@ -130,9 +143,21 @@ export default function TournamentView() {
                 </span>
               </div>
             ))}
+            {ctpPot > 0 && (
+              <div className="flex items-center justify-between py-2 text-sm">
+                <span className="text-stone-600">📍 Closest to Pin</span>
+                <span className="font-semibold text-stone-900">${ctpPot.toFixed(0)}</span>
+              </div>
+            )}
+            {ldPot > 0 && (
+              <div className="flex items-center justify-between py-2 text-sm">
+                <span className="text-stone-600">🏌️ Longest Drive</span>
+                <span className="font-semibold text-stone-900">${ldPot.toFixed(0)}</span>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Results link if completed */}
       {tournament.status === 'completed' && (

@@ -67,6 +67,7 @@ export default function AdminTournamentSetup() {
     name: '', description: '', startDate: '', endDate: '',
     format: 'stroke_play', isNet: true, isGross: true,
     hasClosestToPin: false, hasLongestDrive: false,
+    closestToPinFee: '0', longestDriveFee: '0',
     entryFee: '0', notes: '',
   });
   const [payoutRows, setPayoutRows] = useState<{ place: number; label: string; percentage: string }[]>([]);
@@ -107,6 +108,7 @@ export default function AdminTournamentSetup() {
           name: t.name, description: t.description ?? '', startDate: t.startDate,
           endDate: t.endDate ?? '', format: t.format, isNet: t.isNet, isGross: t.isGross,
           hasClosestToPin: t.hasClosestToPin, hasLongestDrive: t.hasLongestDrive,
+          closestToPinFee: String(t.closestToPinFee ?? 0), longestDriveFee: String(t.longestDriveFee ?? 0),
           entryFee: String(t.entryFee), notes: t.notes ?? '',
         });
         setPayoutRows(t.payoutStructure.map(p => ({ ...p, percentage: String(p.percentage) })));
@@ -181,6 +183,8 @@ export default function AdminTournamentSetup() {
       startDate: form.startDate, endDate: form.endDate || undefined,
       format: form.format as any, isNet: form.isNet, isGross: form.isGross,
       hasClosestToPin: form.hasClosestToPin, hasLongestDrive: form.hasLongestDrive,
+      closestToPinFee: form.hasClosestToPin ? Number(form.closestToPinFee) : undefined,
+      longestDriveFee: form.hasLongestDrive ? Number(form.longestDriveFee) : undefined,
       entryFee: Number(form.entryFee),
       payoutStructure: payoutRows.map(r => ({ place: r.place, label: r.label, percentage: Number(r.percentage) })),
       playerIds: selectedPlayerIds,
@@ -373,8 +377,6 @@ export default function AdminTournamentSetup() {
                   {[
                     { key: 'isGross', label: 'Gross Scores' },
                     { key: 'isNet', label: 'Net Scores' },
-                    { key: 'hasClosestToPin', label: 'Closest to Pin' },
-                    { key: 'hasLongestDrive', label: 'Longest Drive' },
                   ].map(({ key, label }) => (
                     <label key={key} className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
                       <input type="checkbox" className="rounded accent-sage-600"
@@ -383,6 +385,53 @@ export default function AdminTournamentSetup() {
                       {label}
                     </label>
                   ))}
+                </div>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="label">Side Contests</label>
+                <div className="space-y-2 mt-1">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
+                      <input type="checkbox" className="rounded accent-sage-600"
+                        checked={form.hasClosestToPin}
+                        onChange={e => setForm(f => ({ ...f, hasClosestToPin: e.target.checked }))} />
+                      Closest to Pin
+                    </label>
+                    {form.hasClosestToPin && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-stone-400">Ante per player</span>
+                        <div className="relative w-24">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                          <input className="input pl-5" type="number" min="0" step="1" value={form.closestToPinFee}
+                            onChange={e => setForm(f => ({ ...f, closestToPinFee: e.target.value }))} placeholder="0" />
+                        </div>
+                        {Number(form.closestToPinFee) > 0 && selectedPlayerIds.length > 0 && (
+                          <span className="text-xs text-sand-600">${(Number(form.closestToPinFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
+                      <input type="checkbox" className="rounded accent-sage-600"
+                        checked={form.hasLongestDrive}
+                        onChange={e => setForm(f => ({ ...f, hasLongestDrive: e.target.checked }))} />
+                      Longest Drive
+                    </label>
+                    {form.hasLongestDrive && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-stone-400">Ante per player</span>
+                        <div className="relative w-24">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                          <input className="input pl-5" type="number" min="0" step="1" value={form.longestDriveFee}
+                            onChange={e => setForm(f => ({ ...f, longestDriveFee: e.target.value }))} placeholder="0" />
+                        </div>
+                        {Number(form.longestDriveFee) > 0 && selectedPlayerIds.length > 0 && (
+                          <span className="text-xs text-sand-600">${(Number(form.longestDriveFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="sm:col-span-2">
