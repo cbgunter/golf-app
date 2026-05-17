@@ -121,6 +121,15 @@ export async function submitScore(
 
   await putItem(S_TABLE, score);
 
+  // Auto-transition round to in_progress on first score
+  if (round.status === 'scheduled') {
+    await putItem(R_TABLE, {
+      ...round,
+      status: 'in_progress',
+      updatedAt: now,
+    });
+  }
+
   // Update player handicap
   const allPlayerScores = await queryIndex<Score>(S_TABLE, 'player-index', 'playerId', player.id);
   const allDiffs = [...allPlayerScores.map(s => s.handicapDifferential!).filter(d => d !== undefined), differential];

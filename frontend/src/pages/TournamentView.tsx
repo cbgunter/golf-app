@@ -28,10 +28,10 @@ export default function TournamentView() {
       const active = rs.find(r => r.status === 'in_progress');
       if (active) setExpandedRound(active.id);
 
-      // Load scores for completed/in-progress rounds
+      // Load scores for all rounds
       const scoreMap: Record<string, Score[]> = {};
       await Promise.all(
-        rs.filter(r => r.status !== 'scheduled').map(async r => {
+        rs.map(async r => {
           scoreMap[r.id] = await roundsApi.scores(r.id);
         })
       );
