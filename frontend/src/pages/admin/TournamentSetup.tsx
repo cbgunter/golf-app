@@ -92,22 +92,33 @@ export default function AdminTournamentSetup() {
     }
   }
 
-  function selectCourseResult(c: any) {
-    const tees = flattenTees(c.tees);
-    setCourseTees(tees);
-    // Pre-fill with first men's tee
-    const first = tees[0];
-    setRoundForm(f => ({
-      ...f,
-      courseId: String(c.id ?? ''),
-      courseName: c.club_name ?? c.course_name ?? '',
-      tee: first?.label ?? '',
-      courseRating: first ? String(first.courseRating) : '',
-      slopeRating: first ? String(first.slopeRating) : '',
-      par: first ? String(first.par) : '72',
-    }));
+  async function selectCourseResult(c: any) {
+    const name = c.club_name ?? c.course_name ?? '';
     setCourseResults([]);
     setCourseQuery('');
+    // Pre-fill name immediately; fetch full details for tees
+    setRoundForm(f => ({ ...f, courseId: String(c.id ?? ''), courseName: name }));
+    setCourseSearching(true);
+    try {
+      const full = await coursesApi.getFromApi(String(c.id));
+      const course = full.course ?? full;
+      const tees = flattenTees(course.tees);
+      setCourseTees(tees);
+      const first = tees[0];
+      if (first) {
+        setRoundForm(f => ({
+          ...f,
+          tee: first.label,
+          courseRating: String(first.courseRating),
+          slopeRating: String(first.slopeRating),
+          par: String(first.par),
+        }));
+      }
+    } catch {
+      toast.error('Could not load tee data — enter manually');
+    } finally {
+      setCourseSearching(false);
+    }
   }
 
   function selectTee(teeLabel: string) {

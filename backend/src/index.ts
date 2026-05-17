@@ -51,7 +51,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       if (method === 'GET' && segments[1] && segments[2] === 'results') return getTournamentResults(segments[1]);
       if (method === 'GET' && segments[1] && segments[2] === 'rounds') return listRoundsForTournament(segments[1]);
       if (method === 'GET' && segments[1]) return getTournament(segments[1]);
-      if (method === 'POST') return adminOnly(() => createTournament(body));
+      if (method === 'POST' && !segments[1]) return adminOnly(() => createTournament(body));
       if (method === 'PUT' && segments[1]) return adminOnly(() => updateTournament(segments[1], body));
       if (method === 'DELETE' && segments[1]) return adminOnly(() => deleteTournament(segments[1]));
       if (method === 'POST' && segments[1] && segments[2] === 'rounds') return adminOnly(() => createRound(segments[1], body));
