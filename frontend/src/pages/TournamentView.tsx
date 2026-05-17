@@ -388,15 +388,21 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
           <section>
             <h3 className="font-semibold text-stone-900 mb-1.5">Handicap Index</h3>
             <p className="text-stone-600 leading-relaxed">
-              Your Handicap Index is calculated automatically from your submitted scores using the{' '}
-              <span className="font-medium">USGA World Handicap System</span>. After each round, a{' '}
-              <span className="font-medium">differential</span> is computed:
+              Each player starts with a <span className="font-medium">manually entered Handicap Index</span> set
+              by the tournament admin — this should reflect your current real-world handicap (e.g. from GHIN).
+            </p>
+            <p className="mt-2 text-stone-600 leading-relaxed">
+              After each round is scored, your index is <span className="font-medium">automatically recalculated</span> using the{' '}
+              <span className="font-medium">USGA World Handicap System</span>. A <span className="font-medium">differential</span> is computed for the round:
             </p>
             <div className="mt-2 bg-stone-50 rounded-lg px-4 py-3 font-mono text-xs text-stone-700 leading-relaxed">
               Differential = (Adjusted Gross − Course Rating) × 113 ÷ Slope Rating
             </div>
             <p className="mt-2 text-stone-500 text-xs">
-              The system uses the <span className="font-medium">best differentials</span> from your last 20 rounds — how many depends on how many rounds you have:
+              The new index is derived from the <span className="font-medium">best differentials</span> across
+              your last 20 rounds in this system. Your manually entered starting index is used for round 1
+              scoring, then replaced once that round's differential is recorded.
+              How many differentials are used depends on how many rounds you have:
             </p>
             <div className="mt-2 bg-stone-50 rounded-lg px-4 py-2.5 text-xs space-y-1 text-stone-600">
               {[
@@ -483,8 +489,18 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
                 : 'The leaderboard ranks players by total gross score across all rounds. Lowest gross score wins.'}
             </p>
             <p className="mt-2 text-stone-500 text-xs">
-              Multi-round tournaments accumulate scores across all rounds. The final standings
-              after all rounds are completed determine payouts.
+              Multi-round tournaments accumulate scores across all rounds. The leaderboard updates live
+              as scores are entered — projected payouts are shown until all rounds are complete.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-semibold text-stone-900 mb-1.5">A note on your starting index</h3>
+            <p className="text-stone-600 leading-relaxed">
+              Because handicaps here are recalculated from rounds played <span className="font-medium">in this system</span>,
+              a player's index may differ from their official GHIN index after only a few rounds. The
+              system uses USGA adjustment factors (e.g. −2 for 1 round) to compensate, but the index
+              will stabilize to a reliable number once you have 6+ rounds recorded.
             </p>
           </section>
 
