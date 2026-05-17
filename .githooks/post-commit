@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# .githooks/post-commit
+#
+# After every commit, asks Claude to update CLAUDE.md if the changes affect
+# anything documented there. The update is committed as a follow-up commit.
+#
+# One-time setup (run from repo root):
+#   git config core.hooksPath .githooks
+#   chmod +x .githooks/post-commit   # Linux/Mac only
+
+# ── Loop guard ───────────────────────────────────────────────────────────────
+# The follow-up commit uses [skip claude-md] in its message to prevent
+# the hook from firing again on that commit.
+LAST_MSG=$(git log -1 --format='%s' 2>/dev/null)
+if echo "$LAST_MSG" | grep -q '\[skip claude-md\]'; then
+  exit 0
+fi
+
+# ── Dependency check ─────────────────────────────────────────────────────────
+if ! command -v claude &>/dev/null; then
+  echo "→ claude CLI not found; skipping CLAUDE.md update"
+  exit 0
+fi
+
+# ── Gather context ───────────────────────────────────────────────────────────
+CURRENT=$(cat CLAUDE.md 2>/dev/null || echo "")
+
+# Handle first commit (no parent)
+if git rev-parse HEAD~1 &>/dev/null 2>&1; then
+  STAT=$(git diff HEAD~1 HEAD --stat 2>/dev/null)
+  DIFF=$(git diff HEAD~1 HEAD 2>/dev/null | head -500)
+else
+  STAT=$(git show --stat HEAD 2>/dev/null | tail -n +2)
+  DIFF=$(git show HEAD 2>/dev/null | head -500)
+fi
+
+[ -z "$STAT" ] && exit 0
+
+# ── Call Claude ───────────────────────────────────────────────────────────────
+echo "→ Reviewing CLAUDE.md..."
+
+PROMPT="You are maintaining a CLAUDE.md guidance file for a software repository. A git commit was just made. Review the changes and update CLAUDE.md only where needed.
+
+Current CLAUDE.md:
+$CURRENT
+
+Changed files in this commit:
+$STAT
+
+Diff:
+$DIFF
+
+Rules:
+- Only modify sections that are directly affected by these changes.
+- Preserve all other sections exactly as-is (same wording, same order).
+- Do not add sections for things already covered or not changed.
+- Output the complete updated CLAUDE.md file — no markdown fences, no explanation, just the file content."
+
+UPDATED=$(claude -p "$PROMPT" 2>/dev/null)
+
+# ── Write and commit if changed ───────────────────────────────────────────────
+if [ -n "$UPDATED" ] && [ "$UPDATED" != "$CURRENT" ]; then
+  printf '%s\n' "$UPDATED" > CLAUDE.md
+  git add CLAUDE.md
+  git commit -m "chore: update CLAUDE.md [skip claude-md]" --no-verify --quiet
+  echo "✓ CLAUDE.md updated"
+fi
