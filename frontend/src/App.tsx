@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import TournamentView from './pages/TournamentView';
 import TournamentResults from './pages/TournamentResults';
 import History from './pages/History';
+import Players from './pages/Players';
 import PlayerProfilePage from './pages/PlayerProfile';
 
 // Admin pages
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="tournament/:id" element={<TournamentView />} />
           <Route path="tournament/:id/results" element={<TournamentResults />} />
           <Route path="history" element={<History />} />
+          <Route path="players" element={<Players />} />
           <Route path="players/:id" element={<PlayerProfilePage />} />
         </Route>
 

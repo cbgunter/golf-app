@@ -16,6 +16,9 @@ export default function Layout() {
             <NavLink to="/history" className={({ isActive }) => isActive ? 'text-sand-300 font-medium' : 'text-white/70 hover:text-white transition-colors'}>
               History
             </NavLink>
+            <NavLink to="/players" className={({ isActive }) => isActive ? 'text-sand-300 font-medium' : 'text-white/70 hover:text-white transition-colors'}>
+              Players
+            </NavLink>
             <Link to="/admin" className="text-white/50 hover:text-white/80 text-xs border border-white/20 px-2.5 py-1 rounded-full transition-colors">
               Admin
             </Link>

@@ -44,8 +44,8 @@ export default function PlayerProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <Link to="/" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6">
-        <ArrowLeft size={14} /> Home
+      <Link to="/players" className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-6">
+        <ArrowLeft size={14} /> All Players
       </Link>
 
       {/* Header */}
