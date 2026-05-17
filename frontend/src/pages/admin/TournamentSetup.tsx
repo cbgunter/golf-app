@@ -276,6 +276,21 @@ export default function AdminTournamentSetup() {
           <h1 className="page-header mt-1">{creating ? 'New Tournament' : tournament?.name}</h1>
           {tournament && <div className="mt-1"><StatusBadge status={tournament.status} /></div>}
         </div>
+        {!creating && tournament?.status === 'active' && (
+          <button
+            onClick={async () => {
+              if (!confirm('Mark this tournament as completed?')) return;
+              try {
+                const updated = await tournamentsApi.update(id!, { status: 'completed' });
+                setTournament(updated);
+                toast.success('Tournament completed');
+              } catch (e: any) { toast.error(e.message); }
+            }}
+            className="btn-secondary text-xs shrink-0"
+          >
+            <Check size={13} /> Mark Completed
+          </button>
+        )}
         {!creating && tournament?.status === 'completed' && (
           <div className="flex gap-2 shrink-0">
             <Link to={`/tournament/${id}/results`} className="btn-gold">Results</Link>

@@ -400,9 +400,11 @@ export default function AdminRoundScoring() {
       )}
 
       {/* Complete round */}
-      {round.status !== 'completed' && scores.length === players.length && players.length > 0 && !activePlayer && (
-        <div className="card p-5 border-l-4 border-sage-500">
-          <h2 className="font-semibold text-stone-800 mb-1">All scores entered!</h2>
+      {round.status !== 'completed' && scores.length > 0 && !activePlayer && (
+        <div className={`card p-5 border-l-4 ${scores.length === players.length ? 'border-sage-500' : 'border-stone-300'}`}>
+          <h2 className="font-semibold text-stone-800 mb-1">
+            {scores.length === players.length ? 'All scores entered!' : `${scores.length} of ${players.length} scores entered`}
+          </h2>
           <p className="text-sm text-stone-500 mb-4">Mark this round as complete to finalize scores and update the leaderboard.</p>
           <button onClick={handleCompleteRound} className="btn-primary">
             <Check size={15} /> Complete Round
