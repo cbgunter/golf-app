@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { tournamentsApi, playersApi, Tournament, Round, Score, Player } from '../api/client';
 import { roundsApi } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
-import { Trophy, MapPin, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, MapPin, Calendar, ChevronDown, ChevronUp, X, HelpCircle } from 'lucide-react';
 import { parseLocalDate } from '../lib/dates';
 
 export default function TournamentView() {
@@ -13,6 +13,7 @@ export default function TournamentView() {
   const [scoresByRound, setScoresByRound] = useState<Record<string, Score[]>>({});
   const [players, setPlayers] = useState<Player[]>([]);
   const [expandedRound, setExpandedRound] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
   const [loading, setLoading] = useState(true);
   const roundRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -72,10 +73,21 @@ export default function TournamentView() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Info modal */}
+      {showInfo && <HandicapInfoModal isNet={tournament.isNet} isGross={tournament.isGross} onClose={() => setShowInfo(false)} />}
+
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center justify-between mb-2">
           <StatusBadge status={tournament.status} />
+          <button
+            onClick={() => setShowInfo(true)}
+            className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-sage-600 transition-colors"
+            title="How scoring works"
+          >
+            <HelpCircle size={16} />
+            <span>How it works</span>
+          </button>
         </div>
         <h1 className="text-3xl font-bold text-stone-900">{tournament.name}</h1>
         {tournament.description && <p className="text-stone-500 mt-1">{tournament.description}</p>}
@@ -350,6 +362,134 @@ function RoundCard({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGross: boolean; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+
+      {/* Panel */}
+      <div className="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 shrink-0">
+          <h2 className="font-bold text-stone-900 text-lg">How Scoring Works</h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1 rounded-lg hover:bg-stone-100">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto px-5 py-4 space-y-5 text-sm text-stone-700">
+
+          <section>
+            <h3 className="font-semibold text-stone-900 mb-1.5">Handicap Index</h3>
+            <p className="text-stone-600 leading-relaxed">
+              Your Handicap Index is calculated automatically from your submitted scores using the{' '}
+              <span className="font-medium">USGA World Handicap System</span>. After each round, a{' '}
+              <span className="font-medium">differential</span> is computed:
+            </p>
+            <div className="mt-2 bg-stone-50 rounded-lg px-4 py-3 font-mono text-xs text-stone-700 leading-relaxed">
+              Differential = (Adjusted Gross − Course Rating) × 113 ÷ Slope Rating
+            </div>
+            <p className="mt-2 text-stone-500 text-xs">
+              The system uses the <span className="font-medium">best differentials</span> from your last 20 rounds — how many depends on how many rounds you have:
+            </p>
+            <div className="mt-2 bg-stone-50 rounded-lg px-4 py-2.5 text-xs space-y-1 text-stone-600">
+              {[
+                ['1–3 rounds', 'Lowest 1 (with −2 or −1 adjustment)'],
+                ['4–5 rounds', 'Lowest 1'],
+                ['6–8 rounds', 'Average of lowest 2'],
+                ['9–11 rounds', 'Average of lowest 3'],
+                ['12–14 rounds', 'Average of lowest 4'],
+                ['15–16 rounds', 'Average of lowest 5'],
+                ['17–18 rounds', 'Average of lowest 6'],
+                ['19 rounds', 'Average of lowest 7'],
+                ['20+ rounds', 'Average of best 8 of last 20 × 0.96'],
+              ].map(([rounds, rule]) => (
+                <div key={rounds} className="flex gap-3">
+                  <span className="w-28 shrink-0 text-stone-400">{rounds}</span>
+                  <span>{rule}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h3 className="font-semibold text-stone-900 mb-1.5">Course Handicap</h3>
+            <p className="text-stone-600 leading-relaxed">
+              Before each round, your Handicap Index is converted to a Course Handicap specific to that course and tee:
+            </p>
+            <div className="mt-2 bg-stone-50 rounded-lg px-4 py-3 font-mono text-xs text-stone-700">
+              Course Handicap = Index × (Slope ÷ 113) + (Course Rating − Par)
+            </div>
+            <p className="mt-2 text-stone-500 text-xs">
+              This accounts for the difficulty of the specific course and tee you're playing from.
+              A harder course (higher slope or rating) gives you more strokes.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-semibold text-stone-900 mb-1.5">Equitable Stroke Control (ESC)</h3>
+            <p className="text-stone-600 leading-relaxed">
+              To prevent one bad hole from unfairly inflating your handicap, the USGA caps the maximum score
+              per hole before computing your differential:
+            </p>
+            <div className="mt-2 bg-stone-50 rounded-lg px-4 py-2.5 text-xs space-y-1 text-stone-600">
+              {[
+                ['0–9', 'Double bogey (Par + 2)'],
+                ['10–19', '7'],
+                ['20–29', '8'],
+                ['30–39', '9'],
+                ['40+', '10'],
+              ].map(([hcp, max]) => (
+                <div key={hcp} className="flex gap-3">
+                  <span className="w-20 shrink-0 text-stone-400">HCP {hcp}</span>
+                  <span>Max {max} per hole</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-2 text-stone-500 text-xs">
+              ESC only affects the handicap differential calculation — your gross score for the leaderboard
+              uses the actual strokes you took.
+            </p>
+          </section>
+
+          {isNet && (
+            <section>
+              <h3 className="font-semibold text-stone-900 mb-1.5">Net Score</h3>
+              <p className="text-stone-600 leading-relaxed">
+                Net score subtracts your Course Handicap across the 18 holes. You receive{' '}
+                <span className="font-medium">one stroke off</span> on holes whose Stroke Index (SI) is
+                less than or equal to your Course Handicap, starting from the hardest hole (SI 1).
+              </p>
+              <p className="mt-2 text-stone-500 text-xs">
+                Example: Course Handicap 12 → you get a stroke on the 12 hardest holes (SI 1–12).
+                Net strokes on those holes = Gross strokes − 1.
+              </p>
+            </section>
+          )}
+
+          <section>
+            <h3 className="font-semibold text-stone-900 mb-1.5">Leaderboard</h3>
+            <p className="text-stone-600 leading-relaxed">
+              {isNet && isGross
+                ? 'The leaderboard ranks players by total net score (lowest wins). Gross scores are shown for reference.'
+                : isNet
+                ? 'The leaderboard ranks players by total net score across all rounds. Lowest net score wins.'
+                : 'The leaderboard ranks players by total gross score across all rounds. Lowest gross score wins.'}
+            </p>
+            <p className="mt-2 text-stone-500 text-xs">
+              Multi-round tournaments accumulate scores across all rounds. The final standings
+              after all rounds are completed determine payouts.
+            </p>
+          </section>
+
+        </div>
+      </div>
     </div>
   );
 }
