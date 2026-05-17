@@ -77,6 +77,13 @@ export interface PayoutEntry {
   amount?: number;
 }
 
+export interface TeeTimeGroup {
+  groupNumber: number;
+  teeTime: string;
+  playerIds: string[];
+  startingHole?: number;
+}
+
 export interface Round {
   id: string;
   tournamentId: string;
@@ -92,7 +99,9 @@ export interface Round {
   closestToPinWinnerId?: string;
   longestDriveHole?: number;
   longestDriveWinnerId?: string;
-  holes?: Hole[]; // per-hole par and stroke index from GHIN
+  holes?: Hole[];
+  startFormat?: 'sequential' | 'shotgun';
+  teeTimeGroups?: TeeTimeGroup[];
   notes?: string;
   createdAt: string;
   updatedAt: string;

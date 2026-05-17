@@ -146,6 +146,8 @@ interface Round {
   longestDriveHole?: number;
   longestDriveWinnerId?: string;
   holes?: { number: number; par: number; handicap: number; yardage?: number }[];
+  startFormat?: 'sequential' | 'shotgun';
+  teeTimeGroups?: { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number }[];
   notes?: string;
   createdAt: string;
   updatedAt: string;

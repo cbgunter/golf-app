@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { tournamentsApi, Tournament, Round, Score } from '../api/client';
+import { tournamentsApi, playersApi, Tournament, Round, Score, Player } from '../api/client';
 import { roundsApi } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
 import { Trophy, MapPin, Calendar, ChevronDown, ChevronUp, Info } from 'lucide-react';
@@ -10,6 +10,7 @@ export default function TournamentView() {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [scoresByRound, setScoresByRound] = useState<Record<string, Score[]>>({});
+  const [players, setPlayers] = useState<Player[]>([]);
   const [expandedRound, setExpandedRound] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -18,9 +19,11 @@ export default function TournamentView() {
     Promise.all([
       tournamentsApi.get(id),
       tournamentsApi.rounds(id),
-    ]).then(async ([t, rs]) => {
+      playersApi.list(),
+    ]).then(async ([t, rs, ps]) => {
       setTournament(t);
       setRounds(rs);
+      setPlayers(ps);
       // Auto-expand in-progress round
       const active = rs.find(r => r.status === 'in_progress');
       if (active) setExpandedRound(active.id);
@@ -114,6 +117,7 @@ export default function TournamentView() {
               key={round.id}
               round={round}
               scores={scoresByRound[round.id] ?? []}
+              players={players}
               expanded={expandedRound === round.id}
               onToggle={() => setExpandedRound(expandedRound === round.id ? null : round.id)}
               isNet={tournament.isNet}
@@ -128,12 +132,14 @@ export default function TournamentView() {
 function RoundCard({
   round,
   scores,
+  players,
   expanded,
   onToggle,
   isNet,
 }: {
   round: Round;
   scores: Score[];
+  players: Player[];
   expanded: boolean;
   onToggle: () => void;
   isNet: boolean;
@@ -168,6 +174,40 @@ function RoundCard({
 
       {expanded && (
         <div className="border-t border-stone-100">
+          {/* Tee sheet */}
+          {round.teeTimeGroups && round.teeTimeGroups.length > 0 && (
+            <div className="px-4 pt-4 pb-3">
+              <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+                Tee Sheet
+                {round.startFormat && (
+                  <span className="ml-2 font-normal normal-case text-stone-400 capitalize">({round.startFormat})</span>
+                )}
+              </h3>
+              <div className="space-y-1.5">
+                {[...round.teeTimeGroups]
+                  .sort((a, b) => a.groupNumber - b.groupNumber)
+                  .map(group => {
+                    const names = group.playerIds
+                      .map(pid => players.find(p => p.id === pid)?.name)
+                      .filter(Boolean)
+                      .join(', ');
+                    return (
+                      <div key={group.groupNumber} className="flex items-baseline gap-3 text-sm">
+                        <span className="font-medium text-stone-700 w-20 shrink-0">
+                          {group.teeTime || `Group ${group.groupNumber}`}
+                        </span>
+                        {round.startFormat === 'shotgun' && group.startingHole && (
+                          <span className="text-xs text-stone-400 w-14 shrink-0">Hole {group.startingHole}</span>
+                        )}
+                        <span className="text-stone-600">{names || '—'}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+              <div className="border-t border-stone-100 mt-3" />
+            </div>
+          )}
+
           {scores.length === 0 ? (
             <p className="text-sm text-stone-400 text-center py-6">No scores entered yet.</p>
           ) : (

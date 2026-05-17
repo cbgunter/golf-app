@@ -4,9 +4,31 @@ import { tournamentsApi, playersApi, roundsApi, Tournament, Player, Round } from
 import { coursesApi } from '../../api/client';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/StatusBadge';
-import { Plus, Save, ChevronRight, X, Check, Search, Loader2, Trash2 } from 'lucide-react';
+import { Plus, Save, ChevronRight, X, Check, Search, Loader2, Trash2, Users } from 'lucide-react';
 
 const isNew = (id: string) => id === 'new';
+
+function convertTo24h(display: string): string {
+  if (!display) return '';
+  const match = display.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return display;
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const period = match[3].toUpperCase();
+  if (period === 'AM' && h === 12) h = 0;
+  if (period === 'PM' && h !== 12) h += 12;
+  return `${String(h).padStart(2, '0')}:${m}`;
+}
+
+function convertTo12h(time24: string): string {
+  if (!time24) return '';
+  const [hStr, mStr] = time24.split(':');
+  let h = parseInt(hStr, 10);
+  const period = h >= 12 ? 'PM' : 'AM';
+  if (h === 0) h = 12;
+  else if (h > 12) h -= 12;
+  return `${h}:${mStr} ${period}`;
+}
 
 // Map GHIN TeeSets array to flat tee list with hole data
 function flattenTees(teeSets: any[]): { label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[] {
@@ -60,6 +82,12 @@ export default function AdminTournamentSetup() {
   const [courseResults, setCourseResults] = useState<any[]>([]);
   const [courseTees, setCourseTees] = useState<{ label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[]>([]);
   const [courseSearching, setCourseSearching] = useState(false);
+
+  // Tee time groups
+  const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null);
+  type GroupEdit = { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number };
+  const [editGroups, setEditGroups] = useState<{ startFormat: 'sequential' | 'shotgun'; groups: GroupEdit[] } | null>(null);
+  const [savingGroups, setSavingGroups] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -191,6 +219,36 @@ export default function AdminTournamentSetup() {
       toast.success('Round added');
     } catch (e: any) {
       toast.error(e.message);
+    }
+  }
+
+  function handleExpandRound(r: Round) {
+    if (expandedRoundId === r.id) {
+      setExpandedRoundId(null);
+      setEditGroups(null);
+      return;
+    }
+    setExpandedRoundId(r.id);
+    setEditGroups({
+      startFormat: r.startFormat ?? 'sequential',
+      groups: r.teeTimeGroups ? r.teeTimeGroups.map(g => ({ ...g })) : [],
+    });
+  }
+
+  async function handleSaveGroups(roundId: string) {
+    if (!editGroups) return;
+    setSavingGroups(true);
+    try {
+      const updated = await roundsApi.update(roundId, {
+        startFormat: editGroups.startFormat,
+        teeTimeGroups: editGroups.groups,
+      } as any);
+      setRounds(rs => rs.map(r => r.id === roundId ? updated : r));
+      toast.success('Tee sheet saved');
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSavingGroups(false);
     }
   }
 
@@ -499,39 +557,256 @@ export default function AdminTournamentSetup() {
             <div className="card p-8 text-center text-stone-400 text-sm">No rounds yet.</div>
           ) : (
             <div className="card divide-y divide-stone-100">
-              {rounds.map(r => (
-                <div key={r.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors group">
-                  <Link to={`/admin/rounds/${r.id}/scoring`} className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <StatusBadge status={r.status} />
-                      <span className="text-xs text-stone-400">{r.tee}</span>
-                    </div>
-                    <div className="font-medium text-stone-800 group-hover:text-sage-700">{r.courseName}</div>
-                    <div className="text-xs text-stone-400 mt-0.5">
-                      {new Date(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
-                    </div>
-                  </Link>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={async () => {
-                        if (!confirm(`Delete round at ${r.courseName}? This cannot be undone.`)) return;
-                        try {
-                          await roundsApi.delete(r.id);
-                          setRounds(rs => rs.filter(x => x.id !== r.id));
-                          toast.success('Round deleted');
-                        } catch (e: any) { toast.error(e.message); }
-                      }}
-                      className="p-1.5 text-stone-300 hover:text-red-400 transition-colors rounded"
-                      title="Delete round"
+              {rounds.map(r => {
+                const isExpanded = expandedRoundId === r.id;
+                const assignedIds = new Set((editGroups?.groups ?? []).flatMap(g => g.playerIds));
+                const unassigned = isExpanded
+                  ? (tournament?.playerIds ?? selectedPlayerIds).filter(pid => !assignedIds.has(pid))
+                  : [];
+                return (
+                  <div key={r.id}>
+                    {/* Row header */}
+                    <div
+                      className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors cursor-pointer"
+                      onClick={() => handleExpandRound(r)}
                     >
-                      <Trash2 size={15} />
-                    </button>
-                    <ChevronRight size={15} className="text-stone-300" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <StatusBadge status={r.status} />
+                          <span className="text-xs text-stone-400">{r.tee}</span>
+                          {r.teeTimeGroups && r.teeTimeGroups.length > 0 && (
+                            <span className="flex items-center gap-0.5 text-xs text-sage-600 font-medium">
+                              <Users size={11} /> {r.teeTimeGroups.length} group{r.teeTimeGroups.length !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                        <div className="font-medium text-stone-800">{r.courseName}</div>
+                        <div className="text-xs text-stone-400 mt-0.5">
+                          {new Date(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Delete round at ${r.courseName}? This cannot be undone.`)) return;
+                            try {
+                              await roundsApi.delete(r.id);
+                              setRounds(rs => rs.filter(x => x.id !== r.id));
+                              if (expandedRoundId === r.id) { setExpandedRoundId(null); setEditGroups(null); }
+                              toast.success('Round deleted');
+                            } catch (e: any) { toast.error(e.message); }
+                          }}
+                          className="p-1.5 text-stone-300 hover:text-red-400 transition-colors rounded"
+                          title="Delete round"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                        <Link
+                          to={`/admin/rounds/${r.id}/scoring`}
+                          className="p-1.5 text-stone-300 hover:text-sage-600 transition-colors rounded"
+                          title="Enter scores"
+                        >
+                          <ChevronRight size={15} />
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Accordion: tee time groups */}
+                    {isExpanded && editGroups && (
+                      <div className="border-t border-stone-100 bg-stone-50/50 px-4 py-4 space-y-4">
+
+                        {/* Start format */}
+                        <div>
+                          <p className="label mb-1.5">Start Format</p>
+                          <div className="flex rounded-lg border border-stone-200 overflow-hidden w-fit text-sm">
+                            {(['sequential', 'shotgun'] as const).map(fmt => (
+                              <button
+                                key={fmt}
+                                type="button"
+                                onClick={() => setEditGroups(g => g ? { ...g, startFormat: fmt } : g)}
+                                className={`px-4 py-1.5 font-medium capitalize transition-colors ${
+                                  editGroups.startFormat === fmt
+                                    ? 'bg-sage-600 text-white'
+                                    : 'bg-white text-stone-500 hover:bg-stone-50'
+                                }`}
+                              >
+                                {fmt}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Groups */}
+                        <div className="space-y-3">
+                          {editGroups.groups.map((group, gIdx) => (
+                            <div key={gIdx} className="bg-white rounded-lg border border-stone-200 p-3 space-y-2">
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <span className="text-sm font-semibold text-stone-700">Group {group.groupNumber}</span>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="time"
+                                    className="input py-1 text-sm w-32"
+                                    value={convertTo24h(group.teeTime)}
+                                    onChange={e => {
+                                      const display = convertTo12h(e.target.value);
+                                      setEditGroups(g => {
+                                        if (!g) return g;
+                                        const updated = [...g.groups];
+                                        updated[gIdx] = { ...updated[gIdx], teeTime: display };
+                                        return { ...g, groups: updated };
+                                      });
+                                    }}
+                                  />
+                                  {editGroups.startFormat === 'shotgun' && (
+                                    <input
+                                      type="number" min="1" max="18"
+                                      placeholder="Hole #"
+                                      className="input py-1 text-sm w-24"
+                                      value={group.startingHole ?? ''}
+                                      onChange={e => {
+                                        const val = e.target.value ? Number(e.target.value) : undefined;
+                                        setEditGroups(g => {
+                                          if (!g) return g;
+                                          const updated = [...g.groups];
+                                          updated[gIdx] = { ...updated[gIdx], startingHole: val };
+                                          return { ...g, groups: updated };
+                                        });
+                                      }}
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditGroups(g => {
+                                      if (!g) return g;
+                                      return { ...g, groups: g.groups.filter((_, i) => i !== gIdx).map((grp, i) => ({ ...grp, groupNumber: i + 1 })) };
+                                    })}
+                                    className="p-1 text-stone-300 hover:text-red-400"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 min-h-[28px]">
+                                {group.playerIds.map(pid => {
+                                  const p = players.find(pl => pl.id === pid);
+                                  if (!p) return null;
+                                  return (
+                                    <button
+                                      key={pid}
+                                      type="button"
+                                      title="Remove from group"
+                                      onClick={() => setEditGroups(g => {
+                                        if (!g) return g;
+                                        const updated = [...g.groups];
+                                        updated[gIdx] = { ...updated[gIdx], playerIds: updated[gIdx].playerIds.filter(x => x !== pid) };
+                                        return { ...g, groups: updated };
+                                      })}
+                                      className="flex items-center gap-1 bg-sage-100 text-sage-800 text-xs px-2 py-0.5 rounded-full hover:bg-red-100 hover:text-red-700 transition-colors"
+                                    >
+                                      {p.name} <X size={10} />
+                                    </button>
+                                  );
+                                })}
+                                {group.playerIds.length === 0 && (
+                                  <span className="text-xs text-stone-400 italic">No players yet</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setEditGroups(g => g ? { ...g, groups: [...g.groups, { groupNumber: g.groups.length + 1, teeTime: '', playerIds: [] }] } : g)}
+                          className="btn-secondary text-xs"
+                        >
+                          <Plus size={13} /> Add Group
+                        </button>
+
+                        {/* Unassigned players */}
+                        {unassigned.length > 0 && (
+                          <div>
+                            <p className="label mb-1.5">Unassigned Players — click to add to a group</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {unassigned.map(pid => {
+                                const p = players.find(pl => pl.id === pid);
+                                if (!p) return null;
+                                return (
+                                  <UnassignedChip
+                                    key={pid}
+                                    name={p.name}
+                                    groups={editGroups.groups}
+                                    onAssign={gIdx => setEditGroups(g => {
+                                      if (!g) return g;
+                                      const updated = [...g.groups];
+                                      updated[gIdx] = { ...updated[gIdx], playerIds: [...updated[gIdx].playerIds, pid] };
+                                      return { ...g, groups: updated };
+                                    })}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex justify-end pt-1 border-t border-stone-100">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveGroups(r.id)}
+                            disabled={savingGroups}
+                            className="btn-primary"
+                          >
+                            {savingGroups ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                            Save Tee Sheet
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UnassignedChip({
+  name,
+  groups,
+  onAssign,
+}: {
+  name: string;
+  groups: { groupNumber: number; teeTime: string }[];
+  onAssign: (groupIdx: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  if (groups.length === 0) {
+    return <span className="text-xs text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">{name}</span>;
+  }
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1 bg-stone-100 text-stone-600 text-xs px-2 py-0.5 rounded-full hover:bg-sage-100 hover:text-sage-800 transition-colors"
+      >
+        {name} <Plus size={10} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-stone-200 rounded-lg shadow-md min-w-[130px]">
+          {groups.map((g, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => { onAssign(idx); setOpen(false); }}
+              className="block w-full text-left px-3 py-2 text-xs hover:bg-sage-50 text-stone-700 first:rounded-t-lg last:rounded-b-lg"
+            >
+              Group {g.groupNumber}{g.teeTime ? ` · ${g.teeTime}` : ''}
+            </button>
+          ))}
         </div>
       )}
     </div>
