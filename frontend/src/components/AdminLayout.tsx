@@ -1,7 +1,7 @@
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { authApi } from '../api/client';
-import { LayoutDashboard, Users, Trophy, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Trophy, LogOut, Menu, X, Users } from 'lucide-react';
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -30,7 +30,6 @@ export default function AdminLayout() {
 
   const navItems = [
     { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/admin/players', label: 'Players', icon: Users },
     { to: '/admin/tournaments', label: 'Tournaments', icon: Trophy },
   ];
 
@@ -69,6 +68,9 @@ export default function AdminLayout() {
               <Icon size={16} /> {label}
             </NavLink>
           ))}
+          <NavLink to="/admin/players" className={navCls} onClick={() => setMenuOpen(false)}>
+            <Users size={16} /> All Players
+          </NavLink>
           <button onClick={logout} className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-500 font-medium w-full">
             <LogOut size={16} /> Log out
           </button>
@@ -85,6 +87,11 @@ export default function AdminLayout() {
                 <Icon size={15} /> {label}
               </NavLink>
             ))}
+            <div className="pt-4 mt-2 border-t border-stone-200">
+              <NavLink to="/admin/players" className={navCls}>
+                <Users size={15} /> All Players
+              </NavLink>
+            </div>
           </nav>
         </aside>
 

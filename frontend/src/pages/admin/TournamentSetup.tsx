@@ -84,6 +84,11 @@ export default function AdminTournamentSetup() {
   const [courseTees, setCourseTees] = useState<{ label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[]>([]);
   const [courseSearching, setCourseSearching] = useState(false);
 
+  // Inline new player form (Players tab)
+  const [showNewPlayer, setShowNewPlayer] = useState(false);
+  const [newPlayerForm, setNewPlayerForm] = useState({ name: '', handicapIndex: '', email: '' });
+  const [savingNewPlayer, setSavingNewPlayer] = useState(false);
+
   // Tee time groups
   const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null);
   type GroupEdit = { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number };
@@ -452,24 +457,100 @@ export default function AdminTournamentSetup() {
 
       {/* ── Players tab ── */}
       {!creating && tab === 'players' && (
-        <div className="card p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-4">
-            <p className="section-title">Tournament Players ({selectedPlayerIds.length})</p>
-            <button onClick={async () => {
-              try { await tournamentsApi.update(id!, { playerIds: selectedPlayerIds }); toast.success('Saved'); }
-              catch (e: any) { toast.error(e.message); }
-            }} className="btn-primary"><Save size={14} /> Save</button>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-1">
-            {players.map(p => (
-              <label key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 cursor-pointer border border-stone-100">
-                <input type="checkbox" className="rounded accent-sage-600"
-                  checked={selectedPlayerIds.includes(p.id)}
-                  onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
-                <span className="flex-1 text-sm font-medium text-stone-700">{p.name}</span>
-                <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
-              </label>
-            ))}
+        <div className="space-y-3">
+          {/* Inline add new player */}
+          {showNewPlayer ? (
+            <div className="card p-4 sm:p-5 border-l-4 border-sage-400">
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-semibold text-stone-800 text-sm">New Player</p>
+                <button onClick={() => { setShowNewPlayer(false); setNewPlayerForm({ name: '', handicapIndex: '', email: '' }); }}
+                  className="text-stone-300 hover:text-stone-500"><X size={16} /></button>
+              </div>
+              <form
+                onSubmit={async e => {
+                  e.preventDefault();
+                  if (!newPlayerForm.name.trim()) return;
+                  setSavingNewPlayer(true);
+                  try {
+                    const created = await playersApi.create({
+                      name: newPlayerForm.name.trim(),
+                      handicapIndex: Number(newPlayerForm.handicapIndex) || 0,
+                      email: newPlayerForm.email.trim() || undefined,
+                      handicapHistory: [],
+                    });
+                    setPlayers(ps => [...ps, created]);
+                    const updatedIds = [...selectedPlayerIds, created.id];
+                    setSelectedPlayerIds(updatedIds);
+                    await tournamentsApi.update(id!, { playerIds: updatedIds });
+                    setShowNewPlayer(false);
+                    setNewPlayerForm({ name: '', handicapIndex: '', email: '' });
+                    toast.success(`${created.name} added to tournament`);
+                  } catch (err: any) {
+                    toast.error(err.message);
+                  } finally {
+                    setSavingNewPlayer(false);
+                  }
+                }}
+                className="grid sm:grid-cols-3 gap-3"
+              >
+                <div className="sm:col-span-1">
+                  <label className="label">Name *</label>
+                  <input className="input" value={newPlayerForm.name} required
+                    onChange={e => setNewPlayerForm(f => ({ ...f, name: e.target.value }))} placeholder="Casey Hunter" />
+                </div>
+                <div>
+                  <label className="label">Handicap Index</label>
+                  <input className="input" type="number" min="0" max="54" step="0.1"
+                    value={newPlayerForm.handicapIndex}
+                    onChange={e => setNewPlayerForm(f => ({ ...f, handicapIndex: e.target.value }))} placeholder="0.0" />
+                </div>
+                <div>
+                  <label className="label">Email (optional)</label>
+                  <input className="input" type="email" value={newPlayerForm.email}
+                    onChange={e => setNewPlayerForm(f => ({ ...f, email: e.target.value }))} placeholder="email@example.com" />
+                </div>
+                <div className="sm:col-span-3 flex gap-2">
+                  <button type="submit" disabled={savingNewPlayer} className="btn-primary">
+                    {savingNewPlayer ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                    Add to Tournament
+                  </button>
+                  <button type="button" onClick={() => { setShowNewPlayer(false); setNewPlayerForm({ name: '', handicapIndex: '', email: '' }); }}
+                    className="btn-secondary">Cancel</button>
+                </div>
+              </form>
+            </div>
+          ) : null}
+
+          <div className="card p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="section-title">Tournament Players ({selectedPlayerIds.length})</p>
+              <div className="flex gap-2">
+                <button onClick={() => setShowNewPlayer(true)} className="btn-secondary text-xs">
+                  <Plus size={13} /> New Player
+                </button>
+                <button onClick={async () => {
+                  try { await tournamentsApi.update(id!, { playerIds: selectedPlayerIds }); toast.success('Saved'); }
+                  catch (e: any) { toast.error(e.message); }
+                }} className="btn-primary text-xs"><Save size={13} /> Save</button>
+              </div>
+            </div>
+            {players.length === 0 ? (
+              <p className="text-sm text-stone-400 text-center py-4">
+                No players yet. Use "New Player" to add someone.
+              </p>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-1">
+                {players.map(p => (
+                  <label key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 cursor-pointer border border-stone-100">
+                    <input type="checkbox" className="rounded accent-sage-600"
+                      checked={selectedPlayerIds.includes(p.id)}
+                      onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
+                    <span className="flex-1 text-sm font-medium text-stone-700">{p.name}</span>
+                    <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
