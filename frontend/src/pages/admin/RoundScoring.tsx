@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, FormEvent } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { roundsApi, tournamentsApi, playersApi, Round, Tournament, Player, Score } from '../../api/client';
 import toast from 'react-hot-toast';
-import { Save, Check, Info, X, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
+import { Save, Check, X, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import { parseLocalDate } from '../../lib/dates';
 
 const DEFAULT_HOLES = Array.from({ length: 18 }, (_, i) => ({
@@ -159,106 +159,173 @@ export default function AdminRoundScoring() {
           </div>
 
           <form onSubmit={handleSubmitScore} className="space-y-4">
-            {/* HCP override — collapsed by default when course data loaded */}
-            {!courseDataLoaded && (
-              <div className="bg-blue-50 rounded-lg p-3 flex items-start gap-2 text-xs text-blue-700">
-                <Info size={14} className="shrink-0 mt-0.5" />
-                <span>
-                  Course handicap auto-calculated: HCP Index × ({round.slopeRating}/113) + ({round.courseRating} − {round.par}).
-                  Override only if needed.
-                </span>
+            {/* HCP override */}
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="w-44">
+                <label className="label">Course Handicap Override</label>
+                <input className="input" type="number" min="0" max="54" value={manualHCP}
+                  onChange={e => setManualHCP(e.target.value)} placeholder="Auto-calculated" />
               </div>
-            )}
-            <div className="w-48">
-              <label className="label">Course Handicap Override (optional)</label>
-              <input className="input" type="number" min="0" max="54" value={manualHCP}
-                onChange={e => setManualHCP(e.target.value)} placeholder="Auto-calculated" />
+              {!manualHCP && (
+                <p className="text-xs text-stone-400 pb-2">
+                  Auto: {activePlayer.handicapIndex.toFixed(1)} × ({round.slopeRating}/113) + ({round.courseRating}−{round.par})
+                </p>
+              )}
             </div>
 
-            {/* Hole scores */}
-            <div className="overflow-x-auto -mx-5 px-5">
-              <table className="w-full text-sm border-collapse">
+            {/* Scorecard */}
+            <div className="overflow-x-auto -mx-5">
+              <table className="min-w-max text-sm border-collapse">
                 <thead>
-                  <tr className="text-xs text-stone-500 bg-stone-50">
-                    <th className="text-left px-2 py-2 w-10">Hole</th>
-                    <th className="px-2 py-2 w-10">Par</th>
-                    {!courseDataLoaded && <th className="px-2 py-2 w-10">SI</th>}
-                    <th className="px-2 py-2">Strokes</th>
-                    <th className="px-2 py-2 text-stone-400">+/-</th>
+                  <tr className="bg-stone-800 text-white text-xs">
+                    <th className="pl-5 pr-4 py-2.5 text-left font-medium sticky left-0 bg-stone-800 z-10 min-w-[3.5rem]">Hole</th>
+                    {[0,1,2,3,4,5,6,7,8].map(i => (
+                      <th key={i} className="w-10 py-2.5 text-center font-medium">{i+1}</th>
+                    ))}
+                    <th className="w-12 py-2.5 text-center font-medium bg-stone-600">OUT</th>
+                    {[9,10,11,12,13,14,15,16,17].map(i => (
+                      <th key={i} className="w-10 py-2.5 text-center font-medium">{i+1}</th>
+                    ))}
+                    <th className="w-12 py-2.5 text-center font-medium bg-stone-600">IN</th>
+                    <th className="w-12 py-2.5 text-center font-medium bg-stone-900 pr-5">TOT</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {holeInputs.map((h, i) => {
-                    const strokes = Number(h.strokes) || 0;
-                    const diff = strokes ? strokes - h.par : null;
-                    return (
-                      <tr key={h.hole} className={i % 2 === 0 ? 'bg-white' : 'bg-stone-50/40'}>
-                        <td className="px-2 py-1 font-medium text-stone-600 text-sm">{h.hole}</td>
-
-                        {/* Par — read-only when course loaded, editable otherwise */}
-                        <td className="px-2 py-1 text-center">
-                          {courseDataLoaded ? (
-                            <span className="text-sm text-stone-500">{h.par}</span>
-                          ) : (
-                            <input type="number" min="3" max="6"
-                              className="w-10 text-center border border-stone-200 rounded px-1 py-0.5 text-xs"
-                              value={h.par}
-                              onChange={e => setHoleInputs(hs => hs.map((x, j) => j === i ? { ...x, par: Number(e.target.value) } : x))}
-                            />
-                          )}
-                        </td>
-
-                        {/* SI — hidden when course loaded */}
-                        {!courseDataLoaded && (
-                          <td className="px-2 py-1 text-center">
-                            <input type="number" min="1" max="18"
-                              className="w-10 text-center border border-stone-200 rounded px-1 py-0.5 text-xs"
-                              value={h.handicap}
-                              onChange={e => setHoleInputs(hs => hs.map((x, j) => j === i ? { ...x, handicap: Number(e.target.value) } : x))}
-                            />
-                          </td>
+                  {/* Par row */}
+                  <tr className="bg-stone-50 border-b border-stone-200">
+                    <td className="pl-5 pr-4 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wide sticky left-0 bg-stone-50 z-10">Par</td>
+                    {holeInputs.slice(0, 9).map((h, i) => (
+                      <td key={i} className="py-2 text-center text-sm text-stone-600">
+                        {courseDataLoaded ? h.par : (
+                          <input type="number" min="3" max="6"
+                            className="w-9 text-center border border-stone-200 rounded py-0.5 text-xs"
+                            value={h.par}
+                            onChange={e => setHoleInputs(hs => hs.map((x, j) => j === i ? { ...x, par: Number(e.target.value) } : x))} />
                         )}
+                      </td>
+                    ))}
+                    <td className="py-2 text-center text-sm font-semibold text-stone-700 bg-stone-200">
+                      {holeInputs.slice(0, 9).reduce((s, h) => s + h.par, 0)}
+                    </td>
+                    {holeInputs.slice(9).map((h, i) => (
+                      <td key={i + 9} className="py-2 text-center text-sm text-stone-600">
+                        {courseDataLoaded ? h.par : (
+                          <input type="number" min="3" max="6"
+                            className="w-9 text-center border border-stone-200 rounded py-0.5 text-xs"
+                            value={h.par}
+                            onChange={e => setHoleInputs(hs => hs.map((x, j) => j === (i + 9) ? { ...x, par: Number(e.target.value) } : x))} />
+                        )}
+                      </td>
+                    ))}
+                    <td className="py-2 text-center text-sm font-semibold text-stone-700 bg-stone-200">
+                      {holeInputs.slice(9).reduce((s, h) => s + h.par, 0)}
+                    </td>
+                    <td className="py-2 pr-5 text-center text-sm font-bold text-stone-800 bg-stone-300">
+                      {holeInputs.reduce((s, h) => s + h.par, 0)}
+                    </td>
+                  </tr>
 
-                        {/* Strokes — always editable, large target */}
-                        <td className="px-2 py-0.5">
+                  {/* HCP / SI row */}
+                  <tr className="border-b border-stone-200">
+                    <td className="pl-5 pr-4 py-1.5 text-xs font-semibold text-stone-400 uppercase tracking-wide sticky left-0 bg-white z-10">HCP</td>
+                    {holeInputs.slice(0, 9).map((h, i) => (
+                      <td key={i} className="py-1.5 text-center">
+                        {courseDataLoaded ? (
+                          <span className="text-xs text-stone-400">{h.handicap}</span>
+                        ) : (
+                          <input type="number" min="1" max="18"
+                            className="w-9 text-center border border-stone-200 rounded py-0.5 text-xs"
+                            value={h.handicap}
+                            onChange={e => setHoleInputs(hs => hs.map((x, j) => j === i ? { ...x, handicap: Number(e.target.value) } : x))} />
+                        )}
+                      </td>
+                    ))}
+                    <td className="bg-stone-100" />
+                    {holeInputs.slice(9).map((h, i) => (
+                      <td key={i + 9} className="py-1.5 text-center">
+                        {courseDataLoaded ? (
+                          <span className="text-xs text-stone-400">{h.handicap}</span>
+                        ) : (
+                          <input type="number" min="1" max="18"
+                            className="w-9 text-center border border-stone-200 rounded py-0.5 text-xs"
+                            value={h.handicap}
+                            onChange={e => setHoleInputs(hs => hs.map((x, j) => j === (i + 9) ? { ...x, handicap: Number(e.target.value) } : x))} />
+                        )}
+                      </td>
+                    ))}
+                    <td className="bg-stone-100" />
+                    <td className="bg-stone-200" />
+                  </tr>
+
+                  {/* Score input row */}
+                  <tr className="bg-white">
+                    <td className="pl-5 pr-4 py-2 text-xs font-semibold text-stone-500 uppercase tracking-wide sticky left-0 bg-white z-10">Score</td>
+                    {holeInputs.slice(0, 9).map((h, i) => {
+                      const strokes = Number(h.strokes) || 0;
+                      const diff = strokes > 0 ? strokes - h.par : null;
+                      const cellBg = diff === null ? '' : diff <= -2 ? 'bg-yellow-100' : diff === -1 ? 'bg-red-100' : diff === 0 ? 'bg-green-50' : '';
+                      return (
+                        <td key={i} className={`py-1.5 px-0.5 text-center ${cellBg}`}>
                           <input
                             type="number" min="1" max="15" required
-                            className="input text-center text-lg font-bold py-1.5"
+                            className="w-9 h-9 text-center text-sm font-bold rounded border border-stone-200 focus:border-sage-400 focus:outline-none bg-transparent"
                             value={h.strokes || ''}
                             onChange={e => setHoleInputs(hs => hs.map((x, j) => j === i ? { ...x, strokes: Number(e.target.value) } : x))}
                           />
                         </td>
-
-                        <td className={`px-2 py-1 text-center text-xs font-semibold ${
-                          diff === null ? 'text-stone-300'
-                          : diff < 0 ? 'text-red-500'
-                          : diff === 0 ? 'text-green-600'
-                          : 'text-stone-500'
-                        }`}>
-                          {diff === null ? '—' : diff === 0 ? 'E' : diff > 0 ? `+${diff}` : diff}
+                      );
+                    })}
+                    <td className="text-center font-bold text-stone-900 bg-stone-100 py-1.5 text-base">
+                      {holeInputs.slice(0, 9).reduce((s, h) => s + (Number(h.strokes) || 0), 0) || '—'}
+                    </td>
+                    {holeInputs.slice(9).map((h, i) => {
+                      const strokes = Number(h.strokes) || 0;
+                      const diff = strokes > 0 ? strokes - h.par : null;
+                      const cellBg = diff === null ? '' : diff <= -2 ? 'bg-yellow-100' : diff === -1 ? 'bg-red-100' : diff === 0 ? 'bg-green-50' : '';
+                      return (
+                        <td key={i + 9} className={`py-1.5 px-0.5 text-center ${cellBg}`}>
+                          <input
+                            type="number" min="1" max="15" required
+                            className="w-9 h-9 text-center text-sm font-bold rounded border border-stone-200 focus:border-sage-400 focus:outline-none bg-transparent"
+                            value={h.strokes || ''}
+                            onChange={e => setHoleInputs(hs => hs.map((x, j) => j === (i + 9) ? { ...x, strokes: Number(e.target.value) } : x))}
+                          />
                         </td>
-                      </tr>
-                    );
-                  })}
-                  <tr className="bg-sage-50 font-semibold border-t-2 border-sage-200">
-                    <td className="px-2 py-2 text-stone-700" colSpan={courseDataLoaded ? 2 : 3}>Total</td>
-                    <td className="px-2 py-2 text-center text-xl font-bold text-stone-900">{calcGross() || '—'}</td>
-                    <td className="px-2 py-2 text-center text-sm text-stone-500">
-                      {calcGross() ? (() => {
-                        const toPar = calcGross() - holeInputs.reduce((s, h) => s + h.par, 0);
-                        return toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar;
-                      })() : '—'}
+                      );
+                    })}
+                    <td className="text-center font-bold text-stone-900 bg-stone-100 py-1.5 text-base">
+                      {holeInputs.slice(9).reduce((s, h) => s + (Number(h.strokes) || 0), 0) || '—'}
+                    </td>
+                    <td className="pr-5 text-center font-bold text-stone-900 bg-stone-200 py-1.5 text-lg">
+                      {calcGross() || '—'}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div className="flex gap-2 pt-1">
-              <button type="submit" className="btn-primary flex-1 justify-center" disabled={submitting}>
-                <Save size={14} /> {submitting ? 'Saving...' : 'Submit Score'}
-              </button>
-              <button type="button" onClick={() => setActivePlayer(null)} className="btn-secondary">Cancel</button>
+            {/* Score summary + actions */}
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <div className="text-sm text-stone-500">
+                {calcGross() > 0 && (() => {
+                  const totalPar = holeInputs.reduce((s, h) => s + h.par, 0);
+                  const toPar = calcGross() - totalPar;
+                  return (
+                    <span>
+                      Gross {calcGross()} ·{' '}
+                      <span className={`font-semibold ${toPar < 0 ? 'text-red-500' : toPar === 0 ? 'text-green-600' : 'text-stone-600'}`}>
+                        {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar} to par
+                      </span>
+                    </span>
+                  );
+                })()}
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button type="button" onClick={() => setActivePlayer(null)} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" disabled={submitting}>
+                  <Save size={14} /> {submitting ? 'Saving…' : 'Submit Score'}
+                </button>
+              </div>
             </div>
           </form>
         </div>
