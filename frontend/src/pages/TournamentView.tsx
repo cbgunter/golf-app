@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { tournamentsApi, playersApi, Tournament, Round, Score, Player } from '../api/client';
 import { roundsApi } from '../api/client';
 import StatusBadge from '../components/StatusBadge';
-import { Trophy, MapPin, Calendar, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Trophy, MapPin, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { parseLocalDate } from '../lib/dates';
 
 export default function TournamentView() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ export default function TournamentView() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [expandedRound, setExpandedRound] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const roundRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     if (!id) return;
@@ -26,7 +28,11 @@ export default function TournamentView() {
       setPlayers(ps);
       // Auto-expand in-progress round
       const active = rs.find(r => r.status === 'in_progress');
-      if (active) setExpandedRound(active.id);
+      if (active) {
+        setExpandedRound(active.id);
+        // Scroll to it after render
+        setTimeout(() => roundRefs.current[active.id]?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+      }
 
       // Load scores for all rounds
       const scoreMap: Record<string, Score[]> = {};
@@ -44,6 +50,26 @@ export default function TournamentView() {
 
   const totalPot = tournament.entryFee * tournament.playerIds.length;
 
+  // Build projected leaderboard from current scores across all rounds
+  const allScores = Object.values(scoresByRound).flat();
+  const scoresByPlayer = new Map<string, Score[]>();
+  for (const s of allScores) {
+    if (!scoresByPlayer.has(s.playerId)) scoresByPlayer.set(s.playerId, []);
+    scoresByPlayer.get(s.playerId)!.push(s);
+  }
+  const leaderboard = Array.from(scoresByPlayer.entries()).map(([pid, scores]) => {
+    const player = players.find(p => p.id === pid);
+    return {
+      player,
+      playerName: scores[0].playerName,
+      totalGross: scores.reduce((s, sc) => s + sc.grossTotal, 0),
+      totalNet: scores.reduce((s, sc) => s + sc.netTotal, 0),
+      rounds: scores.length,
+    };
+  });
+  leaderboard.sort((a, b) => tournament.isNet ? a.totalNet - b.totalNet : a.totalGross - b.totalGross);
+  const showLeaderboard = leaderboard.length > 0;
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
@@ -57,7 +83,7 @@ export default function TournamentView() {
         <div className="flex flex-wrap gap-6 mt-4 text-sm text-stone-600">
           <span className="flex items-center gap-1">
             <Calendar size={15} />
-            {new Date(tournament.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            {parseLocalDate(tournament.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </span>
           {totalPot > 0 && (
             <span className="flex items-center gap-1 text-sand-600 font-semibold">
@@ -76,7 +102,7 @@ export default function TournamentView() {
         </div>
       </div>
 
-      {/* Payout structure */}
+      {/* Payout structure — only shown when there's an actual pot */}
       {tournament.payoutStructure.length > 0 && totalPot > 0 && (
         <div className="card p-4 mb-6">
           <h2 className="font-semibold text-stone-800 mb-3 flex items-center gap-2">
@@ -106,6 +132,55 @@ export default function TournamentView() {
         </Link>
       )}
 
+      {/* Live leaderboard */}
+      {showLeaderboard && tournament.status !== 'completed' && (
+        <div className="card mb-6">
+          <div className="px-5 py-3.5 border-b border-stone-100 flex items-center justify-between">
+            <h2 className="font-semibold text-stone-800 flex items-center gap-2">
+              <Trophy size={15} className="text-sand-500" />
+              {tournament.status === 'active' ? 'Live Leaderboard' : 'Leaderboard'}
+            </h2>
+            <span className="text-xs text-stone-400">{tournament.isNet ? 'Net' : 'Gross'}</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-stone-50 text-stone-500 text-xs">
+                  <th className="text-left px-5 py-2 font-medium">Rank</th>
+                  <th className="text-left px-3 py-2 font-medium">Player</th>
+                  {tournament.isGross && <th className="text-center px-3 py-2 font-medium">Gross</th>}
+                  {tournament.isNet && <th className="text-center px-3 py-2 font-medium">Net</th>}
+                  <th className="text-center px-3 py-2 font-medium">Rounds</th>
+                  {totalPot > 0 && <th className="text-center px-3 py-2 font-medium">Projected $</th>}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {leaderboard.map((entry, idx) => {
+                  const payout = tournament.payoutStructure[idx];
+                  const projectedPayout = payout ? Math.round((payout.percentage / 100) * totalPot) : null;
+                  return (
+                    <tr key={entry.playerName} className={idx === 0 ? 'bg-sand-50' : ''}>
+                      <td className="px-5 py-2.5 font-bold text-stone-500">
+                        {idx === 0 ? '🏆' : idx + 1}
+                      </td>
+                      <td className="px-3 py-2.5 font-medium text-stone-900">{entry.playerName}</td>
+                      {tournament.isGross && <td className="px-3 py-2.5 text-center">{entry.totalGross}</td>}
+                      {tournament.isNet && <td className="px-3 py-2.5 text-center font-semibold">{entry.totalNet}</td>}
+                      <td className="px-3 py-2.5 text-center text-stone-400">{entry.rounds}</td>
+                      {totalPot > 0 && (
+                        <td className="px-3 py-2.5 text-center font-semibold text-sage-700">
+                          {projectedPayout ? `$${projectedPayout}` : '—'}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Rounds */}
       <h2 className="text-xl font-bold text-stone-800 mb-3">Rounds</h2>
       {rounds.length === 0 ? (
@@ -113,15 +188,16 @@ export default function TournamentView() {
       ) : (
         <div className="space-y-3">
           {rounds.map(round => (
-            <RoundCard
-              key={round.id}
-              round={round}
-              scores={scoresByRound[round.id] ?? []}
-              players={players}
-              expanded={expandedRound === round.id}
-              onToggle={() => setExpandedRound(expandedRound === round.id ? null : round.id)}
-              isNet={tournament.isNet}
-            />
+            <div key={round.id} ref={el => { roundRefs.current[round.id] = el; }}>
+              <RoundCard
+                round={round}
+                scores={scoresByRound[round.id] ?? []}
+                players={players}
+                expanded={expandedRound === round.id}
+                onToggle={() => setExpandedRound(expandedRound === round.id ? null : round.id)}
+                isNet={tournament.isNet}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -163,7 +239,7 @@ function RoundCard({
           <div className="text-xs text-stone-500 mt-0.5 flex items-center gap-3">
             <span className="flex items-center gap-1">
               <Calendar size={12} />
-              {new Date(round.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              {parseLocalDate(round.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </span>
             <span>Par {round.par}</span>
             <span>Rating {round.courseRating} / Slope {round.slopeRating}</span>
@@ -252,14 +328,22 @@ function RoundCard({
                 <span className="flex items-center gap-1">
                   <MapPin size={12} className="text-blue-500" />
                   CTP: Hole {round.closestToPinHole}
-                  {round.closestToPinWinnerId && ` — winner TBD`}
+                  {round.closestToPinWinnerId && (
+                    <span className="font-medium text-stone-700 ml-1">
+                      — {players.find(p => p.id === round.closestToPinWinnerId)?.name ?? 'Winner TBD'}
+                    </span>
+                  )}
                 </span>
               )}
               {round.longestDriveHole && (
                 <span className="flex items-center gap-1">
                   <span>🏌️</span>
                   LD: Hole {round.longestDriveHole}
-                  {round.longestDriveWinnerId && ` — winner TBD`}
+                  {round.longestDriveWinnerId && (
+                    <span className="font-medium text-stone-700 ml-1">
+                      — {players.find(p => p.id === round.longestDriveWinnerId)?.name ?? 'Winner TBD'}
+                    </span>
+                  )}
                 </span>
               )}
             </div>

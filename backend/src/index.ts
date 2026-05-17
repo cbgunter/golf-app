@@ -4,7 +4,7 @@ import { ok, error, unauthorized } from './lib/response';
 
 import { listPlayers, getPlayer, createPlayer, updatePlayer, deletePlayer } from './handlers/players';
 import { listTournaments, getTournament, createTournament, updateTournament, deleteTournament, getTournamentResults } from './handlers/tournaments';
-import { listRoundsForTournament, getRound, createRound, updateRound, completeRound, deleteRound } from './handlers/rounds';
+import { listRoundsForTournament, getRound, createRound, updateRound, completeRound, reopenRound, deleteRound } from './handlers/rounds';
 import { listScoresForRound, getScore, submitScore, updateScore } from './handlers/scores';
 import { listCourses, getCourse, searchCourses, getCourseFromApi, saveCourse } from './handlers/courses';
 
@@ -64,6 +64,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       if (method === 'PUT' && segments[1]) return adminOnly(() => updateRound(segments[1], body));
       if (method === 'DELETE' && segments[1]) return adminOnly(() => deleteRound(segments[1]));
       if (method === 'POST' && segments[1] && segments[2] === 'complete') return adminOnly(() => completeRound(segments[1]));
+      if (method === 'POST' && segments[1] && segments[2] === 'reopen') return adminOnly(() => reopenRound(segments[1]));
       if (method === 'POST' && segments[1] && segments[2] === 'scores') return adminOnly(() => submitScore(segments[1], body));
     }
 

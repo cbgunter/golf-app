@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { roundsApi, tournamentsApi, playersApi, Round, Tournament, Player, Score } from '../../api/client';
 import toast from 'react-hot-toast';
 import { Save, Check, Info, X, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
+import { parseLocalDate } from '../../lib/dates';
 
 const DEFAULT_HOLES = Array.from({ length: 18 }, (_, i) => ({
   hole: i + 1,
@@ -141,7 +142,7 @@ export default function AdminRoundScoring() {
         <Link to={`/admin/tournaments/${round.tournamentId}`} className="text-xs text-stone-400 hover:text-stone-600">← Tournament</Link>
         <h1 className="text-2xl font-bold text-stone-900 mt-1">{round.courseName}</h1>
         <div className="text-sm text-stone-500 mt-0.5">
-          {round.tee} tees · Par {round.par} · {new Date(round.date).toLocaleDateString()}
+          {round.tee} tees · Par {round.par} · {parseLocalDate(round.date).toLocaleDateString()}
           <span className="text-stone-400"> · Rating {round.courseRating} / Slope {round.slopeRating}</span>
         </div>
       </div>
@@ -262,21 +263,28 @@ export default function AdminRoundScoring() {
           </form>
         </div>
       ) : (
-        /* Player picker — only shown when not actively entering a score */
-        needsScoring.length > 0 && (
+        /* Player picker — shown when not actively entering a score */
+        players.length > 0 && (
           <div className="card p-4">
-            <h2 className="font-semibold text-stone-700 mb-3 text-sm uppercase tracking-wide">Enter Score For</h2>
+            <h2 className="font-semibold text-stone-700 mb-3 text-sm uppercase tracking-wide">
+              {needsScoring.length > 0 ? 'Enter Score For' : 'Edit Scores'}
+            </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {needsScoring.map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => startScoring(p)}
-                  className="flex flex-col items-start p-3 bg-stone-50 hover:bg-sage-50 border border-stone-200 hover:border-sage-300 rounded-lg transition-colors text-left"
-                >
-                  <span className="font-medium text-stone-900 text-sm">{p.name}</span>
-                  <span className="text-xs text-stone-400 mt-0.5">HCP {p.handicapIndex.toFixed(1)}</span>
-                </button>
-              ))}
+              {(needsScoring.length > 0 ? needsScoring : players).map(p => {
+                const hasScore = scoredPlayerIds.has(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => startScoring(p)}
+                    className="flex flex-col items-start p-3 bg-stone-50 hover:bg-sage-50 border border-stone-200 hover:border-sage-300 rounded-lg transition-colors text-left"
+                  >
+                    <span className="font-medium text-stone-900 text-sm">{p.name}</span>
+                    <span className="text-xs text-stone-400 mt-0.5">
+                      {hasScore ? 'Edit score' : `HCP ${p.handicapIndex.toFixed(1)}`}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )
@@ -408,6 +416,25 @@ export default function AdminRoundScoring() {
           <p className="text-sm text-stone-500 mb-4">Mark this round as complete to finalize scores and update the leaderboard.</p>
           <button onClick={handleCompleteRound} className="btn-primary">
             <Check size={15} /> Complete Round
+          </button>
+        </div>
+      )}
+
+      {round.status === 'completed' && !activePlayer && (
+        <div className="card p-5 border-l-4 border-stone-300">
+          <h2 className="font-semibold text-stone-800 mb-1">Round Completed</h2>
+          <p className="text-sm text-stone-500 mb-4">Reopen to add or edit scores.</p>
+          <button
+            onClick={async () => {
+              try {
+                const updated = await roundsApi.reopen(round.id) as any;
+                setRound(updated);
+                toast.success('Round reopened');
+              } catch (e: any) { toast.error(e.message); }
+            }}
+            className="btn-secondary"
+          >
+            Reopen Round
           </button>
         </div>
       )}

@@ -100,6 +100,22 @@ export async function deleteRound(id: string) {
   return ok({ deleted: true });
 }
 
+export async function reopenRound(id: string) {
+  const round = await getItem<Round>(R_TABLE, id);
+  if (!round) return notFound('Round');
+
+  const updated: Round = { ...round, status: 'in_progress', updatedAt: new Date().toISOString() };
+  await putItem(R_TABLE, updated);
+
+  // If the tournament was auto-completed, revert it to active
+  const tournament = await getItem<Tournament>(T_TABLE, round.tournamentId);
+  if (tournament && tournament.status === 'completed') {
+    await putItem(T_TABLE, { ...tournament, status: 'active', updatedAt: new Date().toISOString() });
+  }
+
+  return ok(updated);
+}
+
 export async function completeRound(id: string) {
   const round = await getItem<Round>(R_TABLE, id);
   if (!round) return notFound('Round');

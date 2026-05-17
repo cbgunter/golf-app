@@ -65,6 +65,7 @@ export const roundsApi = {
   update: (id: string, data: Partial<Round>) => api.put<Round>(`/rounds/${id}`, data),
   delete: (id: string) => api.delete(`/rounds/${id}`),
   complete: (id: string) => api.post(`/rounds/${id}/complete`),
+  reopen: (id: string) => api.post(`/rounds/${id}/reopen`),
   scores: (id: string) => api.get<Score[]>(`/rounds/${id}/scores`),
   submitScore: (roundId: string, data: unknown) => api.post(`/rounds/${roundId}/scores`, data),
 };

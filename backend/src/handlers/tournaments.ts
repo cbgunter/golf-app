@@ -77,6 +77,17 @@ export async function updateTournament(id: string, body: Partial<Tournament>) {
 export async function deleteTournament(id: string) {
   const existing = await getItem<Tournament>(T_TABLE, id);
   if (!existing) return notFound('Tournament');
+
+  // Cascade: delete all rounds and their scores
+  const rounds = await queryIndex<Round>(R_TABLE, 'tournament-index', 'tournamentId', id);
+  for (const round of rounds) {
+    const scores = await queryIndex<Score>(S_TABLE, 'round-index', 'roundId', round.id);
+    for (const score of scores) {
+      await deleteItem(S_TABLE, score.id);
+    }
+    await deleteItem(R_TABLE, round.id);
+  }
+
   await deleteItem(T_TABLE, id);
   return ok({ deleted: true });
 }

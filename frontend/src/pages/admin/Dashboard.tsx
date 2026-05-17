@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { tournamentsApi, playersApi, Tournament, Player } from '../../api/client';
 import StatusBadge from '../../components/StatusBadge';
 import { Users, Trophy, Plus } from 'lucide-react';
+import { parseLocalDate } from '../../lib/dates';
 
 export default function AdminDashboard() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -28,15 +29,15 @@ export default function AdminDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Active', count: active.length, color: 'text-green-600', bg: 'bg-green-50' },
-          { label: 'Upcoming', count: upcoming.length, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Completed', count: completed.length, color: 'text-sand-600', bg: 'bg-sand-50' },
-          { label: 'Players', count: players.length, color: 'text-sage-700', bg: 'bg-sage-50' },
+          { label: 'Active', count: active.length, color: 'text-green-600', bg: 'bg-green-50', to: '/admin/tournaments?status=active' },
+          { label: 'Upcoming', count: upcoming.length, color: 'text-blue-600', bg: 'bg-blue-50', to: '/admin/tournaments?status=upcoming' },
+          { label: 'Completed', count: completed.length, color: 'text-sand-600', bg: 'bg-sand-50', to: '/admin/tournaments?status=completed' },
+          { label: 'Players', count: players.length, color: 'text-sage-700', bg: 'bg-sage-50', to: '/admin/players' },
         ].map(s => (
-          <div key={s.label} className={`card p-4 ${s.bg}`}>
+          <Link key={s.label} to={s.to} className={`card p-4 ${s.bg} hover:shadow-md transition-shadow`}>
             <div className={`text-2xl font-bold ${s.color}`}>{s.count}</div>
             <div className="text-sm text-stone-600 mt-1">{s.label}</div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -85,7 +86,7 @@ export default function AdminDashboard() {
                 <div>
                   <div className="font-medium text-sm text-stone-900">{t.name}</div>
                   <div className="text-xs text-stone-400 mt-0.5">
-                    {new Date(t.startDate).toLocaleDateString()} · {t.playerIds.length} players
+                    {parseLocalDate(t.startDate).toLocaleDateString()} · {t.playerIds.length} players
                   </div>
                 </div>
                 <StatusBadge status={t.status} />

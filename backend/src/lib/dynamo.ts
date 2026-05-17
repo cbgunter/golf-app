@@ -31,8 +31,14 @@ export async function deleteItem(table: string, id: string): Promise<void> {
 }
 
 export async function scanTable<T>(table: string, filter?: Partial<ScanCommandInput>): Promise<T[]> {
-  const result = await ddb.send(new ScanCommand({ TableName: table, ...filter }));
-  return (result.Items ?? []) as T[];
+  const items: T[] = [];
+  let lastKey: Record<string, any> | undefined;
+  do {
+    const result = await ddb.send(new ScanCommand({ TableName: table, ...filter, ExclusiveStartKey: lastKey }));
+    items.push(...((result.Items ?? []) as T[]));
+    lastKey = result.LastEvaluatedKey;
+  } while (lastKey);
+  return items;
 }
 
 export async function queryIndex<T>(
@@ -41,14 +47,21 @@ export async function queryIndex<T>(
   keyName: string,
   keyValue: string
 ): Promise<T[]> {
-  const result = await ddb.send(
-    new QueryCommand({
-      TableName: table,
-      IndexName: indexName,
-      KeyConditionExpression: '#k = :v',
-      ExpressionAttributeNames: { '#k': keyName },
-      ExpressionAttributeValues: { ':v': keyValue },
-    })
-  );
-  return (result.Items ?? []) as T[];
+  const items: T[] = [];
+  let lastKey: Record<string, any> | undefined;
+  do {
+    const result = await ddb.send(
+      new QueryCommand({
+        TableName: table,
+        IndexName: indexName,
+        KeyConditionExpression: '#k = :v',
+        ExpressionAttributeNames: { '#k': keyName },
+        ExpressionAttributeValues: { ':v': keyValue },
+        ExclusiveStartKey: lastKey,
+      })
+    );
+    items.push(...((result.Items ?? []) as T[]));
+    lastKey = result.LastEvaluatedKey;
+  } while (lastKey);
+  return items;
 }

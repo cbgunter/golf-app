@@ -7,16 +7,19 @@ export default function TournamentResultsPage() {
   const { id } = useParams<{ id: string }>();
   const [results, setResults] = useState<TournamentResults | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     tournamentsApi.results(id)
       .then(setResults)
+      .catch(e => setError(e.message ?? 'Failed to load results'))
       .finally(() => setLoading(false));
   }, [id]);
 
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-stone-500">Loading results...</div>;
+  if (error) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">{error}</div>;
   if (!results) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Results not found.</div>;
 
   const { tournament, leaderboard, payouts, totalPot, closestToPin, longestDrive } = results;

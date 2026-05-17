@@ -5,13 +5,14 @@ import { coursesApi } from '../../api/client';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/StatusBadge';
 import { Plus, Save, ChevronRight, X, Check, Search, Loader2, Trash2, Users } from 'lucide-react';
+import { parseLocalDate } from '../../lib/dates';
 
 const isNew = (id: string) => id === 'new';
 
 function convertTo24h(display: string): string {
   if (!display) return '';
   const match = display.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) return display;
+  if (!match) return ''; // return empty so <input type="time"> shows blank rather than corrupt value
   let h = parseInt(match[1], 10);
   const m = match[2];
   const period = match[3].toUpperCase();
@@ -237,6 +238,21 @@ export default function AdminTournamentSetup() {
 
   async function handleSaveGroups(roundId: string) {
     if (!editGroups) return;
+
+    // Validate: no empty groups, no duplicate players across groups
+    const emptyGroups = editGroups.groups.filter(g => g.playerIds.length === 0);
+    if (emptyGroups.length > 0) {
+      toast.error(`Group${emptyGroups.length > 1 ? 's' : ''} ${emptyGroups.map(g => g.groupNumber).join(', ')} ${emptyGroups.length > 1 ? 'have' : 'has'} no players`);
+      return;
+    }
+    const allAssigned = editGroups.groups.flatMap(g => g.playerIds);
+    const duplicates = allAssigned.filter((id, i) => allAssigned.indexOf(id) !== i);
+    if (duplicates.length > 0) {
+      const names = duplicates.map(pid => players.find(p => p.id === pid)?.name ?? pid).join(', ');
+      toast.error(`Players assigned to multiple groups: ${names}`);
+      return;
+    }
+
     setSavingGroups(true);
     try {
       const updated = await roundsApi.update(roundId, {
@@ -594,7 +610,7 @@ export default function AdminTournamentSetup() {
                         </div>
                         <div className="font-medium text-stone-800 group-hover:text-sage-700">{r.courseName}</div>
                         <div className="text-xs text-stone-400 mt-0.5">
-                          {new Date(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
+                          {parseLocalDate(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
                         </div>
                       </Link>
                       <div className="flex items-center gap-1 shrink-0">

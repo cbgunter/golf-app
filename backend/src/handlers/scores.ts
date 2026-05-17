@@ -50,6 +50,10 @@ export async function submitScore(
 
   if (!body.holeScores?.length) return error('holeScores are required');
 
+  // Find existing score for this player in this round (for in-place update)
+  const existingRoundScores = await queryIndex<Score>(S_TABLE, 'round-index', 'roundId', roundId);
+  const existingScore = existingRoundScores.find(s => s.playerId === body.playerId);
+
   // Determine course handicap
   const { courseHandicap, explanation: chExplanation } = calcCourseHandicap(
     player.handicapIndex,
@@ -103,7 +107,7 @@ export async function submitScore(
 
   const now = new Date().toISOString();
   const score: Score = {
-    id: uuidv4(),
+    id: existingScore?.id ?? uuidv4(),
     roundId,
     tournamentId: round.tournamentId,
     playerId: player.id,
@@ -115,7 +119,7 @@ export async function submitScore(
     handicapDifferential: differential,
     adjustments,
     isComplete: true,
-    createdAt: now,
+    createdAt: existingScore?.createdAt ?? now,
     updatedAt: now,
   };
 
@@ -130,9 +134,15 @@ export async function submitScore(
     });
   }
 
-  // Update player handicap
+  // Update player handicap using last 20 differentials (USGA WHS)
   const allPlayerScores = await queryIndex<Score>(S_TABLE, 'player-index', 'playerId', player.id);
-  const allDiffs = [...allPlayerScores.map(s => s.handicapDifferential!).filter(d => d !== undefined), differential];
+  const recentDiffs = [...allPlayerScores]
+    .filter(s => s.id !== score.id) // exclude re-submitted score to avoid double-counting
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 19)
+    .map(s => s.handicapDifferential!)
+    .filter(d => d !== undefined);
+  const allDiffs = [...recentDiffs, differential];
   const { handicapIndex, explanation } = calcHandicapIndex(allDiffs);
 
   const historyEntry: HandicapEntry = {
