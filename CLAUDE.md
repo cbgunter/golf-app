@@ -86,7 +86,7 @@ GHIN response shape for holes: `TeeSets[].Holes[{ Number, Par, Allocation (strok
 Player `handicapIndex` is **manually entered** at creation (admin sets it from GHIN or known index). It is automatically recalculated and overwritten after every scored round. The starting value is not separately stored; the `handicapHistory[]` array shows the progression from round 1 onward.
 
 ### Side contests (CTP / LD)
-Tournaments have `hasClosestToPin` / `hasLongestDrive` boolean flags and optional `closestToPinFee` / `longestDriveFee` per-player ante amounts. The hole for each contest is set per-round (`closestToPinHole`, `longestDriveHole`). Winners are selected on the RoundScoring admin page and saved when the round is completed (`closestToPinWinnerId`, `longestDriveWinnerId` on the round). Prize pots (`fee × playerCount`) are shown on the public tournament view and results page.
+Tournaments have `hasClosestToPin` / `hasLongestDrive` boolean flags and optional `closestToPinFee` / `longestDriveFee` per-player ante amounts. The hole for each contest is set per-round (`closestToPinHole`, `longestDriveHole`). Winners are selected on the RoundScoring admin page via dropdowns that **auto-save immediately on change** (calls `roundsApi.update` directly; no need to complete the round first). `closestToPinWinnerId` / `longestDriveWinnerId` are stored on the round. Prize pots (`fee × playerCount`) are shown on the public tournament view and results page.
 
 ### Tee time groups
 Rounds store `startFormat?: 'sequential' | 'shotgun'` and `teeTimeGroups?: TeeTimeGroup[]` inline. Groups are managed from the TournamentSetup admin page (accordion panel per round). Each group has `groupNumber`, `teeTime` (display string e.g. "8:00 AM"), `playerIds[]`, and optional `startingHole` for shotgun starts. The public tournament view shows the tee sheet above the scores table when groups exist.
@@ -118,13 +118,29 @@ Admin routes (JWT required, stored in `localStorage` as `golf_admin_token`):
 - `frontend/src/components/StatusBadge.tsx` — colored badge for tournament/round status values.
 
 ### Player profile endpoint
-`GET /players/:id/profile` (public) returns `{ player, roundScores[] }`. It batch-fetches all scores via `player-index` GSI, then batch-fetches the associated rounds and tournaments via `Promise.all` to enrich each score with `courseName`, `tournamentName`, `date`, and `par`. The frontend renders a handicap trend SVG chart (inline, no chart library) and a round history table.
+`GET /players/:id/profile` (public) returns `{ player, roundScores[] }`. It batch-fetches all scores via `player-index` GSI, then batch-fetches the associated rounds and tournaments via `Promise.all` to enrich each score with `courseName`, `tournamentName`, `date`, and `par`. The frontend renders a handicap trend SVG chart (inline, no chart library), a round history table, and a section showing upcoming/active tournaments the player is enrolled in (fetched client-side from `tournamentsApi.list()`).
+
+### Public tournament view
+`frontend/src/pages/TournamentView.tsx` live leaderboard shows:
+- Rank movement indicators (▲/▼/—) by comparing cumulative totals with vs without the most recent scored round
+- Strokes-back column ("Leader" / "+N") hidden on small screens
+- "After X of Y rounds" subtitle based on how many rounds have scores
+
+Round cards (expanded view):
+- CTP/LD hole number and winner name surface in the **collapsed** card header, not just when expanded
+- Each player row is clickable — expands an inline hole-by-hole scorecard (`HoleScorecard` component at bottom of file) with eagle/birdie/par color coding
+- Player name links to their profile page; HCP index change (e.g. `→ 14.2 (-0.8)`) shown inline next to the name for completed rounds
+- The `HoleScorecard` component is a local function at the bottom of `TournamentView.tsx` (no separate file)
 
 ### Score entry UI
 `frontend/src/pages/admin/RoundScoring.tsx` renders a horizontal golf scorecard: holes 1–9 across the top, OUT subtotal, holes 10–18, IN subtotal, TOT. Par and HCP (stroke index) rows are read-only when course data was loaded from GHIN, editable otherwise. Score cells are color-coded by +/- par (yellow = eagle+, red = birdie, green = par). The sticky left column keeps row labels visible while scrolling on small screens.
 
-### Tournament setup: inline player creation
+The player picker reorganizes into tee time groups when `round.teeTimeGroups` is populated — shows group header (time + hole for shotgun) with players listed under each. Attempting to complete a round with missing scores shows a `window.confirm` listing how many players are unscored.
+
+### Tournament setup: inline player creation + guidance
 The Players tab in `TournamentSetup.tsx` allows creating new players inline without navigating away. Players is demoted to a secondary "All Players" link in the admin sidebar (below a divider), not a primary nav item.
+
+A contextual next-steps banner appears below the tab bar (for non-completed tournaments) guiding the admin through: add players → add rounds → enter scores → mark completed. The banner is computed from `selectedPlayerIds`, `rounds`, and round statuses — no server call needed.
 
 ### Styling conventions
 Tailwind CSS with a custom palette: `sage` (greens), `sand` (gold/tan), `stone` (neutrals). Shared utility classes (`btn-primary`, `btn-secondary`, `btn-gold`, `card`, `badge-*`, `label`, `input`, `page-header`, `section-title`) are defined in `frontend/src/index.css`. Use these rather than raw Tailwind for consistency.
