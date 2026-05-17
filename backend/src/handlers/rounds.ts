@@ -81,6 +81,25 @@ export async function updateRound(id: string, body: Partial<Round>) {
   return ok(updated);
 }
 
+export async function deleteRound(id: string) {
+  const round = await getItem<Round>(R_TABLE, id);
+  if (!round) return notFound('Round');
+
+  await deleteItem(R_TABLE, id);
+
+  // Remove from tournament's roundIds
+  const tournament = await getItem<Tournament>(T_TABLE, round.tournamentId);
+  if (tournament) {
+    await putItem(T_TABLE, {
+      ...tournament,
+      roundIds: tournament.roundIds.filter(rid => rid !== id),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  return ok({ deleted: true });
+}
+
 export async function completeRound(id: string) {
   const round = await getItem<Round>(R_TABLE, id);
   if (!round) return notFound('Round');

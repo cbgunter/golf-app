@@ -4,7 +4,7 @@ import { tournamentsApi, playersApi, roundsApi, Tournament, Player, Round } from
 import { coursesApi } from '../../api/client';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/StatusBadge';
-import { Plus, Save, ChevronRight, X, Check, Search, Loader2 } from 'lucide-react';
+import { Plus, Save, ChevronRight, X, Check, Search, Loader2, Trash2 } from 'lucide-react';
 
 const isNew = (id: string) => id === 'new';
 
@@ -500,9 +500,8 @@ export default function AdminTournamentSetup() {
           ) : (
             <div className="card divide-y divide-stone-100">
               {rounds.map(r => (
-                <Link key={r.id} to={`/admin/rounds/${r.id}/scoring`}
-                  className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors group">
-                  <div>
+                <div key={r.id} className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors group">
+                  <Link to={`/admin/rounds/${r.id}/scoring`} className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <StatusBadge status={r.status} />
                       <span className="text-xs text-stone-400">{r.tee}</span>
@@ -511,9 +510,25 @@ export default function AdminTournamentSetup() {
                     <div className="text-xs text-stone-400 mt-0.5">
                       {new Date(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
                     </div>
+                  </Link>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Delete round at ${r.courseName}? This cannot be undone.`)) return;
+                        try {
+                          await roundsApi.delete(r.id);
+                          setRounds(rs => rs.filter(x => x.id !== r.id));
+                          toast.success('Round deleted');
+                        } catch (e: any) { toast.error(e.message); }
+                      }}
+                      className="p-1.5 text-stone-300 hover:text-red-400 transition-colors rounded"
+                      title="Delete round"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                    <ChevronRight size={15} className="text-stone-300" />
                   </div>
-                  <ChevronRight size={15} className="text-stone-300 shrink-0" />
-                </Link>
+                </div>
               ))}
             </div>
           )}

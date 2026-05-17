@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { tournamentsApi, Tournament } from '../../api/client';
 import StatusBadge from '../../components/StatusBadge';
-import { Plus, Trophy, ChevronRight } from 'lucide-react';
+import { Plus, Trophy, ChevronRight, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function AdminTournaments() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -16,6 +17,18 @@ export default function AdminTournaments() {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  async function handleDelete(e: React.MouseEvent, t: Tournament) {
+    e.preventDefault();
+    if (!confirm(`Delete "${t.name}"? This cannot be undone.`)) return;
+    try {
+      await tournamentsApi.delete(t.id);
+      setTournaments(ts => ts.filter(x => x.id !== t.id));
+      toast.success('Tournament deleted');
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  }
 
   if (loading) return <div className="text-stone-500">Loading...</div>;
 
@@ -57,7 +70,16 @@ export default function AdminTournaments() {
                   {t.entryFee > 0 && ` · $${t.entryFee} entry`}
                 </div>
               </div>
-              <ChevronRight size={16} className="text-stone-300 shrink-0" />
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={e => handleDelete(e, t)}
+                  className="p-1.5 text-stone-300 hover:text-red-400 transition-colors rounded"
+                  title="Delete tournament"
+                >
+                  <Trash2 size={15} />
+                </button>
+                <ChevronRight size={16} className="text-stone-300" />
+              </div>
             </Link>
           ))}
         </div>
