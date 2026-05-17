@@ -2,7 +2,7 @@ import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
 import { verifyToken, verifyAdminLogin } from './lib/auth';
 import { ok, error, unauthorized } from './lib/response';
 
-import { listPlayers, getPlayer, createPlayer, updatePlayer, deletePlayer } from './handlers/players';
+import { listPlayers, getPlayer, createPlayer, updatePlayer, deletePlayer, getPlayerProfile } from './handlers/players';
 import { listTournaments, getTournament, createTournament, updateTournament, deleteTournament, getTournamentResults } from './handlers/tournaments';
 import { listRoundsForTournament, getRound, createRound, updateRound, completeRound, reopenRound, deleteRound } from './handlers/rounds';
 import { listScoresForRound, getScore, submitScore, updateScore } from './handlers/scores';
@@ -39,6 +39,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     // ── Players ────────────────────────────────────────────────────────────
     if (segments[0] === 'players') {
       if (method === 'GET' && !segments[1]) return listPlayers();
+      if (method === 'GET' && segments[1] && segments[2] === 'profile') return getPlayerProfile(segments[1]);
       if (method === 'GET' && segments[1]) return getPlayer(segments[1]);
       if (method === 'POST') return adminOnly(() => createPlayer(body));
       if (method === 'PUT' && segments[1]) return adminOnly(() => updatePlayer(segments[1], body));

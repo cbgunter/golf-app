@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import TournamentView from './pages/TournamentView';
 import TournamentResults from './pages/TournamentResults';
 import History from './pages/History';
+import PlayerProfilePage from './pages/PlayerProfile';
 
 // Admin pages
 import AdminLogin from './pages/admin/Login';
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="tournament/:id" element={<TournamentView />} />
           <Route path="tournament/:id/results" element={<TournamentResults />} />
           <Route path="history" element={<History />} />
+          <Route path="players/:id" element={<PlayerProfilePage />} />
         </Route>
 
         {/* Admin routes */}

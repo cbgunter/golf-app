@@ -200,7 +200,11 @@ export default function TournamentView() {
                       <td className="px-5 py-2.5 font-bold text-stone-500">
                         {idx === 0 ? '🏆' : idx + 1}
                       </td>
-                      <td className="px-3 py-2.5 font-medium text-stone-900">{entry.playerName}</td>
+                      <td className="px-3 py-2.5 font-medium text-stone-900">
+                        {entry.player
+                          ? <Link to={`/players/${entry.player.id}`} className="hover:text-sage-600 hover:underline">{entry.playerName}</Link>
+                          : entry.playerName}
+                      </td>
                       {tournament.isGross && <td className="px-3 py-2.5 text-center">{entry.totalGross}</td>}
                       {tournament.isNet && <td className="px-3 py-2.5 text-center font-semibold">{entry.totalNet}</td>}
                       <td className="px-3 py-2.5 text-center text-stone-400">{entry.rounds}</td>

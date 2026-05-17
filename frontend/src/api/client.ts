@@ -41,6 +41,7 @@ export const authApi = {
 export const playersApi = {
   list: () => api.get<Player[]>('/players'),
   get: (id: string) => api.get<Player>(`/players/${id}`),
+  profile: (id: string) => api.get<PlayerProfile>(`/players/${id}/profile`),
   create: (data: Partial<Player>) => api.post<Player>('/players', data),
   update: (id: string, data: Partial<Player>) => api.put<Player>(`/players/${id}`, data),
   delete: (id: string) => api.delete(`/players/${id}`),
@@ -86,7 +87,26 @@ export const coursesApi = {
 };
 
 // Re-export types for convenience
-export type { Player, Tournament, Round, Score, Course, TournamentResults };
+export type { Player, Tournament, Round, Score, Course, TournamentResults, PlayerProfile };
+
+interface PlayerRoundScore {
+  scoreId: string;
+  roundId: string;
+  tournamentId: string;
+  tournamentName: string;
+  courseName: string;
+  date: string;
+  par: number;
+  grossTotal: number;
+  netTotal: number;
+  courseHandicap: number;
+  handicapDifferential: number;
+}
+
+interface PlayerProfile {
+  player: Player;
+  roundScores: PlayerRoundScore[];
+}
 
 // Local type definitions mirroring the backend
 interface Player {
