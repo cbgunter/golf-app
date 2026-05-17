@@ -565,12 +565,9 @@ export default function AdminTournamentSetup() {
                   : [];
                 return (
                   <div key={r.id}>
-                    {/* Row header */}
-                    <div
-                      className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors cursor-pointer"
-                      onClick={() => handleExpandRound(r)}
-                    >
-                      <div className="flex-1 min-w-0">
+                    {/* Row header — click navigates to scoring; Groups button toggles accordion */}
+                    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors group">
+                      <Link to={`/admin/rounds/${r.id}/scoring`} className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <StatusBadge status={r.status} />
                           <span className="text-xs text-stone-400">{r.tee}</span>
@@ -580,12 +577,23 @@ export default function AdminTournamentSetup() {
                             </span>
                           )}
                         </div>
-                        <div className="font-medium text-stone-800">{r.courseName}</div>
+                        <div className="font-medium text-stone-800 group-hover:text-sage-700">{r.courseName}</div>
                         <div className="text-xs text-stone-400 mt-0.5">
                           {new Date(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                      </Link>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleExpandRound(r)}
+                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                            isExpanded
+                              ? 'bg-sage-100 text-sage-700'
+                              : 'text-stone-400 hover:text-sage-600 hover:bg-sage-50'
+                          }`}
+                          title="Manage tee time groups"
+                        >
+                          <Users size={13} /> Groups
+                        </button>
                         <button
                           onClick={async () => {
                             if (!confirm(`Delete round at ${r.courseName}? This cannot be undone.`)) return;
@@ -601,13 +609,7 @@ export default function AdminTournamentSetup() {
                         >
                           <Trash2 size={15} />
                         </button>
-                        <Link
-                          to={`/admin/rounds/${r.id}/scoring`}
-                          className="p-1.5 text-stone-300 hover:text-sage-600 transition-colors rounded"
-                          title="Enter scores"
-                        >
-                          <ChevronRight size={15} />
-                        </Link>
+                        <ChevronRight size={15} className="text-stone-300" />
                       </div>
                     </div>
 
