@@ -19,6 +19,9 @@ export default function Layout() {
             <NavLink to="/players" className={({ isActive }) => isActive ? 'text-sand-300 font-medium' : 'text-white/70 hover:text-white transition-colors'}>
               Players
             </NavLink>
+            <NavLink to="/score" className={({ isActive }) => isActive ? 'bg-sand-500 text-white px-2.5 py-1 rounded-full text-xs font-medium' : 'bg-white/10 hover:bg-white/20 text-white text-xs px-2.5 py-1 rounded-full transition-colors'}>
+              Score
+            </NavLink>
             <Link to="/admin" className="text-white/50 hover:text-white/80 text-xs border border-white/20 px-2.5 py-1 rounded-full transition-colors">
               Admin
             </Link>

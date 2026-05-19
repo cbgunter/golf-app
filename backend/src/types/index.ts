@@ -84,6 +84,21 @@ export interface TeeTimeGroup {
   teeTime: string;
   playerIds: string[];
   startingHole?: number;
+  pin?: string;
+}
+
+export interface DraftScorecard {
+  id: string;            // `${roundId}#${groupNumber}`
+  pin: string;
+  roundId: string;
+  tournamentId: string;
+  groupNumber: number;
+  status: 'draft' | 'submitted';
+  // holes[playerId][holeNumber] = strokes
+  holes: Record<string, Record<string, number>>;
+  submittedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Round {

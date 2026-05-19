@@ -11,6 +11,8 @@ import TournamentResults from './pages/TournamentResults';
 import History from './pages/History';
 import Players from './pages/Players';
 import PlayerProfilePage from './pages/PlayerProfile';
+import ScoreHub from './pages/ScoreHub';
+import ScoreEntry from './pages/ScoreEntry';
 
 // Admin pages
 import AdminLogin from './pages/admin/Login';
@@ -35,6 +37,10 @@ export default function App() {
           <Route path="players" element={<Players />} />
           <Route path="players/:id" element={<PlayerProfilePage />} />
         </Route>
+
+        {/* Scoring routes — full-screen mobile, no nav wrapper */}
+        <Route path="/score" element={<ScoreHub />} />
+        <Route path="/score/:pin" element={<ScoreEntry />} />
 
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

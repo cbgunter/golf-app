@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, FormEvent } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { roundsApi, tournamentsApi, playersApi, Round, Tournament, Player, Score } from '../../api/client';
+import { roundsApi, tournamentsApi, playersApi, scoringApi, Round, Tournament, Player, Score, DraftScorecard } from '../../api/client';
 import toast from 'react-hot-toast';
 import { Save, Check, X, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import { parseLocalDate } from '../../lib/dates';
@@ -41,6 +41,10 @@ export default function AdminRoundScoring() {
   const [savingWinners, setSavingWinners] = useState(false);
   const [winnersSaved, setWinnersSaved] = useState(false);
 
+  const [drafts, setDrafts] = useState<DraftScorecard[]>([]);
+  const [confirmingGroup, setConfirmingGroup] = useState<number | null>(null);
+  const [expandedDraft, setExpandedDraft] = useState<number | null>(null);
+
   // True when course hole data came from GHIN — lock par/SI columns
   const courseDataLoaded = Boolean(round?.holes && round.holes.length === 18);
 
@@ -57,6 +61,7 @@ export default function AdminRoundScoring() {
       ]);
       setTournament(t);
       setScores(existingScores);
+      try { setDrafts(await scoringApi.getDrafts(id)); } catch {}
       const allPlayers = await playersApi.list();
       setPlayers(allPlayers.filter(p => t.playerIds.includes(p.id)));
       setLoading(false);
@@ -146,6 +151,26 @@ export default function AdminRoundScoring() {
   }
 
   function calcGross() { return holeInputs.reduce((s, h) => s + Number(h.strokes || 0), 0); }
+
+  async function handleConfirmDraft(groupNumber: number) {
+    if (!round) return;
+    setConfirmingGroup(groupNumber);
+    try {
+      await scoringApi.confirmDraft(round.id, groupNumber);
+      const [updated, updatedDrafts] = await Promise.all([
+        roundsApi.scores(round.id),
+        scoringApi.getDrafts(round.id),
+      ]);
+      setScores(updated);
+      setDrafts(updatedDrafts);
+      setExpandedDraft(null);
+      toast.success(`Group ${groupNumber} scores confirmed`);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setConfirmingGroup(null);
+    }
+  }
 
   if (loading) return <div className="text-stone-500">Loading...</div>;
   if (!round || !tournament) return <div className="text-red-500">Round not found.</div>;
@@ -548,6 +573,105 @@ export default function AdminRoundScoring() {
                 </select>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Group Submissions */}
+      {drafts.length > 0 && !activePlayer && (
+        <div className="card p-5">
+          <h2 className="font-semibold text-stone-800 mb-3 text-sm uppercase tracking-wide">Group Submissions</h2>
+          <div className="space-y-2">
+            {drafts.map(draft => {
+              const group = round.teeTimeGroups?.find(g => g.groupNumber === draft.groupNumber);
+              const groupPlayers = players.filter(p => group?.playerIds.includes(p.id));
+              const allHoleNums = round.holes?.length
+                ? round.holes.map(h => h.number)
+                : Array.from({ length: 18 }, (_, i) => i + 1);
+              const isExpanded = expandedDraft === draft.groupNumber;
+              const isSubmitted = draft.status === 'submitted';
+              const alreadyConfirmed = groupPlayers.every(p => scoredPlayerIds.has(p.id));
+
+              return (
+                <div key={draft.groupNumber} className={`border rounded-lg ${isSubmitted ? 'border-sage-200 bg-sage-50' : 'border-stone-200'}`}>
+                  <button
+                    onClick={() => setExpandedDraft(isExpanded ? null : draft.groupNumber)}
+                    className="w-full flex items-center justify-between px-4 py-3 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-stone-800">Group {draft.groupNumber}</span>
+                      {group?.teeTime && <span className="text-xs text-stone-400">{group.teeTime}</span>}
+                      {alreadyConfirmed ? (
+                        <span className="text-xs bg-sage-100 text-sage-700 px-2 py-0.5 rounded-full">Confirmed</span>
+                      ) : isSubmitted ? (
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Submitted — awaiting review</span>
+                      ) : (
+                        <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">In progress</span>
+                      )}
+                    </div>
+                    {isExpanded ? <ChevronUp size={15} className="text-stone-400" /> : <ChevronDown size={15} className="text-stone-400" />}
+                  </button>
+
+                  {isExpanded && (
+                    <div className="px-4 pb-4 border-t border-stone-100">
+                      <div className="overflow-x-auto mt-3">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-stone-50">
+                              <th className="text-left px-2 py-1.5 font-medium text-stone-500">Player</th>
+                              {allHoleNums.map(n => (
+                                <th key={n} className="px-1 py-1.5 text-center text-stone-400 font-normal w-6">{n}</th>
+                              ))}
+                              <th className="px-2 py-1.5 text-center font-medium text-stone-600">Tot</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {groupPlayers.map(player => {
+                              const total = allHoleNums.reduce((sum, n) => sum + (draft.holes[player.id]?.[String(n)] ?? 0), 0);
+                              return (
+                                <tr key={player.id} className="border-t border-stone-100">
+                                  <td className="px-2 py-2 font-medium text-stone-700 whitespace-nowrap">{player.name}</td>
+                                  {allHoleNums.map(n => {
+                                    const s = draft.holes[player.id]?.[String(n)];
+                                    const hInfo = round.holes?.find(h => h.number === n);
+                                    const diff = s != null && hInfo ? s - hInfo.par : null;
+                                    return (
+                                      <td key={n} className="px-1 py-2 text-center">
+                                        <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
+                                          s == null ? 'text-stone-300' :
+                                          diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
+                                          diff === -1 ? 'bg-red-200' :
+                                          diff === 0 ? 'bg-green-100' : ''
+                                        }`}>
+                                          {s ?? '–'}
+                                        </span>
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="px-2 py-2 text-center font-bold text-stone-800">{total || '–'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      {isSubmitted && !alreadyConfirmed && (
+                        <button
+                          onClick={() => handleConfirmDraft(draft.groupNumber)}
+                          disabled={confirmingGroup === draft.groupNumber}
+                          className="btn-primary mt-3 text-sm"
+                        >
+                          {confirmingGroup === draft.groupNumber ? 'Confirming…' : '✓ Confirm Scores'}
+                        </button>
+                      )}
+                      {alreadyConfirmed && (
+                        <p className="text-xs text-sage-600 mt-2">Scores have been confirmed and finalized.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

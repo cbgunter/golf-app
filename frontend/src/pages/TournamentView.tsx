@@ -16,6 +16,13 @@ export default function TournamentView() {
   const [showInfo, setShowInfo] = useState(false);
   const [loading, setLoading] = useState(true);
   const roundRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const roundIdsRef = useRef<string[]>([]);
+
+  async function refreshScores(roundIds: string[]) {
+    const scoreMap: Record<string, Score[]> = {};
+    await Promise.all(roundIds.map(async rid => { scoreMap[rid] = await roundsApi.scores(rid); }));
+    setScoresByRound(scoreMap);
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -27,6 +34,7 @@ export default function TournamentView() {
       setTournament(t);
       setRounds(rs);
       setPlayers(ps);
+      roundIdsRef.current = rs.map(r => r.id);
       // Auto-expand in-progress round
       const active = rs.find(r => r.status === 'in_progress');
       if (active) {
@@ -34,16 +42,17 @@ export default function TournamentView() {
         // Scroll to it after render
         setTimeout(() => roundRefs.current[active.id]?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
       }
-
-      // Load scores for all rounds
-      const scoreMap: Record<string, Score[]> = {};
-      await Promise.all(
-        rs.map(async r => {
-          scoreMap[r.id] = await roundsApi.scores(r.id);
-        })
-      );
-      setScoresByRound(scoreMap);
+      await refreshScores(rs.map(r => r.id));
     }).finally(() => setLoading(false));
+  }, [id]);
+
+  // Poll every 30s for active tournaments
+  useEffect(() => {
+    if (!id) return;
+    const interval = setInterval(() => {
+      if (roundIdsRef.current.length > 0) refreshScores(roundIdsRef.current);
+    }, 30_000);
+    return () => clearInterval(interval);
   }, [id]);
 
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-stone-500">Loading...</div>;
@@ -204,7 +213,15 @@ export default function TournamentView() {
                 </p>
               )}
             </div>
-            <span className="text-xs text-stone-400">{tournament.isNet ? 'Net' : 'Gross'}</span>
+            <div className="flex items-center gap-2">
+              {tournament.status === 'active' && (
+                <span className="flex items-center gap-1 text-xs text-sage-600">
+                  <span className="w-1.5 h-1.5 bg-sage-500 rounded-full animate-pulse" />
+                  Live
+                </span>
+              )}
+              <span className="text-xs text-stone-400">{tournament.isNet ? 'Net' : 'Gross'}</span>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

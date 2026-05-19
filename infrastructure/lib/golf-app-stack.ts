@@ -73,6 +73,21 @@ export class GolfAppStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    const draftScorecardsTable = new dynamodb.Table(this, 'DraftScorecardsTable', {
+      tableName: 'golf-draft-scorecards',
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+    draftScorecardsTable.addGlobalSecondaryIndex({
+      indexName: 'pin-index',
+      partitionKey: { name: 'pin', type: dynamodb.AttributeType.STRING },
+    });
+    draftScorecardsTable.addGlobalSecondaryIndex({
+      indexName: 'round-index',
+      partitionKey: { name: 'roundId', type: dynamodb.AttributeType.STRING },
+    });
+
     // ─── SSM Parameters ────────────────────────────────────────────────────
     const adminPasswordParam = new ssm.StringParameter(this, 'AdminPassword', {
       parameterName: '/golf-app/admin-password',
@@ -100,6 +115,7 @@ export class GolfAppStack extends cdk.Stack {
         ROUNDS_TABLE: roundsTable.tableName,
         SCORES_TABLE: scoresTable.tableName,
         COURSES_TABLE: coursesTable.tableName,
+        DRAFT_SCORECARDS_TABLE: draftScorecardsTable.tableName,
         ADMIN_PASSWORD_PARAM: adminPasswordParam.parameterName,
         JWT_SECRET_PARAM: jwtSecretParam.parameterName,
         GHIN_USERNAME_PARAM: '/golf-app/ghin-username',
@@ -114,6 +130,7 @@ export class GolfAppStack extends cdk.Stack {
     roundsTable.grantReadWriteData(apiLambda);
     scoresTable.grantReadWriteData(apiLambda);
     coursesTable.grantReadWriteData(apiLambda);
+    draftScorecardsTable.grantReadWriteData(apiLambda);
     adminPasswordParam.grantRead(apiLambda);
     jwtSecretParam.grantRead(apiLambda);
     // Grant access to GHIN SecureString params (created outside CDK)

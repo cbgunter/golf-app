@@ -86,6 +86,18 @@ export const coursesApi = {
   save: (data: Partial<Course>) => api.post<Course>('/courses', data),
 };
 
+// Scoring (PIN-based group entry)
+export const scoringApi = {
+  activeRounds: () => api.get<ActiveRoundsForScoring[]>('/score/rounds'),
+  lookupByPin: (pin: string) => api.get<PinLookupResult>(`/score/lookup?pin=${encodeURIComponent(pin)}`),
+  saveDraftHole: (pin: string, holeNumber: number, scores: Record<string, number>) =>
+    api.put<DraftScorecard>('/score/draft', { pin, holeNumber, scores }),
+  submitDraft: (pin: string) => api.post<DraftScorecard>('/score/submit', { pin }),
+  getDrafts: (roundId: string) => api.get<DraftScorecard[]>(`/rounds/${roundId}/drafts`),
+  confirmDraft: (roundId: string, groupNumber: number, body?: { overrides?: Record<string, Record<string, number>>; manualHandicaps?: Record<string, number> }) =>
+    api.post(`/rounds/${roundId}/drafts/${groupNumber}/confirm`, body ?? {}),
+};
+
 // Re-export types for convenience
 export type { Player, Tournament, Round, Score, Course, TournamentResults, PlayerProfile };
 
@@ -170,7 +182,7 @@ interface Round {
   longestDriveWinnerId?: string;
   holes?: { number: number; par: number; handicap: number; yardage?: number }[];
   startFormat?: 'sequential' | 'shotgun';
-  teeTimeGroups?: { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number }[];
+  teeTimeGroups?: { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number; pin?: string }[];
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -241,4 +253,54 @@ interface LeaderboardEntry {
   totalNet: number;
   roundDifferentials: number[];
   payout?: number;
+}
+
+export interface DraftScorecard {
+  id: string;
+  pin: string;
+  roundId: string;
+  tournamentId: string;
+  groupNumber: number;
+  status: 'draft' | 'submitted';
+  holes: Record<string, Record<string, number>>; // holes[playerId][holeNum] = strokes
+  submittedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PinLookupResult {
+  pin: string;
+  roundId: string;
+  tournamentId: string;
+  tournamentName: string;
+  courseName: string;
+  date: string;
+  par: number;
+  tee: string;
+  courseRating: number;
+  slopeRating: number;
+  holes: { number: number; par: number; handicap: number; yardage?: number }[];
+  groupNumber: number;
+  teeTime: string;
+  startingHole?: number;
+  players: { id: string; name: string; handicapIndex: number }[];
+  draft: DraftScorecard | null;
+}
+
+export interface ActiveRoundsForScoring {
+  tournamentId: string;
+  tournamentName: string;
+  rounds: {
+    roundId: string;
+    courseName: string;
+    date: string;
+    status: string;
+    groups: {
+      groupNumber: number;
+      teeTime: string;
+      startingHole?: number;
+      pin?: string;
+      playerIds: string[];
+    }[];
+  }[];
 }

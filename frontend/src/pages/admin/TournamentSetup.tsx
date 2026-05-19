@@ -92,7 +92,7 @@ export default function AdminTournamentSetup() {
 
   // Tee time groups
   const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null);
-  type GroupEdit = { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number };
+  type GroupEdit = { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number; pin?: string };
   const [editGroups, setEditGroups] = useState<{ startFormat: 'sequential' | 'shotgun'; groups: GroupEdit[] } | null>(null);
   const [savingGroups, setSavingGroups] = useState(false);
 
@@ -262,11 +262,21 @@ export default function AdminTournamentSetup() {
       return;
     }
 
+    // Assign a unique 4-digit PIN to any group that doesn't have one
+    const usedPins = new Set(editGroups.groups.map(g => g.pin).filter(Boolean));
+    const groupsWithPins = editGroups.groups.map(g => {
+      if (g.pin) return g;
+      let pin: string;
+      do { pin = String(Math.floor(1000 + Math.random() * 9000)); } while (usedPins.has(pin));
+      usedPins.add(pin);
+      return { ...g, pin };
+    });
+
     setSavingGroups(true);
     try {
       const updated = await roundsApi.update(roundId, {
         startFormat: editGroups.startFormat,
-        teeTimeGroups: editGroups.groups,
+        teeTimeGroups: groupsWithPins,
       } as any);
       setRounds(rs => rs.map(r => r.id === roundId ? updated : r));
       toast.success('Tee sheet saved');
@@ -831,7 +841,12 @@ export default function AdminTournamentSetup() {
                           {editGroups.groups.map((group, gIdx) => (
                             <div key={gIdx} className="bg-white rounded-lg border border-stone-200 p-3 space-y-2">
                               <div className="flex items-center justify-between gap-2 flex-wrap">
-                                <span className="text-sm font-semibold text-stone-700">Group {group.groupNumber}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold text-stone-700">Group {group.groupNumber}</span>
+                                  {group.pin && (
+                                    <span className="text-xs font-mono bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">PIN: {group.pin}</span>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="time"

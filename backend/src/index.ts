@@ -7,6 +7,7 @@ import { listTournaments, getTournament, createTournament, updateTournament, del
 import { listRoundsForTournament, getRound, createRound, updateRound, completeRound, reopenRound, deleteRound } from './handlers/rounds';
 import { listScoresForRound, getScore, submitScore, updateScore } from './handlers/scores';
 import { listCourses, getCourse, searchCourses, getCourseFromApi, saveCourse } from './handlers/courses';
+import { getActiveRoundsForScoring, lookupByPin, saveDraftHole, submitDraft, getDraftsForRound, confirmDraft } from './handlers/scoring';
 
 export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
   const method = event.requestContext.http.method;
@@ -67,12 +68,22 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       if (method === 'POST' && segments[1] && segments[2] === 'complete') return adminOnly(() => completeRound(segments[1]));
       if (method === 'POST' && segments[1] && segments[2] === 'reopen') return adminOnly(() => reopenRound(segments[1]));
       if (method === 'POST' && segments[1] && segments[2] === 'scores') return adminOnly(() => submitScore(segments[1], body));
+      if (method === 'GET' && segments[1] && segments[2] === 'drafts') return adminOnly(() => getDraftsForRound(segments[1]));
+      if (method === 'POST' && segments[1] && segments[2] === 'drafts' && segments[3] && segments[4] === 'confirm') return adminOnly(() => confirmDraft(segments[1], Number(segments[3]), body));
     }
 
     // ── Scores ─────────────────────────────────────────────────────────────
     if (segments[0] === 'scores') {
       if (method === 'GET' && segments[1]) return getScore(segments[1]);
       if (method === 'PUT' && segments[1]) return adminOnly(() => updateScore(segments[1], body));
+    }
+
+    // ── Scoring (public PIN-based entry) ───────────────────────────────────
+    if (segments[0] === 'score') {
+      if (method === 'GET' && segments[1] === 'rounds') return getActiveRoundsForScoring();
+      if (method === 'GET' && segments[1] === 'lookup') return lookupByPin(query.pin ?? '');
+      if (method === 'PUT' && segments[1] === 'draft') return saveDraftHole(body);
+      if (method === 'POST' && segments[1] === 'submit') return submitDraft(body);
     }
 
     // ── Courses ────────────────────────────────────────────────────────────
