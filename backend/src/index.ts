@@ -61,14 +61,15 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
 
     // ── Rounds ─────────────────────────────────────────────────────────────
     if (segments[0] === 'rounds') {
+      // specific sub-routes first, catch-all GET last
       if (method === 'GET' && segments[1] && segments[2] === 'scores') return listScoresForRound(segments[1]);
-      if (method === 'GET' && segments[1]) return getRound(segments[1]);
+      if (method === 'GET' && segments[1] && segments[2] === 'drafts') return adminOnly(() => getDraftsForRound(segments[1]));
+      if (method === 'GET' && segments[1] && !segments[2]) return getRound(segments[1]);
       if (method === 'PUT' && segments[1]) return adminOnly(() => updateRound(segments[1], body));
       if (method === 'DELETE' && segments[1]) return adminOnly(() => deleteRound(segments[1]));
       if (method === 'POST' && segments[1] && segments[2] === 'complete') return adminOnly(() => completeRound(segments[1]));
       if (method === 'POST' && segments[1] && segments[2] === 'reopen') return adminOnly(() => reopenRound(segments[1]));
       if (method === 'POST' && segments[1] && segments[2] === 'scores') return adminOnly(() => submitScore(segments[1], body));
-      if (method === 'GET' && segments[1] && segments[2] === 'drafts') return adminOnly(() => getDraftsForRound(segments[1]));
       if (method === 'POST' && segments[1] && segments[2] === 'drafts' && segments[3] && segments[4] === 'confirm') return adminOnly(() => confirmDraft(segments[1], Number(segments[3]), body));
     }
 
