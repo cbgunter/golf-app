@@ -35,12 +35,8 @@ npm run install:all  # from repo root
 
 There are no automated tests in any workspace.
 
-### Git hooks
-A `post-commit` hook in `.githooks/post-commit` automatically updates CLAUDE.md after each commit using the Claude CLI. New clones must opt in:
-```bash
-git config core.hooksPath .githooks
-```
-The hook skips commits whose message contains `[skip claude-md]` (used by the hook itself to prevent loops). If the `claude` CLI is not found, it exits silently.
+### Auto-updating CLAUDE.md
+A Claude Code `PostToolUse` hook (`.claude/settings.local.json`) fires after every Bash `git commit` within a Claude Code session. The hook script (`.claude/hooks/update-claude-md-reminder.sh`) outputs a reminder that Claude reads, then runs `git diff HEAD~1 HEAD` and updates CLAUDE.md if needed. Commits whose message contains `[skip claude-md]` are ignored to prevent loops.
 
 ## Architecture
 

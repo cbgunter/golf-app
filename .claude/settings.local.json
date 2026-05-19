@@ -1,4 +1,17 @@
 {
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/update-claude-md-reminder.sh"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(git init *)",
@@ -71,7 +84,21 @@
       "Bash(curl -s https://api.github.com/repos/boorad/ghin/contents/src/client/ghin/courses)",
       "Bash(curl -s https://api.github.com/repos/boorad/ghin/git/trees/main?recursive=1)",
       "Bash(aws ssm *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(aws dynamodb *)",
+      "Bash(git config *)",
+      "Bash(where claude *)",
+      "Read(//c/Users/cbgun/AppData/Roaming/**)",
+      "Read(//c/Users/cbgun/AppData/Local/Programs/**)",
+      "Bash(npx --no claude --version)",
+      "Bash(ls \"/c/Users/cbgun/AppData/Roaming/npm/\" 2>/dev/null | grep -i claude; ls \"/c/Users/cbgun/AppData/Local/npm-cache/_npx/\" 2>/dev/null | head -5)",
+      "Read(//c/Users/cbgun/AppData/Local/npm-cache/_npx//**)",
+      "Bash(find \"/c/Users/cbgun/AppData/Local\" -name \"claude.exe\" -o -name \"claude\" 2>/dev/null | head -10; find \"/c/Users/cbgun/AppData/Roaming\" -name \"claude.exe\" -o -name \"claude\" 2>/dev/null | head -10)",
+      "Read(//c/Users/cbgun/AppData/Local/**)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\cbgun\\\\projects\\\\golf-app\\\\.claude\\\\hooks\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\cbgun\\projects\\golf-app\\.claude"
     ]
   }
 }
