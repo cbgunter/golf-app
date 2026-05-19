@@ -223,15 +223,14 @@ export class GolfAppStack extends cdk.Stack {
       defaultRootObject: 'index.html',
       errorResponses: [
         {
+          // S3 with OAC returns 403 (AccessDenied) for missing objects.
+          // Map to 200/index.html so SPA deep links work.
           httpStatus: 403,
           responseHttpStatus: 200,
           responsePagePath: '/index.html',
         },
-        {
-          httpStatus: 404,
-          responseHttpStatus: 200,
-          responsePagePath: '/index.html',
-        },
+        // DO NOT add a 404 rule — it would intercept legitimate API 404 responses
+        // from the /api/* behavior and return HTML instead of JSON error bodies.
       ],
     });
 
