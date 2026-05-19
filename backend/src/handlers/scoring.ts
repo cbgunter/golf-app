@@ -53,10 +53,7 @@ export async function getActiveRoundsForScoring() {
 export async function lookupByPin(pin: string) {
   if (!pin) return error('pin is required', 400);
 
-  const drafts = await queryIndex<DraftScorecard>(D_TABLE, 'pin-index', 'pin', pin);
-  const draft = drafts[0] ?? null;
-
-  // Find the round that owns this PIN
+  // Find the active round that owns this PIN (scoped to active/upcoming tournaments)
   const tournaments = await scanTable<Tournament>(T_TABLE);
   const active = tournaments.filter(t => t.status === 'upcoming' || t.status === 'active');
 
@@ -78,12 +75,14 @@ export async function lookupByPin(pin: string) {
 
   if (!foundRound) return error('Invalid PIN', 404);
 
-  const group = foundRound.teeTimeGroups!.find(g => g.groupNumber === foundGroupNumber)!;
-  const players = await Promise.all(
-    group.playerIds.map(pid => getItem<Player>(P_TABLE, pid))
-  );
+  // Look up draft by specific (roundId, groupNumber) — not by PIN — to avoid stale PIN collisions
+  const draft = await getItem<DraftScorecard>(D_TABLE, draftId(foundRound.id, foundGroupNumber));
 
-  const tournament = await getItem<Tournament>(T_TABLE, foundRound.tournamentId);
+  const group = foundRound.teeTimeGroups!.find(g => g.groupNumber === foundGroupNumber)!;
+  const [players, tournament] = await Promise.all([
+    Promise.all(group.playerIds.map(pid => getItem<Player>(P_TABLE, pid))),
+    getItem<Tournament>(T_TABLE, foundRound.tournamentId),
+  ]);
 
   return ok({
     pin,
@@ -118,25 +117,8 @@ export async function saveDraftHole(body: {
   const { pin, holeNumber, scores } = body;
   if (!pin || !holeNumber || !scores) return error('pin, holeNumber, and scores are required', 400);
 
-  const drafts = await queryIndex<DraftScorecard>(D_TABLE, 'pin-index', 'pin', pin);
-  const existing = drafts[0] ?? null;
-
-  const now = new Date().toISOString();
-
-  if (existing) {
-    if (existing.status === 'submitted') return error('Scorecard already submitted', 400);
-    // Merge new hole scores
-    const updatedHoles = { ...existing.holes };
-    for (const [playerId, strokes] of Object.entries(scores)) {
-      if (!updatedHoles[playerId]) updatedHoles[playerId] = {};
-      updatedHoles[playerId][String(holeNumber)] = strokes;
-    }
-    const updated: DraftScorecard = { ...existing, holes: updatedHoles, updatedAt: now };
-    await putItem(D_TABLE, updated);
-    return ok(updated);
-  }
-
-  // Create new draft — need to find the round for this PIN
+  // Always find the active round first so we use the correct (roundId, groupNumber) pair.
+  // Querying by PIN alone would match stale drafts from previous tournaments using the same PIN.
   const tournaments = await scanTable<Tournament>(T_TABLE);
   const active = tournaments.filter(t => t.status === 'upcoming' || t.status === 'active');
   let foundRound: Round | null = null;
@@ -153,13 +135,31 @@ export async function saveDraftHole(body: {
 
   if (!foundRound) return error('Invalid PIN', 404);
 
+  const id = draftId(foundRound.id, foundGroupNumber);
+  const existing = await getItem<DraftScorecard>(D_TABLE, id);
+  const now = new Date().toISOString();
+
+  if (existing) {
+    if (existing.status === 'submitted' || existing.status === 'confirmed') {
+      return error('Scorecard already submitted', 400);
+    }
+    const updatedHoles = { ...existing.holes };
+    for (const [playerId, strokes] of Object.entries(scores)) {
+      if (!updatedHoles[playerId]) updatedHoles[playerId] = {};
+      updatedHoles[playerId][String(holeNumber)] = strokes;
+    }
+    const updated: DraftScorecard = { ...existing, holes: updatedHoles, updatedAt: now };
+    await putItem(D_TABLE, updated);
+    return ok(updated);
+  }
+
   const holesData: Record<string, Record<string, number>> = {};
   for (const [playerId, strokes] of Object.entries(scores)) {
     holesData[playerId] = { [String(holeNumber)]: strokes };
   }
 
   const draft: DraftScorecard = {
-    id: draftId(foundRound.id, foundGroupNumber),
+    id,
     pin,
     roundId: foundRound.id,
     tournamentId: foundRound.tournamentId,
@@ -173,7 +173,7 @@ export async function saveDraftHole(body: {
   return ok(draft);
 }
 
-// POST /score/submit — mark draft as submitted
+// POST /score/submit — validate completeness and mark draft as submitted
 export async function submitDraft(body: { pin: string }) {
   const { pin } = body;
   if (!pin) return error('pin is required', 400);
@@ -181,7 +181,27 @@ export async function submitDraft(body: { pin: string }) {
   const drafts = await queryIndex<DraftScorecard>(D_TABLE, 'pin-index', 'pin', pin);
   const draft = drafts[0];
   if (!draft) return error('No draft found for this PIN', 404);
-  if (draft.status === 'submitted') return ok(draft); // idempotent
+  if (draft.status === 'submitted' || draft.status === 'confirmed') return ok(draft); // idempotent
+
+  // Validate all group players have scores for all holes
+  const round = await getItem<Round>(R_TABLE, draft.roundId);
+  const allHoleNums = round?.holes?.length
+    ? round.holes.map(h => h.number)
+    : Array.from({ length: 18 }, (_, i) => i + 1);
+  const group = round?.teeTimeGroups?.find(g => g.groupNumber === draft.groupNumber);
+  const groupPlayerIds = group?.playerIds ?? Object.keys(draft.holes);
+
+  const missing: string[] = [];
+  for (const pid of groupPlayerIds) {
+    const playerHoles = draft.holes[pid] ?? {};
+    const missingHoles = allHoleNums.filter(n => playerHoles[String(n)] == null);
+    if (missingHoles.length > 0) {
+      missing.push(`holes ${missingHoles.join(',')} for player ${pid}`);
+    }
+  }
+  if (missing.length > 0) {
+    return error(`Incomplete scorecard — missing: ${missing.join('; ')}`, 400);
+  }
 
   const now = new Date().toISOString();
   const updated: DraftScorecard = { ...draft, status: 'submitted', submittedAt: now, updatedAt: now };
@@ -204,6 +224,11 @@ export async function confirmDraft(roundId: string, groupNumber: number, body: {
   const id = draftId(roundId, groupNumber);
   const draft = await getItem<DraftScorecard>(D_TABLE, id);
   if (!draft) return notFound('Draft scorecard');
+
+  // Idempotent: re-confirming a confirmed draft is a no-op (prevents double handicap recalculation)
+  if (draft.status === 'confirmed') {
+    return ok({ confirmed: 0, roundId, groupNumber, alreadyConfirmed: true });
+  }
 
   const round = await getItem<Round>(R_TABLE, roundId);
   if (!round) return notFound('Round');
@@ -242,9 +267,8 @@ export async function confirmDraft(roundId: string, groupNumber: number, body: {
     results.push(result);
   }
 
-  // Mark draft as confirmed by deleting it (scores are now in golf-scores)
   const now = new Date().toISOString();
-  await putItem(D_TABLE, { ...draft, status: 'submitted', updatedAt: now });
+  await putItem(D_TABLE, { ...draft, status: 'confirmed', updatedAt: now });
 
   return ok({ confirmed: results.length, roundId, groupNumber });
 }

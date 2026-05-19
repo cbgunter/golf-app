@@ -379,7 +379,9 @@ function ReviewScreen({
             </thead>
             <tbody>
               {info.players.map(player => {
-                const total = allHoleNums.reduce((sum, n) => sum + (holes[player.id]?.[String(n)] ?? 0), 0);
+                const scoredNums = allHoleNums.filter(n => holes[player.id]?.[String(n)] != null);
+                const total = scoredNums.reduce((sum, n) => sum + holes[player.id][String(n)], 0);
+                const isComplete = scoredNums.length === allHoleNums.length;
                 return (
                   <tr key={player.id} className="border-t border-stone-100">
                     <td className="px-3 py-2 font-medium text-stone-700 whitespace-nowrap">{player.name}</td>
@@ -401,7 +403,9 @@ function ReviewScreen({
                         </td>
                       );
                     })}
-                    <td className="px-2 py-2 text-center font-bold text-stone-800">{total || '–'}</td>
+                    <td className="px-2 py-2 text-center font-bold text-stone-800">
+                      {scoredNums.length === 0 ? '–' : isComplete ? total : `${total}*`}
+                    </td>
                   </tr>
                 );
               })}
@@ -418,9 +422,12 @@ function ReviewScreen({
           </table>
         </div>
 
-        <p className="text-xs text-stone-400 text-center mb-4">
+        <p className="text-xs text-stone-400 text-center mb-1">
           Compare with your paper scorecard before submitting. The admin will do a final review.
         </p>
+        {info.players.some(p => allHoleNums.some(n => holes[p.id]?.[String(n)] == null)) && (
+          <p className="text-xs text-yellow-600 text-center mb-4">* Partial total — some holes not yet scored.</p>
+        )}
       </div>
 
       <div className="sticky bottom-0 bg-white border-t border-stone-100 px-4 py-3 flex gap-2">

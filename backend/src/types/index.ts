@@ -93,7 +93,7 @@ export interface DraftScorecard {
   roundId: string;
   tournamentId: string;
   groupNumber: number;
-  status: 'draft' | 'submitted';
+  status: 'draft' | 'submitted' | 'confirmed';
   // holes[playerId][holeNumber] = strokes
   holes: Record<string, Record<string, number>>;
   submittedAt?: string;

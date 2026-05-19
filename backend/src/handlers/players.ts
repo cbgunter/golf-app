@@ -22,16 +22,12 @@ export async function getPlayer(id: string) {
 
 export async function createPlayer(body: Partial<Player>) {
   if (!body.name) return error('Player name is required');
-  if (body.handicapIndex === undefined || body.handicapIndex === null) {
-    return error('Initial handicap index is required');
-  }
-
   const now = new Date().toISOString();
   const player: Player = {
     id: uuidv4(),
     name: body.name.trim(),
     email: body.email,
-    handicapIndex: Number(body.handicapIndex),
+    handicapIndex: body.handicapIndex !== undefined && body.handicapIndex !== null ? Number(body.handicapIndex) : 0.0,
     handicapHistory: [],
     createdAt: now,
     updatedAt: now,
