@@ -1,17 +1,4 @@
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash .claude/hooks/update-claude-md-reminder.sh"
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Bash(git init *)",
@@ -95,10 +82,74 @@
       "Read(//c/Users/cbgun/AppData/Local/npm-cache/_npx//**)",
       "Bash(find \"/c/Users/cbgun/AppData/Local\" -name \"claude.exe\" -o -name \"claude\" 2>/dev/null | head -10; find \"/c/Users/cbgun/AppData/Roaming\" -name \"claude.exe\" -o -name \"claude\" 2>/dev/null | head -10)",
       "Read(//c/Users/cbgun/AppData/Local/**)",
-      "Bash(mkdir -p \"c:\\\\Users\\\\cbgun\\\\projects\\\\golf-app\\\\.claude\\\\hooks\")"
+      "Bash(mkdir -p \"c:\\\\Users\\\\cbgun\\\\projects\\\\golf-app\\\\.claude\\\\hooks\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(cat vite.config.ts)",
+      "Bash(cat vite.config.js)",
+      "Bash(curl -s -X POST https://golf.caseyhunter.net/api/auth/login -H \"Content-Type: application/json\" -d '{\"password\":\"admin123\"}')",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(curl -s -X POST \"https://golf.caseyhunter.net/api/auth/login\" -H \"Content-Type: application/json\" -d '{\"password\":\"ChangeMe123!\"}')",
+      "Bash(python e2e_test.py)",
+      "Bash(curl -s -X POST https://golf.caseyhunter.net/api/auth/login -H \"Content-Type: application/json\" -d '{\"password\":\"ChangeMe123!\"}')",
+      "Bash(curl -sv https://golf.caseyhunter.net/api/score/lookup?pin=1001)",
+      "Bash(curl -s \"https://golf.caseyhunter.net/api/auth/verify\" -H \"Content-Type: application/json\")",
+      "Bash(python -c \"import json,sys; print\\(json.load\\(sys.stdin\\)\\)\")",
+      "Bash(curl -sv \"https://golf.caseyhunter.net/api/score/rounds\")",
+      "Bash(curl -s \"https://golf.caseyhunter.net/api/score/rounds\" -H \"Content-Type: application/json\")",
+      "Bash(gh run *)",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(f'{r[\\\\\"databaseId\\\\\"]}: {r[\\\\\"name\\\\\"]} - {r[\\\\\"status\\\\\"]}'\\) for r in d]\")",
+      "Bash(aws lambda *)",
+      "Bash(Compress-Archive -Path index.js -DestinationPath lambda.zip -Force)",
+      "Bash(zip lambda.zip index.js)",
+      "Bash(python -c \"import zipfile,os; z=zipfile.ZipFile\\('lambda.zip','w',zipfile.ZIP_DEFLATED\\); z.write\\('index.js'\\); z.close\\(\\); print\\(f'Zipped: {os.path.getsize\\(\\\\\"lambda.zip\\\\\"\\)} bytes'\\)\")",
+      "Bash(curl -s \"https://golf.caseyhunter.net/api/score/lookup?pin=1001\")",
+      "Bash(aws logs *)",
+      "PowerShell(aws logs filter-log-events --log-group-name \"/aws/lambda/golf-app-api\" --start-time \\([DateTimeOffset]::UtcNow.AddMinutes\\(-10\\).ToUnixTimeMilliseconds\\(\\)\\) --filter-pattern \"ERROR\" --query \"events[-3:].message\" --output text 2>&1 | Select-Object -First 20)",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"https://kby86u944h.execute-api.us-east-1.amazonaws.com/api/score/lookup?pin=9999\" -H \"Content-Type: application/json\")",
+      "Bash(curl -s \"https://golf.caseyhunter.net/api/score/lookup?pin=9999\" -H \"Content-Type: application/json\")",
+      "Bash(curl -so /dev/null -w \"CF-Status:%{http_code}\" \"https://golf.caseyhunter.net/api/score/lookup?pin=9999\")",
+      "Bash(python -c \"import json; print\\(open\\('c:/Users/cbgun/AppData/Local/Temp/lout.json'\\).read\\(\\)[:500]\\)\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(f'  Path: {b[\\\\\"PathPattern\\\\\"]} -> {b[\\\\\"TargetOriginId\\\\\"]}'\\) for b in d.get\\('Items',[]\\)]\")",
+      "Bash(curl -sv \"https://golf.caseyhunter.net/api/score/lookup?pin=9999\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f'PathPattern: {d[\\\\\"PathPattern\\\\\"]}'\\); print\\(f'TargetOriginId: {d[\\\\\"TargetOriginId\\\\\"]}'\\); print\\(f'CachePolicyId: {d.get\\(\\\\\"CachePolicyId\\\\\"\\)}'\\); print\\(f'OriginRequestPolicyId: {d.get\\(\\\\\"OriginRequestPolicyId\\\\\"\\)}'\\)\")",
+      "Bash(curl -sv \"https://golf.caseyhunter.net/api/players\")",
+      "Bash(curl -sI \"https://golf.caseyhunter.net/api/players\")",
+      "Bash(curl -sI \"https://golf.caseyhunter.net/api/score/rounds\")",
+      "Bash(curl -s \"https://golf.caseyhunter.net/api/players\")",
+      "Bash(curl -s -X POST https://kby86u944h.execute-api.us-east-1.amazonaws.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"password\":\"ChangeMe123!\"}')",
+      "Bash(python -c \"import zipfile; z=zipfile.ZipFile\\('dist/lambda.zip','w',zipfile.ZIP_DEFLATED\\); z.write\\('dist/index.js','index.js'\\); z.close\\(\\); print\\('Zipped'\\)\")",
+      "Bash(curl -sI \"https://golf.caseyhunter.net/api/tournaments\")",
+      "Bash(curl -sv -X GET \"https://golf.caseyhunter.net/api/score/rounds\")",
+      "Bash(curl -s \"https://golf.caseyhunter.net/api/score/rounds\")",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(type\\(d\\).__name__, len\\(d\\), 'tournaments'\\)\")",
+      "Bash(curl -s \"https://golf.caseyhunter.net/api/score/lookup?pin=9999\")",
+      "Bash(curl -sv \"https://golf.caseyhunter.net/api/tournaments/nonexistent-id\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\cbgun\\projects\\golf-app\\.claude"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/update-claude-md-reminder.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NonInteractive -File .claude/hooks/update-claude-md-reminder.ps1"
+          }
+        ]
+      }
     ]
   }
 }

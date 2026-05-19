@@ -36,7 +36,7 @@ npm run install:all  # from repo root
 There are no automated tests in any workspace.
 
 ### Auto-updating CLAUDE.md
-A Claude Code `PostToolUse` hook (`.claude/settings.local.json`) fires after every Bash `git commit` within a Claude Code session. The hook script (`.claude/hooks/update-claude-md-reminder.sh`) outputs a reminder that Claude reads, then runs `git diff HEAD~1 HEAD` and updates CLAUDE.md if needed. Commits whose message contains `[skip claude-md]` are ignored to prevent loops.
+A Claude Code `PostToolUse` hook fires after every `Bash` or `PowerShell` `git commit`. Two scripts handle each shell: `.claude/hooks/update-claude-md-reminder.sh` (Bash) and `.claude/hooks/update-claude-md-reminder.ps1` (PowerShell). Both output a reminder to review and update CLAUDE.md. Commits whose message contains `[skip claude-md]` are ignored to prevent loops.
 
 ## Architecture
 
@@ -48,6 +48,8 @@ Three-stage CI/CD pipeline (`.github/workflows/deploy.yml`) triggered on push to
 
 Custom domain `golf.caseyhunter.net` → CloudFront → routes `/api/*` to API Gateway HTTP API → single Lambda, and `/*` to S3 static assets.
 
+CloudFront `errorResponses` maps only **403 → 200/index.html** for SPA deep links. S3 with OAC returns 403 (not 404) for missing objects. There is intentionally **no 404 rule** — it would intercept API Gateway JSON error bodies from the `/api/*` behavior and replace them with HTML.
+
 ### Backend: single Lambda, manual routing
 `backend/src/index.ts` is the entire API. It splits `rawPath` into `segments[]` and pattern-matches on `[method, segments[0], segments[1], segments[2]]`. There is no framework — adding a new endpoint means adding an `if` branch to the router.
 
@@ -56,12 +58,13 @@ Route ordering matters: more-specific paths (`segments[2] === 'profile'`, `segme
 Admin-only routes are wrapped in `adminOnly(() => handler())` which short-circuits with 401 if the JWT is absent or invalid.
 
 ### Backend: handlers + DynamoDB
-Five tables (all PAY_PER_REQUEST, RemovalPolicy RETAIN):
+Six tables (all PAY_PER_REQUEST, RemovalPolicy RETAIN):
 - `golf-players` — `handicapIndex` + `handicapHistory[]` stored inline; updated on every score submission
 - `golf-tournaments` — stores `playerIds[]`, `roundIds[]`, `payoutStructure[]`, `closestToPinFee?`, `longestDriveFee?`
 - `golf-rounds` — stores `teeTimeGroups[]`, `holes[]`, `closestToPinWinnerId?`, `longestDriveWinnerId?` inline
 - `golf-scores` — GSIs on both `roundId` and `playerId`; includes `holeScores[]`, `adjustments[]`, `handicapDifferential`
 - `golf-courses` — cached GHIN course data (not cleared with other data resets)
+- `golf-draft-scorecards` — GSIs on `pin` and `roundId`; stores group scorecards during PIN-based entry; status lifecycle: `draft` → `submitted` → `confirmed`. ID is `${roundId}#${groupNumber}`. PIN lookup uses `getItem` by this ID (not the `pin-index` GSI) so stale PINs from previous tournaments don't block new ones.
 
 `updateRound` spreads the request body onto the existing record, so any field sent is automatically persisted — no explicit field handling needed for new round properties.
 
@@ -86,13 +89,22 @@ GHIN response shape for holes: `TeeSets[].Holes[{ Number, Par, Allocation (strok
 - `applyESC` — per-hole stroke cap by course handicap bracket (≤9 → double bogey, 10–19 → 7, 20–29 → 8, 30–39 → 9, 40+ → 10)
 - `computeHoleScores` — applies handicap strokes hole-by-hole by stroke index
 
-Player `handicapIndex` is **manually entered** at creation (admin sets it from GHIN or known index). It is automatically recalculated and overwritten after every scored round. The starting value is not separately stored; the `handicapHistory[]` array shows the progression from round 1 onward.
+Player `handicapIndex` defaults to `0.0` at creation if not supplied. It is automatically recalculated and overwritten after every scored round. The starting value is not separately stored; the `handicapHistory[]` array shows the progression from round 1 onward.
 
 ### Side contests (CTP / LD)
 Tournaments have `hasClosestToPin` / `hasLongestDrive` boolean flags and optional `closestToPinFee` / `longestDriveFee` per-player ante amounts. The hole for each contest is set per-round (`closestToPinHole`, `longestDriveHole`). Winners are selected on the RoundScoring admin page via dropdowns that **auto-save immediately on change** (calls `roundsApi.update` directly; no need to complete the round first). `closestToPinWinnerId` / `longestDriveWinnerId` are stored on the round. Prize pots (`fee × playerCount`) are shown on the public tournament view and results page.
 
 ### Tee time groups
-Rounds store `startFormat?: 'sequential' | 'shotgun'` and `teeTimeGroups?: TeeTimeGroup[]` inline. Groups are managed from the TournamentSetup admin page (accordion panel per round). Each group has `groupNumber`, `teeTime` (display string e.g. "8:00 AM"), `playerIds[]`, and optional `startingHole` for shotgun starts. The public tournament view shows the tee sheet above the scores table when groups exist.
+Rounds store `startFormat?: 'sequential' | 'shotgun'` and `teeTimeGroups?: TeeTimeGroup[]` inline. Groups are managed from the TournamentSetup admin page (accordion panel per round). Each group has `groupNumber`, `teeTime` (display string e.g. "8:00 AM"), `playerIds[]`, optional `startingHole` for shotgun starts, and a `pin?: string` (4-digit, auto-generated on save). The public tournament view shows the tee sheet above the scores table when groups exist.
+
+### PIN-based group scoring
+Public mobile scoring flow: `/score` (ScoreHub) → player enters 4-digit PIN → `/score/:pin` (ScoreEntry) for hole-by-hole entry.
+
+Backend flow: `GET /score/rounds` lists active rounds with group PINs → `GET /score/lookup?pin=XXXX` resolves PIN to round+group+players+draft → `PUT /score/draft` saves one hole at a time → `POST /score/submit` validates all holes are present for every group player and marks draft `submitted` → admin confirms via `POST /rounds/:id/drafts/:group/confirm` which calls `submitScore` for each player and marks draft `confirmed`.
+
+`confirmDraft` is idempotent: a `confirmed` draft returns immediately without re-running score or handicap calculations.
+
+`ScoreEntry.tsx` persists hole scores to localStorage (`golf_draft_${pin}`) as an offline fallback; server draft and local draft are merged on load (local takes precedence). Both `ScoreHub` and `ScoreEntry` are rendered outside the `Layout` wrapper — they are full-screen mobile pages with their own sticky header.
 
 ### Frontend: routing and pages
 Public routes (no auth):
