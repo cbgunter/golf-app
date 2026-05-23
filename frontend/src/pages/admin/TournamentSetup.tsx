@@ -77,7 +77,7 @@ export default function AdminTournamentSetup() {
   const [showRoundForm, setShowRoundForm] = useState(false);
   const [roundForm, setRoundForm] = useState({
     courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72',
-    date: '', closestToPinHole: '', longestDriveHole: '', notes: '',
+    date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false,
     holes: [] as { number: number; par: number; handicap: number; yardage?: number }[],
   });
   const [courseQuery, setCourseQuery] = useState('');
@@ -219,11 +219,12 @@ export default function AdminTournamentSetup() {
         closestToPinHole: roundForm.closestToPinHole ? Number(roundForm.closestToPinHole) : undefined,
         longestDriveHole: roundForm.longestDriveHole ? Number(roundForm.longestDriveHole) : undefined,
         holes: roundForm.holes.length > 0 ? roundForm.holes : undefined,
+        isPracticeRound: roundForm.isPracticeRound || undefined,
         notes: roundForm.notes || undefined,
       } as any);
       setRounds(rs => [...rs, r]);
       setShowRoundForm(false);
-      setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', closestToPinHole: '', longestDriveHole: '', notes: '', holes: [] });
+      setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false, holes: [] });
       setCourseTees([]);
       setCourseQuery('');
       toast.success('Round added');
@@ -743,6 +744,16 @@ export default function AdminTournamentSetup() {
                   )}
                 </div>
 
+                <div className="col-span-2">
+                  <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
+                    <input type="checkbox" className="rounded accent-sage-600"
+                      checked={roundForm.isPracticeRound}
+                      onChange={e => setRoundForm(f => ({ ...f, isPracticeRound: e.target.checked }))} />
+                    Practice Round
+                    <span className="text-xs text-stone-400">(counts toward handicap, excluded from standings)</span>
+                  </label>
+                </div>
+
                 <div className="flex gap-2">
                   <button type="submit" className="btn-primary"><Check size={14} /> Add Round</button>
                   <button type="button" onClick={() => setShowRoundForm(false)} className="btn-secondary">Cancel</button>
@@ -769,9 +780,12 @@ export default function AdminTournamentSetup() {
                         <div className="flex items-center gap-2 mb-0.5">
                           <StatusBadge status={r.status} />
                           <span className="text-xs text-stone-400">{r.tee}</span>
+                          {r.isPracticeRound && (
+                            <span className="text-xs bg-blue-100 text-blue-600 font-medium px-1.5 py-0.5 rounded">Practice</span>
+                          )}
                           {r.teeTimeGroups && r.teeTimeGroups.length > 0 && (
                             <span className="flex items-center gap-0.5 text-xs text-sage-600 font-medium">
-                              <Users size={11} /> {r.teeTimeGroups.length} group{r.teeTimeGroups.length !== 1 ? 's' : ''}
+                              <Users size={11} /> {r.teeTimeGroups.length} pairing{r.teeTimeGroups.length !== 1 ? 's' : ''}
                             </span>
                           )}
                         </div>
@@ -788,9 +802,9 @@ export default function AdminTournamentSetup() {
                               ? 'bg-sage-100 text-sage-700'
                               : 'text-stone-400 hover:text-sage-600 hover:bg-sage-50'
                           }`}
-                          title="Manage tee time groups"
+                          title="Manage tee time pairings"
                         >
-                          <Users size={13} /> Groups
+                          <Users size={13} /> Pairings
                         </button>
                         <button
                           onClick={async () => {
@@ -842,7 +856,7 @@ export default function AdminTournamentSetup() {
                             <div key={gIdx} className="bg-white rounded-lg border border-stone-200 p-3 space-y-2">
                               <div className="flex items-center justify-between gap-2 flex-wrap">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold text-stone-700">Group {group.groupNumber}</span>
+                                  <span className="text-sm font-semibold text-stone-700">Pairing {group.groupNumber}</span>
                                   {group.pin && (
                                     <span className="text-xs font-mono bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">PIN: {group.pin}</span>
                                   )}
@@ -925,13 +939,13 @@ export default function AdminTournamentSetup() {
                           onClick={() => setEditGroups(g => g ? { ...g, groups: [...g.groups, { groupNumber: g.groups.length + 1, teeTime: '', playerIds: [] }] } : g)}
                           className="btn-secondary text-xs"
                         >
-                          <Plus size={13} /> Add Group
+                          <Plus size={13} /> Add Pairing
                         </button>
 
                         {/* Unassigned players */}
                         {unassigned.length > 0 && (
                           <div>
-                            <p className="label mb-1.5">Unassigned Players — click to add to a group</p>
+                            <p className="label mb-1.5">Unassigned Players — click to add to a pairing</p>
                             <div className="flex flex-wrap gap-1.5">
                               {unassigned.map(pid => {
                                 const p = players.find(pl => pl.id === pid);

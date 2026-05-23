@@ -13,6 +13,7 @@ import Players from './pages/Players';
 import PlayerProfilePage from './pages/PlayerProfile';
 import ScoreHub from './pages/ScoreHub';
 import ScoreEntry from './pages/ScoreEntry';
+import RoundSchedule from './pages/RoundSchedule';
 
 // Admin pages
 import AdminLogin from './pages/admin/Login';
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="history" element={<History />} />
           <Route path="players" element={<Players />} />
           <Route path="players/:id" element={<PlayerProfilePage />} />
+          <Route path="rounds/:id/schedule" element={<RoundSchedule />} />
         </Route>
 
         {/* Scoring routes — full-screen mobile, no nav wrapper */}

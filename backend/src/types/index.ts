@@ -119,6 +119,7 @@ export interface Round {
   holes?: Hole[];
   startFormat?: 'sequential' | 'shotgun';
   teeTimeGroups?: TeeTimeGroup[];
+  isPracticeRound?: boolean;
   notes?: string;
   createdAt: string;
   updatedAt: string;

@@ -183,6 +183,7 @@ interface Round {
   holes?: { number: number; par: number; handicap: number; yardage?: number }[];
   startFormat?: 'sequential' | 'shotgun';
   teeTimeGroups?: { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number; pin?: string }[];
+  isPracticeRound?: boolean;
   notes?: string;
   createdAt: string;
   updatedAt: string;

@@ -164,7 +164,7 @@ export default function AdminRoundScoring() {
       setScores(updated);
       setDrafts(updatedDrafts);
       setExpandedDraft(null);
-      toast.success(`Group ${groupNumber} scores confirmed`);
+      toast.success(`Pairing ${groupNumber} scores confirmed`);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -414,7 +414,7 @@ export default function AdminRoundScoring() {
                   return (
                     <div key={g.groupNumber}>
                       <div className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">
-                        Group {g.groupNumber} · {g.teeTime}
+                        Pairing {g.groupNumber} · {g.teeTime}
                         {g.startingHole ? ` · Hole ${g.startingHole}` : ''}
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -577,10 +577,10 @@ export default function AdminRoundScoring() {
         </div>
       )}
 
-      {/* Group Submissions */}
+      {/* Scorecard Submissions */}
       {drafts.length > 0 && !activePlayer && (
         <div className="card p-5">
-          <h2 className="font-semibold text-stone-800 mb-3 text-sm uppercase tracking-wide">Group Submissions</h2>
+          <h2 className="font-semibold text-stone-800 mb-3 text-sm uppercase tracking-wide">Scorecard Submissions</h2>
           <div className="space-y-2">
             {drafts.map(draft => {
               const group = round.teeTimeGroups?.find(g => g.groupNumber === draft.groupNumber);
@@ -599,7 +599,7 @@ export default function AdminRoundScoring() {
                     className="w-full flex items-center justify-between px-4 py-3 text-left"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-stone-800">Group {draft.groupNumber}</span>
+                      <span className="font-medium text-stone-800">Pairing {draft.groupNumber}</span>
                       {group?.teeTime && <span className="text-xs text-stone-400">{group.teeTime}</span>}
                       {alreadyConfirmed ? (
                         <span className="text-xs bg-sage-100 text-sage-700 px-2 py-0.5 rounded-full">Confirmed</span>

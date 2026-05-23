@@ -63,8 +63,11 @@ export default function TournamentView() {
   const ctpPot = tournament.hasClosestToPin && tournament.closestToPinFee ? tournament.closestToPinFee * playerCount : 0;
   const ldPot = tournament.hasLongestDrive && tournament.longestDriveFee ? tournament.longestDriveFee * playerCount : 0;
 
-  // Build projected leaderboard from current scores across all rounds
-  const allScores = Object.values(scoresByRound).flat();
+  // Build projected leaderboard — practice rounds are excluded from standings
+  const practiceRoundIds = new Set(rounds.filter(r => r.isPracticeRound).map(r => r.id));
+  const allScores = Object.entries(scoresByRound)
+    .filter(([rid]) => !practiceRoundIds.has(rid))
+    .flatMap(([, ss]) => ss);
   const scoresByPlayer = new Map<string, Score[]>();
   for (const s of allScores) {
     if (!scoresByPlayer.has(s.playerId)) scoresByPlayer.set(s.playerId, []);
@@ -83,11 +86,12 @@ export default function TournamentView() {
   leaderboard.sort((a, b) => tournament.isNet ? a.totalNet - b.totalNet : a.totalGross - b.totalGross);
   const showLeaderboard = leaderboard.length > 0;
 
-  // Round progress + rank movement
+  // Round progress + rank movement (practice rounds excluded from standings count)
   const scoredRoundsList = [...rounds]
-    .filter(r => (scoresByRound[r.id] ?? []).length > 0)
+    .filter(r => !r.isPracticeRound && (scoresByRound[r.id] ?? []).length > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
   const completedRoundsCount = scoredRoundsList.length;
+  const standingsRoundsTotal = rounds.filter(r => !r.isPracticeRound).length;
   const lastScoredRound = scoredRoundsList[scoredRoundsList.length - 1];
   const prevRankMap = new Map<string, number>();
   if (lastScoredRound && scoredRoundsList.length > 1) {
@@ -207,9 +211,9 @@ export default function TournamentView() {
                 <Trophy size={15} className="text-sand-500" />
                 {tournament.status === 'active' ? 'Live Leaderboard' : 'Leaderboard'}
               </h2>
-              {completedRoundsCount > 0 && rounds.length > 0 && (
+              {completedRoundsCount > 0 && standingsRoundsTotal > 0 && (
                 <p className="text-xs text-stone-400 mt-0.5">
-                  After {completedRoundsCount} of {rounds.length} round{rounds.length !== 1 ? 's' : ''}
+                  After {completedRoundsCount} of {standingsRoundsTotal} round{standingsRoundsTotal !== 1 ? 's' : ''}
                 </p>
               )}
             </div>
@@ -340,6 +344,9 @@ function RoundCard({
           <div className="flex items-center gap-2 mb-0.5">
             <StatusBadge status={round.status} />
             <span className="text-xs text-stone-400">{round.tee} tees</span>
+            {round.isPracticeRound && (
+              <span className="text-xs bg-blue-100 text-blue-600 font-medium px-1.5 py-0.5 rounded">Practice</span>
+            )}
           </div>
           <div className="font-semibold text-stone-900">{round.courseName}</div>
           <div className="text-xs text-stone-500 mt-0.5 flex items-center gap-3">
@@ -371,7 +378,18 @@ function RoundCard({
             </div>
           )}
         </div>
-        {expanded ? <ChevronUp size={18} className="text-stone-400 shrink-0" /> : <ChevronDown size={18} className="text-stone-400 shrink-0" />}
+        <div className="flex items-center gap-2 shrink-0">
+          {round.teeTimeGroups && round.teeTimeGroups.length > 0 && (
+            <Link
+              to={`/rounds/${round.id}/schedule`}
+              onClick={e => e.stopPropagation()}
+              className="text-xs text-sage-600 hover:text-sage-700 hover:underline font-medium"
+            >
+              Tee Sheet
+            </Link>
+          )}
+          {expanded ? <ChevronUp size={18} className="text-stone-400" /> : <ChevronDown size={18} className="text-stone-400" />}
+        </div>
       </button>
 
       {expanded && (

@@ -100,7 +100,8 @@ export async function getTournamentResults(id: string) {
 
   // Fetch all rounds
   const allRounds = await queryIndex<Round>(R_TABLE, 'tournament-index', 'tournamentId', id);
-  const completedRounds = allRounds.filter(r => r.status === 'completed');
+  // Practice rounds count toward handicap but not standings
+  const completedRounds = allRounds.filter(r => r.status === 'completed' && !r.isPracticeRound);
 
   // Fetch all players in tournament
   const playerMap = new Map<string, Player>();
@@ -109,7 +110,7 @@ export async function getTournamentResults(id: string) {
     if (p) playerMap.set(p.id, p);
   }
 
-  // Fetch all scores
+  // Fetch all scores (practice rounds excluded from standings)
   const scoresByPlayer = new Map<string, Score[]>();
   for (const round of completedRounds) {
     const roundScores = await queryIndex<Score>(S_TABLE, 'round-index', 'roundId', round.id);
