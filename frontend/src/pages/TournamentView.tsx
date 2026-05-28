@@ -171,8 +171,10 @@ export default function TournamentView() {
               <div key={p.place} className="flex items-center justify-between py-2 text-sm">
                 <span className="text-stone-600">{p.label}</span>
                 <span className="font-semibold text-stone-900">
-                  ${((p.percentage / 100) * totalPot).toFixed(0)}
-                  <span className="text-stone-400 font-normal ml-1">({p.percentage}%)</span>
+                  {p.payoutType === 'flat'
+                    ? `$${(p.amount ?? 0).toFixed(0)}`
+                    : `$${((p.percentage / 100) * totalPot).toFixed(0)}`}
+                  {p.payoutType !== 'flat' && <span className="text-stone-400 font-normal ml-1">({p.percentage}%)</span>}
                 </span>
               </div>
             ))}
@@ -243,7 +245,11 @@ export default function TournamentView() {
               <tbody className="divide-y divide-gray-50">
                 {leaderboard.map((entry, idx) => {
                   const payout = tournament.payoutStructure[idx];
-                  const projectedPayout = payout ? Math.round((payout.percentage / 100) * totalPot) : null;
+                  const projectedPayout = payout
+                    ? payout.payoutType === 'flat'
+                      ? (payout.amount ?? 0)
+                      : Math.round((payout.percentage / 100) * totalPot)
+                    : null;
                   const prevRank = entry.player ? prevRankMap.get(entry.player.id) : undefined;
                   const movement = prevRank !== undefined ? prevRank - (idx + 1) : null;
                   const leaderTotal = tournament.isNet ? leaderboard[0].totalNet : leaderboard[0].totalGross;

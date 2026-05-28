@@ -70,7 +70,7 @@ export default function AdminTournamentSetup() {
     closestToPinFee: '0', longestDriveFee: '0',
     entryFee: '0', notes: '',
   });
-  const [payoutRows, setPayoutRows] = useState<{ place: number; label: string; percentage: string }[]>([]);
+  const [payoutRows, setPayoutRows] = useState<{ place: number; label: string; payoutType: 'percentage' | 'flat'; percentage: string; flatAmount: string }[]>([]);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
 
   // Round form
@@ -111,7 +111,7 @@ export default function AdminTournamentSetup() {
           closestToPinFee: String(t.closestToPinFee ?? 0), longestDriveFee: String(t.longestDriveFee ?? 0),
           entryFee: String(t.entryFee), notes: t.notes ?? '',
         });
-        setPayoutRows(t.payoutStructure.map(p => ({ ...p, percentage: String(p.percentage) })));
+        setPayoutRows(t.payoutStructure.map(p => ({ ...p, payoutType: p.payoutType ?? 'percentage', percentage: String(p.percentage), flatAmount: p.payoutType === 'flat' ? String(p.amount ?? '') : '' })));
         setSelectedPlayerIds(t.playerIds);
       }
       setLoading(false);
@@ -186,7 +186,9 @@ export default function AdminTournamentSetup() {
       closestToPinFee: form.hasClosestToPin ? Number(form.closestToPinFee) : undefined,
       longestDriveFee: form.hasLongestDrive ? Number(form.longestDriveFee) : undefined,
       entryFee: Number(form.entryFee),
-      payoutStructure: payoutRows.map(r => ({ place: r.place, label: r.label, percentage: Number(r.percentage) })),
+      payoutStructure: payoutRows.map(r => r.payoutType === 'flat'
+        ? { place: r.place, label: r.label, payoutType: 'flat' as const, percentage: 0, amount: Number(r.flatAmount || 0) }
+        : { place: r.place, label: r.label, payoutType: 'percentage' as const, percentage: Number(r.percentage) }),
       playerIds: selectedPlayerIds,
       notes: form.notes || undefined,
     };
@@ -301,7 +303,8 @@ export default function AdminTournamentSetup() {
 
   if (loading) return <div className="text-stone-400 text-sm p-4">Loading…</div>;
 
-  const payoutTotal = payoutRows.reduce((s, r) => s + Number(r.percentage || 0), 0);
+  const payoutPctRows = payoutRows.filter(r => r.payoutType === 'percentage');
+  const payoutTotal = payoutPctRows.reduce((s, r) => s + Number(r.percentage || 0), 0);
 
   return (
     <div className="space-y-5">
@@ -483,7 +486,7 @@ export default function AdminTournamentSetup() {
           <div className="card p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3">
               <p className="section-title">Payout Structure</p>
-              <button type="button" onClick={() => setPayoutRows(r => [...r, { place: r.length + 1, label: `${r.length + 1}${['st','nd','rd'][r.length] ?? 'th'} Place`, percentage: '' }])} className="btn-secondary text-xs">
+              <button type="button" onClick={() => setPayoutRows(r => [...r, { place: r.length + 1, label: `${r.length + 1}${['st','nd','rd'][r.length] ?? 'th'} Place`, payoutType: 'percentage', percentage: '', flatAmount: '' }])} className="btn-secondary text-xs">
                 <Plus size={13} /> Add Place
               </button>
             </div>
@@ -495,21 +498,41 @@ export default function AdminTournamentSetup() {
                   <div key={i} className="flex items-center gap-2">
                     <span className="w-5 text-xs text-stone-400 text-center shrink-0">{row.place}</span>
                     <input className="input flex-1 min-w-0" value={row.label} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
-                    <div className="relative w-24 shrink-0">
-                      <input className="input pr-5 text-right" type="number" min="0" max="100" step="0.5" value={row.percentage} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, percentage: e.target.value } : x))} placeholder="0" />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">%</span>
+                    {/* Type toggle */}
+                    <div className="flex rounded-md border border-stone-200 overflow-hidden shrink-0 text-xs">
+                      <button type="button"
+                        className={`px-2 py-1 ${row.payoutType === 'percentage' ? 'bg-sage-600 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'}`}
+                        onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'percentage' } : x))}>%</button>
+                      <button type="button"
+                        className={`px-2 py-1 ${row.payoutType === 'flat' ? 'bg-sage-600 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'}`}
+                        onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'flat' } : x))}>$</button>
                     </div>
+                    {row.payoutType === 'flat' ? (
+                      <div className="relative w-24 shrink-0">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                        <input className="input pl-5 text-right" type="number" min="0" step="1" value={row.flatAmount} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, flatAmount: e.target.value } : x))} placeholder="0" />
+                      </div>
+                    ) : (
+                      <div className="relative w-24 shrink-0">
+                        <input className="input pr-5 text-right" type="number" min="0" max="100" step="0.5" value={row.percentage} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, percentage: e.target.value } : x))} placeholder="0" />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">%</span>
+                      </div>
+                    )}
                     {Number(form.entryFee) > 0 && selectedPlayerIds.length > 0 && (
                       <span className="text-xs text-sand-600 w-14 text-right shrink-0">
-                        ${((Number(row.percentage || 0) / 100) * Number(form.entryFee) * selectedPlayerIds.length).toFixed(0)}
+                        {row.payoutType === 'flat'
+                          ? `$${Number(row.flatAmount || 0).toFixed(0)}`
+                          : `$${((Number(row.percentage || 0) / 100) * Number(form.entryFee) * selectedPlayerIds.length).toFixed(0)}`}
                       </span>
                     )}
                     <button type="button" onClick={() => setPayoutRows(r => r.filter((_, j) => j !== i))} className="text-stone-300 hover:text-red-400 shrink-0"><X size={14} /></button>
                   </div>
                 ))}
-                <p className={`text-xs mt-1 ${Math.abs(payoutTotal - 100) > 0.01 ? 'text-red-400' : 'text-sage-600'}`}>
-                  Total: {payoutTotal}% {Math.abs(payoutTotal - 100) < 0.01 ? '✓' : '— must equal 100%'}
-                </p>
+                {payoutPctRows.length > 0 && (
+                  <p className={`text-xs mt-1 ${Math.abs(payoutTotal - 100) > 0.01 ? 'text-red-400' : 'text-sage-600'}`}>
+                    % total: {payoutTotal}% {Math.abs(payoutTotal - 100) < 0.01 ? '✓' : '— must equal 100%'}
+                  </p>
+                )}
               </div>
             )}
           </div>

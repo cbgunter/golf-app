@@ -155,7 +155,7 @@ interface Tournament {
   closestToPinFee?: number;
   longestDriveFee?: number;
   entryFee: number;
-  payoutStructure: { place: number; label: string; percentage: number; amount?: number }[];
+  payoutStructure: { place: number; label: string; payoutType?: 'percentage' | 'flat'; percentage: number; amount?: number }[];
   playerIds: string[];
   roundIds: string[];
   startDate: string;
@@ -240,7 +240,7 @@ interface TournamentResults {
   leaderboard: LeaderboardEntry[];
   closestToPin?: { hole: number; roundId: string; player?: Player }[];
   longestDrive?: { hole: number; roundId: string; player?: Player }[];
-  payouts: { place: number; label: string; amount: number; percentage: number; player?: Player }[];
+  payouts: { place: number; label: string; amount: number; percentage: number; payoutType?: 'percentage' | 'flat'; player?: Player }[];
   totalPot: number;
   ctpPot: number;
   ldPot: number;

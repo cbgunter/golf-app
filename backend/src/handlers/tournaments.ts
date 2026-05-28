@@ -28,8 +28,9 @@ export async function createTournament(body: Partial<Tournament>) {
   if (!body.startDate) return error('Start date is required');
 
   const now = new Date().toISOString();
-  const total = (body.payoutStructure ?? []).reduce((s, p) => s + p.percentage, 0);
-  if (body.payoutStructure?.length && Math.abs(total - 100) > 0.01) {
+  const pctRows = (body.payoutStructure ?? []).filter(p => (p.payoutType ?? 'percentage') === 'percentage');
+  const total = pctRows.reduce((s, p) => s + p.percentage, 0);
+  if (pctRows.length > 0 && Math.abs(total - 100) > 0.01) {
     return error('Payout percentages must sum to 100');
   }
 
@@ -153,8 +154,11 @@ export async function getTournamentResults(id: string) {
   const payouts: PayoutResult[] = tournament.payoutStructure.map(p => ({
     place: p.place,
     label: p.label,
-    amount: Math.round((p.percentage / 100) * totalPot * 100) / 100,
+    amount: p.payoutType === 'flat'
+      ? (p.amount ?? 0)
+      : Math.round((p.percentage / 100) * totalPot * 100) / 100,
     percentage: p.percentage,
+    payoutType: p.payoutType,
     player: leaderboard[p.place - 1]?.player,
   }));
 

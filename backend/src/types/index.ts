@@ -75,6 +75,7 @@ export interface Tournament {
 export interface PayoutEntry {
   place: number;
   label: string;
+  payoutType?: 'percentage' | 'flat';
   percentage: number;
   amount?: number;
 }
