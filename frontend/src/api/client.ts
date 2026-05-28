@@ -20,6 +20,11 @@ async function request<T>(
   });
 
   const data = await res.json();
+  if (res.status === 401) {
+    localStorage.removeItem('golf_admin_token');
+    window.location.href = '/admin/login';
+    throw new Error('Session expired. Please log in again.');
+  }
   if (!res.ok) throw new Error(data.error ?? `Request failed: ${res.status}`);
   return data as T;
 }
