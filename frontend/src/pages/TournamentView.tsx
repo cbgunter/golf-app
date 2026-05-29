@@ -385,24 +385,6 @@ function RoundCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {round.status === 'in_progress' && (
-            <Link
-              to="/score"
-              onClick={e => e.stopPropagation()}
-              className="text-xs text-sage-600 hover:text-sage-700 hover:underline font-medium"
-            >
-              Score
-            </Link>
-          )}
-          {round.teeTimeGroups && round.teeTimeGroups.length > 0 && (
-            <Link
-              to={`/rounds/${round.id}/schedule`}
-              onClick={e => e.stopPropagation()}
-              className="text-xs text-sage-600 hover:text-sage-700 hover:underline font-medium"
-            >
-              Tee Sheet
-            </Link>
-          )}
           {expanded ? <ChevronUp size={18} className="text-stone-400" /> : <ChevronDown size={18} className="text-stone-400" />}
         </div>
       </button>
@@ -412,12 +394,19 @@ function RoundCard({
           {/* Tee sheet */}
           {round.teeTimeGroups && round.teeTimeGroups.length > 0 && (
             <div className="px-4 pt-4 pb-3">
-              <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
-                Tee Sheet
-                {round.startFormat && (
-                  <span className="ml-2 font-normal normal-case text-stone-400 capitalize">({round.startFormat})</span>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                  Tee Sheet
+                  {round.startFormat && (
+                    <span className="ml-2 font-normal normal-case text-stone-400 capitalize">({round.startFormat})</span>
+                  )}
+                </h3>
+                {round.status === 'in_progress' && (
+                  <Link to="/score" className="text-xs font-medium text-sage-600 hover:text-sage-700 hover:underline">
+                    Score your round →
+                  </Link>
                 )}
-              </h3>
+              </div>
               <div className="space-y-1.5">
                 {[...round.teeTimeGroups]
                   .sort((a, b) => a.groupNumber - b.groupNumber)
