@@ -350,9 +350,10 @@ function RoundCard({
           <div className="flex items-center gap-2 mb-0.5">
             <StatusBadge status={round.status} />
             <span className="text-xs text-stone-400">{round.tee} tees</span>
-            {round.isPracticeRound && (
-              <span className="text-xs bg-blue-100 text-blue-600 font-medium px-1.5 py-0.5 rounded">Practice</span>
-            )}
+            {round.isPracticeRound
+              ? <span className="text-xs bg-stone-100 text-stone-400 font-medium px-1.5 py-0.5 rounded">No leaderboard</span>
+              : <span className="text-xs bg-sage-50 text-sage-700 font-medium px-1.5 py-0.5 rounded">Leaderboard</span>
+            }
           </div>
           <div className="font-semibold text-stone-900">{round.courseName}</div>
           <div className="text-xs text-stone-500 mt-0.5 flex items-center gap-3">
@@ -397,8 +398,8 @@ function RoundCard({
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
                   Tee Sheet
-                  {round.startFormat && (
-                    <span className="ml-2 font-normal normal-case text-stone-400 capitalize">({round.startFormat})</span>
+                  {round.startFormat === 'shotgun' && (
+                    <span className="ml-2 font-normal normal-case text-stone-400">Shotgun</span>
                   )}
                 </h3>
                 {round.status !== 'completed' && (
