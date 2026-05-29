@@ -385,6 +385,15 @@ function RoundCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {round.status === 'in_progress' && (
+            <Link
+              to="/score"
+              onClick={e => e.stopPropagation()}
+              className="text-xs text-sage-600 hover:text-sage-700 hover:underline font-medium"
+            >
+              Score
+            </Link>
+          )}
           {round.teeTimeGroups && round.teeTimeGroups.length > 0 && (
             <Link
               to={`/rounds/${round.id}/schedule`}

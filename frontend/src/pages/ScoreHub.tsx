@@ -19,19 +19,22 @@ export default function ScoreHub() {
   }, []);
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8">
+    <div className="max-w-lg mx-auto min-h-screen flex flex-col">
       {showHelp && <ScorekeeperHelp onClose={() => setShowHelp(false)} />}
 
-      <div className="flex items-start justify-between mb-1">
-        <h1 className="text-2xl font-bold text-stone-900">Score Entry</h1>
+      {/* Sticky header */}
+      <div className="bg-sage-700 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <span className="font-semibold text-base">Score Entry</span>
         <button
           onClick={() => setShowHelp(true)}
-          className="flex items-center gap-1 text-xs text-stone-400 hover:text-sage-600 transition-colors mt-1"
+          className="flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors"
         >
           <HelpCircle size={15} />
           How to score
         </button>
       </div>
+
+      <div className="px-4 py-6 flex-1">
       <p className="text-stone-500 text-sm mb-6">Tap your group below to start scoring.</p>
 
       {/* Active rounds / groups */}
@@ -79,6 +82,7 @@ export default function ScoreHub() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
