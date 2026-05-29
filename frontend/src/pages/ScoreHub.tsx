@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { scoringApi, ActiveRoundsForScoring } from '../api/client';
-import { Loader2, HelpCircle } from 'lucide-react';
+import { Loader2, HelpCircle, ChevronLeft } from 'lucide-react';
 import { parseLocalDate } from '../lib/dates';
 import HelpModal, { HelpSection, HelpStep, HelpTip } from '../components/HelpModal';
 
@@ -24,13 +24,17 @@ export default function ScoreHub() {
 
       {/* Sticky header */}
       <div className="bg-sage-700 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <Link to="/" className="flex items-center gap-1 text-white/70 hover:text-white transition-colors">
+          <ChevronLeft size={18} />
+          <span className="text-sm">Home</span>
+        </Link>
         <span className="font-semibold text-base">Score Entry</span>
         <button
           onClick={() => setShowHelp(true)}
           className="flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors"
         >
           <HelpCircle size={15} />
-          How to score
+          Help
         </button>
       </div>
 
