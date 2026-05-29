@@ -401,7 +401,7 @@ function RoundCard({
                     <span className="ml-2 font-normal normal-case text-stone-400 capitalize">({round.startFormat})</span>
                   )}
                 </h3>
-                {round.status === 'in_progress' && (
+                {round.status !== 'completed' && (
                   <Link to="/score" className="text-xs font-medium text-sage-600 hover:text-sage-700 hover:underline">
                     Score your round →
                   </Link>
