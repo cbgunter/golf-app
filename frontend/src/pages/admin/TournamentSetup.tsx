@@ -4,7 +4,7 @@ import { tournamentsApi, playersApi, roundsApi, Tournament, Player, Round } from
 import { coursesApi } from '../../api/client';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/StatusBadge';
-import { Plus, Save, ChevronRight, X, Check, Search, Loader2, Trash2, Users } from 'lucide-react';
+import { Plus, Save, ChevronRight, X, Check, Search, Loader2, Trash2, Users, Pencil } from 'lucide-react';
 import { parseLocalDate } from '../../lib/dates';
 
 const isNew = (id: string) => id === 'new';
@@ -75,6 +75,7 @@ export default function AdminTournamentSetup() {
 
   // Round form
   const [showRoundForm, setShowRoundForm] = useState(false);
+  const [editingRound, setEditingRound] = useState<Round | null>(null);
   const [roundForm, setRoundForm] = useState({
     courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72',
     date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false,
@@ -207,29 +208,41 @@ export default function AdminTournamentSetup() {
     }
   }
 
+  function resetRoundForm() {
+    setShowRoundForm(false);
+    setEditingRound(null);
+    setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false, holes: [] });
+    setCourseTees([]);
+    setCourseQuery('');
+  }
+
   async function handleAddRound(e: FormEvent) {
     e.preventDefault();
+    const payload = {
+      courseId: roundForm.courseId || 'manual',
+      courseName: roundForm.courseName,
+      tee: roundForm.tee,
+      courseRating: Number(roundForm.courseRating),
+      slopeRating: Number(roundForm.slopeRating),
+      par: Number(roundForm.par),
+      date: roundForm.date,
+      closestToPinHole: roundForm.closestToPinHole ? Number(roundForm.closestToPinHole) : undefined,
+      longestDriveHole: roundForm.longestDriveHole ? Number(roundForm.longestDriveHole) : undefined,
+      holes: roundForm.holes.length > 0 ? roundForm.holes : undefined,
+      isPracticeRound: roundForm.isPracticeRound || undefined,
+      notes: roundForm.notes || undefined,
+    } as any;
     try {
-      const r = await roundsApi.create(id!, {
-        courseId: roundForm.courseId || 'manual',
-        courseName: roundForm.courseName,
-        tee: roundForm.tee,
-        courseRating: Number(roundForm.courseRating),
-        slopeRating: Number(roundForm.slopeRating),
-        par: Number(roundForm.par),
-        date: roundForm.date,
-        closestToPinHole: roundForm.closestToPinHole ? Number(roundForm.closestToPinHole) : undefined,
-        longestDriveHole: roundForm.longestDriveHole ? Number(roundForm.longestDriveHole) : undefined,
-        holes: roundForm.holes.length > 0 ? roundForm.holes : undefined,
-        isPracticeRound: roundForm.isPracticeRound || undefined,
-        notes: roundForm.notes || undefined,
-      } as any);
-      setRounds(rs => [...rs, r]);
-      setShowRoundForm(false);
-      setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false, holes: [] });
-      setCourseTees([]);
-      setCourseQuery('');
-      toast.success('Round added');
+      if (editingRound) {
+        const r = await roundsApi.update(editingRound.id, payload);
+        setRounds(rs => rs.map(x => x.id === editingRound.id ? r : x));
+        toast.success('Round updated');
+      } else {
+        const r = await roundsApi.create(id!, payload);
+        setRounds(rs => [...rs, r]);
+        toast.success('Round added');
+      }
+      resetRoundForm();
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -670,7 +683,7 @@ export default function AdminTournamentSetup() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="section-title">Rounds ({rounds.length})</p>
-            <button onClick={() => { setShowRoundForm(!showRoundForm); setCourseTees([]); setCourseQuery(''); }} className="btn-primary">
+            <button onClick={() => { setEditingRound(null); setShowRoundForm(!showRoundForm); setCourseTees([]); setCourseQuery(''); }} className="btn-primary">
               <Plus size={14} /> Add Round
             </button>
           </div>
@@ -778,8 +791,8 @@ export default function AdminTournamentSetup() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button type="submit" className="btn-primary"><Check size={14} /> Add Round</button>
-                  <button type="button" onClick={() => setShowRoundForm(false)} className="btn-secondary">Cancel</button>
+                  <button type="submit" className="btn-primary"><Check size={14} /> {editingRound ? 'Save Changes' : 'Add Round'}</button>
+                  <button type="button" onClick={resetRoundForm} className="btn-secondary">Cancel</button>
                 </div>
               </form>
             </div>
@@ -828,6 +841,30 @@ export default function AdminTournamentSetup() {
                           title="Manage tee time pairings"
                         >
                           <Users size={13} /> Pairings
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingRound(r);
+                            setRoundForm({
+                              courseId: r.courseId,
+                              courseName: r.courseName,
+                              tee: r.tee,
+                              courseRating: String(r.courseRating),
+                              slopeRating: String(r.slopeRating),
+                              par: String(r.par),
+                              date: r.date,
+                              closestToPinHole: r.closestToPinHole ? String(r.closestToPinHole) : '',
+                              longestDriveHole: r.longestDriveHole ? String(r.longestDriveHole) : '',
+                              notes: r.notes ?? '',
+                              isPracticeRound: r.isPracticeRound ?? false,
+                              holes: r.holes ?? [],
+                            });
+                            setShowRoundForm(true);
+                          }}
+                          className="p-1.5 text-stone-300 hover:text-sage-600 transition-colors rounded"
+                          title="Edit round"
+                        >
+                          <Pencil size={15} />
                         </button>
                         <button
                           onClick={async () => {
