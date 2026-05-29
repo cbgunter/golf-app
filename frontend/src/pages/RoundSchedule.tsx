@@ -98,8 +98,13 @@ export default function RoundSchedule() {
                         )}
                       </div>
                       {group.pin && (
-                        <div className="mt-1 text-xs text-stone-400">
-                          Score entry PIN: <span className="font-mono font-semibold text-stone-600">{group.pin}</span>
+                        <div className="mt-1">
+                          <Link
+                            to={`/score/${group.pin}`}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-sage-700 bg-sage-50 border border-sage-200 px-2.5 py-1 rounded-full hover:bg-sage-100 transition-colors"
+                          >
+                            Tap to score · PIN {group.pin}
+                          </Link>
                         </div>
                       )}
                     </div>

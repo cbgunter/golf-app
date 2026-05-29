@@ -1,17 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { scoringApi, ActiveRoundsForScoring } from '../api/client';
-import { Loader2, Hash, ChevronRight, HelpCircle } from 'lucide-react';
+import { Loader2, HelpCircle } from 'lucide-react';
 import { parseLocalDate } from '../lib/dates';
 import HelpModal, { HelpSection, HelpStep, HelpTip } from '../components/HelpModal';
 
 export default function ScoreHub() {
   const [rounds, setRounds] = useState<ActiveRoundsForScoring[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pin, setPin] = useState('');
-  const [pinError, setPinError] = useState('');
   const navigate = useNavigate();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
@@ -20,13 +17,6 @@ export default function ScoreHub() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  function handlePinSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = pin.trim();
-    if (!trimmed) { setPinError('Enter a 4-digit PIN'); return; }
-    navigate(`/score/${trimmed}`);
-  }
 
   return (
     <div className="max-w-lg mx-auto px-4 py-8">
@@ -42,34 +32,7 @@ export default function ScoreHub() {
           How to score
         </button>
       </div>
-      <p className="text-stone-500 text-sm mb-6">Enter your group's PIN to start scoring.</p>
-
-      {/* PIN entry */}
-      <form onSubmit={handlePinSubmit} className="card p-4 mb-6">
-        <label className="label mb-1">Group PIN</label>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Hash size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-            <input
-              ref={inputRef}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]{4}"
-              maxLength={4}
-              value={pin}
-              onChange={e => { setPin(e.target.value.replace(/\D/g, '')); setPinError(''); }}
-              placeholder="1234"
-              className="input pl-8 text-center text-xl tracking-widest font-mono w-full"
-              autoFocus
-            />
-          </div>
-          <button type="submit" className="btn-primary px-5">
-            <ChevronRight size={18} />
-            Go
-          </button>
-        </div>
-        {pinError && <p className="text-red-500 text-xs mt-1">{pinError}</p>}
-      </form>
+      <p className="text-stone-500 text-sm mb-6">Tap your group below to start scoring.</p>
 
       {/* Active rounds / groups */}
       {loading ? (
@@ -126,8 +89,8 @@ function ScorekeeperHelp({ onClose }: { onClose: () => void }) {
   return (
     <HelpModal title="How to Score Your Round" onClose={onClose}>
       <HelpSection title="Getting Started">
-        <HelpStep n={1}>Find your group in the list below, or get your 4-digit PIN from your group organizer.</HelpStep>
-        <HelpStep n={2}>Tap your group row, or type the PIN above and tap <strong>Go</strong>.</HelpStep>
+        <HelpStep n={1}>Open the round schedule link shared by your organizer and tap <strong>Tap to score</strong> next to your group.</HelpStep>
+        <HelpStep n={2}>Or find your group in the list below and tap it.</HelpStep>
         <HelpStep n={3}>You'll see a score entry screen for every player in your group.</HelpStep>
       </HelpSection>
 
@@ -163,7 +126,7 @@ function ScorekeeperHelp({ onClose }: { onClose: () => void }) {
           You can jump back to any hole and edit scores before submitting. Once submitted, contact the tournament admin to make corrections.
         </HelpTip>
         <HelpTip>
-          If your PIN shows "Invalid PIN", the round may not be active yet or the PIN hasn't been assigned. Check with your organizer.
+          If your group doesn't appear in the list, the round may not be active yet or pairings haven't been saved. Check with your organizer.
         </HelpTip>
       </HelpSection>
     </HelpModal>
