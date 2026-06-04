@@ -13,10 +13,11 @@ function draftId(roundId: string, groupNumber: number) {
   return `${roundId}#${groupNumber}`;
 }
 
-// GET /score/rounds — all active/upcoming rounds with group PINs
-export async function getActiveRoundsForScoring() {
+// GET /score/rounds — active/upcoming rounds with group PINs, optionally scoped to one tournament
+export async function getActiveRoundsForScoring(tournamentId?: string) {
   const tournaments = await scanTable<Tournament>(T_TABLE);
-  const active = tournaments.filter(t => t.status === 'upcoming' || t.status === 'active');
+  let active = tournaments.filter(t => t.status === 'upcoming' || t.status === 'active');
+  if (tournamentId) active = active.filter(t => t.id === tournamentId);
   if (active.length === 0) return ok([]);
 
   const results = await Promise.all(

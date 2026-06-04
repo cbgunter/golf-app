@@ -81,7 +81,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
 
     // ── Scoring (public PIN-based entry) ───────────────────────────────────
     if (segments[0] === 'score') {
-      if (method === 'GET' && segments[1] === 'rounds') return getActiveRoundsForScoring();
+      if (method === 'GET' && segments[1] === 'rounds') return getActiveRoundsForScoring(query.tournamentId);
       if (method === 'GET' && segments[1] === 'lookup') return lookupByPin(query.pin ?? '');
       if (method === 'PUT' && segments[1] === 'draft') return saveDraftHole(body);
       if (method === 'POST' && segments[1] === 'submit') return submitDraft(body);

@@ -403,7 +403,7 @@ function RoundCard({
                   )}
                 </h3>
                 {round.status !== 'completed' && (
-                  <Link to="/score" className="text-xs font-medium text-sage-600 hover:text-sage-700 hover:underline">
+                  <Link to={`/tournament/${round.tournamentId}/score`} className="text-xs font-medium text-sage-600 hover:text-sage-700 hover:underline">
                     Score your round →
                   </Link>
                 )}

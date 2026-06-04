@@ -93,7 +93,7 @@ export const coursesApi = {
 
 // Scoring (PIN-based group entry)
 export const scoringApi = {
-  activeRounds: () => api.get<ActiveRoundsForScoring[]>('/score/rounds'),
+  activeRounds: (tournamentId?: string) => api.get<ActiveRoundsForScoring[]>(tournamentId ? `/score/rounds?tournamentId=${tournamentId}` : '/score/rounds'),
   lookupByPin: (pin: string) => api.get<PinLookupResult>(`/score/lookup?pin=${encodeURIComponent(pin)}`),
   saveDraftHole: (pin: string, holeNumber: number, scores: Record<string, number>) =>
     api.put<DraftScorecard>('/score/draft', { pin, holeNumber, scores }),

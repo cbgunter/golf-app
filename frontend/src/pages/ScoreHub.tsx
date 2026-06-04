@@ -1,22 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { scoringApi, ActiveRoundsForScoring } from '../api/client';
 import { Loader2, HelpCircle, ChevronLeft } from 'lucide-react';
 import { parseLocalDate } from '../lib/dates';
 import HelpModal, { HelpSection, HelpStep, HelpTip } from '../components/HelpModal';
 
 export default function ScoreHub() {
+  const { tournamentId } = useParams<{ tournamentId?: string }>();
   const [rounds, setRounds] = useState<ActiveRoundsForScoring[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
-    scoringApi.activeRounds()
+    scoringApi.activeRounds(tournamentId)
       .then(setRounds)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [tournamentId]);
 
   return (
     <div className="max-w-lg mx-auto min-h-screen flex flex-col">
