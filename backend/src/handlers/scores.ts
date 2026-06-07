@@ -156,10 +156,16 @@ export async function submitScore(
     notes: explanation,
   };
 
+  // Replace existing history entry for this round (re-submissions) rather than appending
+  const updatedHistory = [
+    ...player.handicapHistory.filter(h => h.roundId !== roundId),
+    historyEntry,
+  ];
+
   const updatedPlayer: Player = {
     ...player,
     handicapIndex,
-    handicapHistory: [...player.handicapHistory, historyEntry],
+    handicapHistory: updatedHistory,
     updatedAt: now,
   };
   await putItem(P_TABLE, updatedPlayer);
