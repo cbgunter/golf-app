@@ -98,13 +98,19 @@ Tournaments have `hasClosestToPin` / `hasLongestDrive` boolean flags and optiona
 Rounds store `startFormat?: 'sequential' | 'shotgun'` and `teeTimeGroups?: TeeTimeGroup[]` inline. Groups are managed from the TournamentSetup admin page (accordion panel per round). Each group has `groupNumber`, `teeTime` (display string e.g. "8:00 AM"), `playerIds[]`, optional `startingHole` for shotgun starts, and a `pin?: string` (4-digit, auto-generated on save). The public tournament view shows the tee sheet above the scores table when groups exist.
 
 ### PIN-based group scoring
-Public mobile scoring flow: `/score` (ScoreHub) → player enters 4-digit PIN → `/score/:pin` (ScoreEntry) for hole-by-hole entry.
+Public mobile scoring flow: `/score` (ScoreHub) → player enters 4-digit PIN → `/score/:pin` (ScoreEntry) for hole-by-hole entry. `/tournament/:id/score` is a tournament-scoped alias for ScoreHub.
 
 Backend flow: `GET /score/rounds` lists active rounds with group PINs → `GET /score/lookup?pin=XXXX` resolves PIN to round+group+players+draft → `PUT /score/draft` saves one hole at a time → `POST /score/submit` validates all holes are present for every group player and marks draft `submitted` → admin confirms via `POST /rounds/:id/drafts/:group/confirm` which calls `submitScore` for each player and marks draft `confirmed`.
 
 `confirmDraft` is idempotent: a `confirmed` draft returns immediately without re-running score or handicap calculations.
 
 `ScoreEntry.tsx` persists hole scores to localStorage (`golf_draft_${pin}`) as an offline fallback; server draft and local draft are merged on load (local takes precedence). Both `ScoreHub` and `ScoreEntry` are rendered outside the `Layout` wrapper — they are full-screen mobile pages with their own sticky header.
+
+Draft status lifecycle gates the mobile UI: `draft`/`submitted` → entry/review allowed; `confirmed` → shows a locked "Scores Confirmed" screen, no further edits possible.
+
+`ScoreHub` fetches confirmed scores (`GET /rounds/:id/scores`) for each active round in parallel. Groups where all players have confirmed scores replace the PIN button with a compact Out/In/Tot scorecard. `ScoreEntry` shows a running Out/In/Tot summary table (per player, above the nav buttons) once any hole has been entered.
+
+After admin manually edits a player's score on the RoundScoring page, the local `drafts` state is patched with the new hole values so the "Scorecard Submissions" table reflects the correction immediately (without a full reload).
 
 ### Frontend: routing and pages
 Public routes (no auth):
@@ -150,7 +156,11 @@ Round cards (expanded view):
 ### Score entry UI
 `frontend/src/pages/admin/RoundScoring.tsx` renders a horizontal golf scorecard: holes 1–9 across the top, OUT subtotal, holes 10–18, IN subtotal, TOT. Par and HCP (stroke index) rows are read-only when course data was loaded from GHIN, editable otherwise. Score cells are color-coded by +/- par (yellow = eagle+, red = birdie, green = par). The sticky left column keeps row labels visible while scrolling on small screens.
 
+The score summary bar below the scorecard shows **Out · In · Gross · to-par** in real time as holes are filled in.
+
 The player picker reorganizes into tee time groups when `round.teeTimeGroups` is populated — shows group header (time + hole for shotgun) with players listed under each. Attempting to complete a round with missing scores shows a `window.confirm` listing how many players are unscored.
+
+The "Scorecard Submissions" panel (shown when drafts exist) displays submitted group scorecards with Out/In/Tot columns. When admin manually edits a player's score, the panel updates immediately via local state patch rather than waiting for a server refetch.
 
 ### Tournament setup: inline player creation + guidance
 The Players tab in `TournamentSetup.tsx` allows creating new players inline without navigating away. Players is demoted to a secondary "All Players" link in the admin sidebar (below a divider), not a primary nav item.
