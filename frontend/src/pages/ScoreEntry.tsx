@@ -21,7 +21,7 @@ function clearLocalDraft(pin: string) {
   try { localStorage.removeItem(DRAFT_KEY(pin)); } catch {}
 }
 
-type Phase = 'loading' | 'entry' | 'review' | 'submitted' | 'error';
+type Phase = 'loading' | 'entry' | 'review' | 'submitted' | 'confirmed' | 'error';
 
 export default function ScoreEntry() {
   const { pin } = useParams<{ pin: string }>();
@@ -63,7 +63,9 @@ export default function ScoreEntry() {
         ) ?? allHoleNums[0];
         setCurrentHole(firstUnscored);
 
-        if (result.draft?.status === 'submitted') {
+        if (result.draft?.status === 'confirmed') {
+          setPhase('confirmed');
+        } else if (result.draft?.status === 'submitted') {
           setPhase('submitted');
         } else {
           setPhase('entry');
@@ -183,6 +185,20 @@ export default function ScoreEntry() {
         <p className="text-stone-500 text-sm">
           Your scorecard for Group {info?.groupNumber} has been submitted.<br />
           The tournament admin will review and confirm your scores.
+        </p>
+        <button onClick={() => navigate('/')} className="btn-primary mt-2">Back to Home</button>
+      </div>
+    );
+  }
+
+  if (phase === 'confirmed') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
+        <CheckCircle size={48} className="text-sage-500" />
+        <h2 className="text-2xl font-bold text-stone-800">Scores Confirmed</h2>
+        <p className="text-stone-500 text-sm">
+          Your scorecard for Group {info?.groupNumber} has been reviewed and confirmed by the tournament admin.
+          No further changes can be made.
         </p>
         <button onClick={() => navigate('/')} className="btn-primary mt-2">Back to Home</button>
       </div>
