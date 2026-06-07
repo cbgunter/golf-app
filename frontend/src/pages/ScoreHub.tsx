@@ -1,20 +1,30 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { scoringApi, ActiveRoundsForScoring } from '../api/client';
-import { Loader2, HelpCircle, ChevronLeft } from 'lucide-react';
+import { scoringApi, roundsApi, ActiveRoundsForScoring, Score } from '../api/client';
+import { Loader2, HelpCircle, ChevronLeft, CheckCircle } from 'lucide-react';
 import { parseLocalDate } from '../lib/dates';
 import HelpModal, { HelpSection, HelpStep, HelpTip } from '../components/HelpModal';
 
 export default function ScoreHub() {
   const { tournamentId } = useParams<{ tournamentId?: string }>();
   const [rounds, setRounds] = useState<ActiveRoundsForScoring[]>([]);
+  const [roundScores, setRoundScores] = useState<Record<string, Score[]>>({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     scoringApi.activeRounds(tournamentId)
-      .then(setRounds)
+      .then(async data => {
+        setRounds(data);
+        const allRoundIds = data.flatMap(t => t.rounds.map(r => r.roundId));
+        const results = await Promise.all(
+          allRoundIds.map(id => roundsApi.scores(id).then(s => ({ id, s })).catch(() => ({ id, s: [] as Score[] })))
+        );
+        const map: Record<string, Score[]> = {};
+        for (const { id, s } of results) map[id] = s;
+        setRoundScores(map);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tournamentId]);
@@ -52,37 +62,85 @@ export default function ScoreHub() {
           {rounds.map(t => (
             <div key={t.tournamentId}>
               <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">{t.tournamentName}</h2>
-              {t.rounds.map(r => (
-                <div key={r.roundId} className="card p-3 mb-2">
-                  <div className="text-sm font-medium text-stone-800 mb-0.5">{r.courseName}</div>
-                  <div className="text-xs text-stone-400 mb-2">
-                    {parseLocalDate(r.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              {t.rounds.map(r => {
+                const scores = roundScores[r.roundId] ?? [];
+                return (
+                  <div key={r.roundId} className="card p-3 mb-2">
+                    <div className="text-sm font-medium text-stone-800 mb-0.5">{r.courseName}</div>
+                    <div className="text-xs text-stone-400 mb-2">
+                      {parseLocalDate(r.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </div>
+                    <div className="divide-y divide-stone-100">
+                      {r.groups.map(g => {
+                        const groupScores = scores.filter(s => g.playerIds.includes(s.playerId));
+                        const allConfirmed = g.playerIds.length > 0 && groupScores.length === g.playerIds.length;
+
+                        if (allConfirmed) {
+                          return (
+                            <div key={g.groupNumber} className="py-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-stone-700">Group {g.groupNumber}</span>
+                                  {g.teeTime && <span className="text-xs text-stone-400">{g.teeTime}</span>}
+                                </div>
+                                <span className="flex items-center gap-1 text-xs text-sage-600 font-medium">
+                                  <CheckCircle size={13} /> Confirmed
+                                </span>
+                              </div>
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="text-stone-400">
+                                    <th className="text-left font-normal pb-1">Player</th>
+                                    <th className="text-center font-normal pb-1 w-10">Out</th>
+                                    <th className="text-center font-normal pb-1 w-10">In</th>
+                                    <th className="text-center font-semibold pb-1 w-10 text-stone-600">Tot</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {groupScores.map(s => {
+                                    const front = s.holeScores.filter(h => h.hole <= 9).reduce((sum, h) => sum + h.strokes, 0);
+                                    const back = s.holeScores.filter(h => h.hole >= 10).reduce((sum, h) => sum + h.strokes, 0);
+                                    return (
+                                      <tr key={s.playerId} className="border-t border-stone-50">
+                                        <td className="py-1.5 font-medium text-stone-700">{s.playerName}</td>
+                                        <td className="py-1.5 text-center text-stone-500">{front || '—'}</td>
+                                        <td className="py-1.5 text-center text-stone-500">{back || '—'}</td>
+                                        <td className="py-1.5 text-center font-bold text-stone-800">{s.grossTotal}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={g.groupNumber}
+                            onClick={() => g.pin && navigate(`/score/${g.pin}`)}
+                            disabled={!g.pin}
+                            className="w-full flex items-center justify-between py-2 text-left hover:bg-stone-50 disabled:opacity-40 rounded"
+                          >
+                            <div>
+                              <span className="text-sm font-medium text-stone-700">Group {g.groupNumber}</span>
+                              {g.teeTime && <span className="text-xs text-stone-400 ml-2">{g.teeTime}</span>}
+                              {g.startingHole && <span className="text-xs text-stone-400 ml-1">· Hole {g.startingHole}</span>}
+                            </div>
+                            {g.pin ? (
+                              <span className="text-xs font-mono bg-sage-50 text-sage-700 border border-sage-200 px-2 py-0.5 rounded">
+                                PIN {g.pin}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-stone-300">No PIN</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="divide-y divide-stone-100">
-                    {r.groups.map(g => (
-                      <button
-                        key={g.groupNumber}
-                        onClick={() => g.pin && navigate(`/score/${g.pin}`)}
-                        disabled={!g.pin}
-                        className="w-full flex items-center justify-between py-2 text-left hover:bg-stone-50 disabled:opacity-40 rounded"
-                      >
-                        <div>
-                          <span className="text-sm font-medium text-stone-700">Group {g.groupNumber}</span>
-                          {g.teeTime && <span className="text-xs text-stone-400 ml-2">{g.teeTime}</span>}
-                          {g.startingHole && <span className="text-xs text-stone-400 ml-1">· Hole {g.startingHole}</span>}
-                        </div>
-                        {g.pin ? (
-                          <span className="text-xs font-mono bg-sage-50 text-sage-700 border border-sage-200 px-2 py-0.5 rounded">
-                            PIN {g.pin}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-stone-300">No PIN</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ))}
         </div>
