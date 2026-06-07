@@ -312,6 +312,38 @@ export default function ScoreEntry() {
         })}
       </div>
 
+      {/* Running totals */}
+      {info.players.some(p => Object.keys(holes[p.id] ?? {}).length > 0) && (
+        <div className="bg-stone-50 border-t border-stone-100 px-4 py-2">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-stone-400">
+                <th className="text-left font-normal pb-0.5">Player</th>
+                <th className="text-center font-normal pb-0.5 w-10">Out</th>
+                <th className="text-center font-normal pb-0.5 w-10">In</th>
+                <th className="text-center font-semibold pb-0.5 w-10 text-stone-600">Tot</th>
+              </tr>
+            </thead>
+            <tbody>
+              {info.players.map(p => {
+                const front = allHoleNums.filter(n => n <= 9).reduce((s, n) => s + (holes[p.id]?.[String(n)] ?? 0), 0);
+                const back = allHoleNums.filter(n => n >= 10).reduce((s, n) => s + (holes[p.id]?.[String(n)] ?? 0), 0);
+                const hasFront = allHoleNums.filter(n => n <= 9).some(n => holes[p.id]?.[String(n)] != null);
+                const hasBack = allHoleNums.filter(n => n >= 10).some(n => holes[p.id]?.[String(n)] != null);
+                return (
+                  <tr key={p.id}>
+                    <td className="py-0.5 text-stone-600 font-medium">{p.name.split(' ')[0]}</td>
+                    <td className="py-0.5 text-center text-stone-500">{hasFront ? front : '—'}</td>
+                    <td className="py-0.5 text-center text-stone-500">{hasBack ? back : '—'}</td>
+                    <td className="py-0.5 text-center font-bold text-stone-700">{hasFront || hasBack ? front + back : '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* Navigation */}
       <div className="sticky bottom-0 bg-white border-t border-stone-100 px-4 py-3 flex gap-2">
         <button
