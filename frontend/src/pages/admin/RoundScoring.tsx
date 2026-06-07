@@ -103,6 +103,19 @@ export default function AdminRoundScoring() {
 
       const updated = await roundsApi.scores(round.id);
       setScores(updated);
+
+      // Reflect edited scores in the draft scorecard display
+      const playerGroup = round.teeTimeGroups?.find(g => g.playerIds.includes(activePlayer.id));
+      if (playerGroup) {
+        const holeMap: Record<string, number> = {};
+        holeInputs.forEach(h => { holeMap[String(h.hole)] = Number(h.strokes); });
+        setDrafts(prev => prev.map(d =>
+          d.groupNumber === playerGroup.groupNumber
+            ? { ...d, holes: { ...d.holes, [activePlayer.id]: holeMap } }
+            : d
+        ));
+      }
+
       setActivePlayer(null);
 
       // Scroll leaderboard into view
@@ -237,19 +250,26 @@ export default function AdminRoundScoring() {
                           <thead>
                             <tr className="bg-stone-50">
                               <th className="text-left px-2 py-1.5 font-medium text-stone-500">Player</th>
-                              {allHoleNums.map(n => (
+                              {allHoleNums.slice(0, 9).map(n => (
                                 <th key={n} className="px-1 py-1.5 text-center text-stone-400 font-normal w-6">{n}</th>
                               ))}
-                              <th className="px-2 py-1.5 text-center font-medium text-stone-600">Tot</th>
+                              <th className="px-2 py-1.5 text-center font-medium text-stone-500 bg-stone-100">Out</th>
+                              {allHoleNums.slice(9).map(n => (
+                                <th key={n} className="px-1 py-1.5 text-center text-stone-400 font-normal w-6">{n}</th>
+                              ))}
+                              <th className="px-2 py-1.5 text-center font-medium text-stone-500 bg-stone-100">In</th>
+                              <th className="px-2 py-1.5 text-center font-medium text-stone-600 bg-stone-200">Tot</th>
                             </tr>
                           </thead>
                           <tbody>
                             {groupPlayers.map(player => {
-                              const total = allHoleNums.reduce((sum, n) => sum + (draft.holes[player.id]?.[String(n)] ?? 0), 0);
+                              const front = allHoleNums.slice(0, 9).reduce((sum, n) => sum + (draft.holes[player.id]?.[String(n)] ?? 0), 0);
+                              const back = allHoleNums.slice(9).reduce((sum, n) => sum + (draft.holes[player.id]?.[String(n)] ?? 0), 0);
+                              const total = front + back;
                               return (
                                 <tr key={player.id} className="border-t border-stone-100">
                                   <td className="px-2 py-2 font-medium text-stone-700 whitespace-nowrap">{player.name}</td>
-                                  {allHoleNums.map(n => {
+                                  {allHoleNums.slice(0, 9).map(n => {
                                     const s = draft.holes[player.id]?.[String(n)];
                                     const hInfo = round.holes?.find(h => h.number === n);
                                     const diff = s != null && hInfo ? s - hInfo.par : null;
@@ -266,7 +286,26 @@ export default function AdminRoundScoring() {
                                       </td>
                                     );
                                   })}
-                                  <td className="px-2 py-2 text-center font-bold text-stone-800">{total || '–'}</td>
+                                  <td className="px-2 py-2 text-center font-semibold text-stone-700 bg-stone-100">{front || '–'}</td>
+                                  {allHoleNums.slice(9).map(n => {
+                                    const s = draft.holes[player.id]?.[String(n)];
+                                    const hInfo = round.holes?.find(h => h.number === n);
+                                    const diff = s != null && hInfo ? s - hInfo.par : null;
+                                    return (
+                                      <td key={n} className="px-1 py-2 text-center">
+                                        <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
+                                          s == null ? 'text-stone-300' :
+                                          diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
+                                          diff === -1 ? 'bg-red-200' :
+                                          diff === 0 ? 'bg-green-100' : ''
+                                        }`}>
+                                          {s ?? '–'}
+                                        </span>
+                                      </td>
+                                    );
+                                  })}
+                                  <td className="px-2 py-2 text-center font-semibold text-stone-700 bg-stone-100">{back || '–'}</td>
+                                  <td className="px-2 py-2 text-center font-bold text-stone-800 bg-stone-200">{total || '–'}</td>
                                 </tr>
                               );
                             })}
