@@ -493,15 +493,24 @@ export default function AdminRoundScoring() {
             {/* Score summary + actions */}
             <div className="flex items-center justify-between gap-4 pt-1">
               <div className="text-sm text-stone-500">
-                {calcGross() > 0 && (() => {
+                {(() => {
+                  const front = holeInputs.slice(0, 9).reduce((s, h) => s + (Number(h.strokes) || 0), 0);
+                  const back = holeInputs.slice(9).reduce((s, h) => s + (Number(h.strokes) || 0), 0);
+                  const gross = front + back;
                   const totalPar = holeInputs.reduce((s, h) => s + h.par, 0);
-                  const toPar = calcGross() - totalPar;
+                  const toPar = gross - totalPar;
                   return (
-                    <span>
-                      Gross {calcGross()} ·{' '}
-                      <span className={`font-semibold ${toPar < 0 ? 'text-red-500' : toPar === 0 ? 'text-green-600' : 'text-stone-600'}`}>
-                        {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar} to par
-                      </span>
+                    <span className="flex flex-wrap gap-x-3 gap-y-1">
+                      <span>Out <strong className="text-stone-700">{front || '—'}</strong></span>
+                      <span>In <strong className="text-stone-700">{back || '—'}</strong></span>
+                      {gross > 0 && (
+                        <>
+                          <span>Gross <strong className="text-stone-700">{gross}</strong></span>
+                          <span className={`font-semibold ${toPar < 0 ? 'text-red-500' : toPar === 0 ? 'text-green-600' : 'text-stone-600'}`}>
+                            {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}
+                          </span>
+                        </>
+                      )}
                     </span>
                   );
                 })()}
