@@ -24,6 +24,9 @@ export default function TournamentResultsPage() {
 
   const { tournament, leaderboard, payouts, totalPot, ctpPot, ldPot, closestToPin, longestDrive } = results;
   const isNet = tournament.isNet;
+  const withdrawnIds = new Set(tournament.withdrawnPlayerIds ?? []);
+  const activeLeaderboard = leaderboard.filter(e => !withdrawnIds.has(e.player.id));
+  const wdEntries = leaderboard.filter(e => withdrawnIds.has(e.player.id));
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -111,7 +114,7 @@ export default function TournamentResultsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {leaderboard.map((entry, idx) => {
+              {activeLeaderboard.map((entry, idx) => {
                 const payout = payouts.find(p => p.player?.id === entry.player.id);
                 const isExpanded = expandedPlayer === entry.player.id;
                 return (
@@ -144,6 +147,18 @@ export default function TournamentResultsPage() {
                   </>
                 );
               })}
+              {wdEntries.map(entry => (
+                <tr key={entry.player.id} className="opacity-50">
+                  <td className="px-5 py-3 text-xs font-semibold text-stone-400">WD</td>
+                  <td className="px-3 py-3 font-medium text-stone-500 line-through">{entry.player.name}</td>
+                  <td className="px-3 py-3 text-center text-stone-400">{entry.player.handicapIndex.toFixed(1)}</td>
+                  {tournament.isGross && <td className="px-3 py-3 text-center text-stone-400">—</td>}
+                  {tournament.isNet && <td className="px-3 py-3 text-center text-stone-400">—</td>}
+                  <td className="px-3 py-3 text-center text-stone-400">—</td>
+                  <td className="px-3 py-3 text-center text-stone-400">—</td>
+                  <td className="px-3 py-3" />
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

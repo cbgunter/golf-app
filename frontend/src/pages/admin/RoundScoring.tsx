@@ -147,8 +147,11 @@ export default function AdminRoundScoring() {
 
   async function handleCompleteRound() {
     if (!round) return;
-    if (scores.length < players.length) {
-      const missing = players.length - scores.length;
+    const withdrawnIds = new Set(tournament?.withdrawnPlayerIds ?? []);
+    const activePlayers = players.filter(p => !withdrawnIds.has(p.id));
+    const activeScored = scores.filter(s => !withdrawnIds.has(s.playerId));
+    if (activeScored.length < activePlayers.length) {
+      const missing = activePlayers.length - activeScored.length;
       const ok = window.confirm(
         `${missing} player${missing > 1 ? 's are' : ' is'} missing a score. Complete the round anyway?`
       );
@@ -188,8 +191,9 @@ export default function AdminRoundScoring() {
   if (loading) return <div className="text-stone-500">Loading...</div>;
   if (!round || !tournament) return <div className="text-red-500">Round not found.</div>;
 
+  const withdrawnIds = new Set(tournament.withdrawnPlayerIds ?? []);
   const scoredPlayerIds = new Set(scores.map(s => s.playerId));
-  const needsScoring = players.filter(p => !scoredPlayerIds.has(p.id));
+  const needsScoring = players.filter(p => !scoredPlayerIds.has(p.id) && !withdrawnIds.has(p.id));
   const hasCTP = tournament.hasClosestToPin && round.closestToPinHole;
   const hasLD = tournament.hasLongestDrive && round.longestDriveHole;
   const sortedScores = [...scores].sort((a, b) =>

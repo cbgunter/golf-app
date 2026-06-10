@@ -64,12 +64,14 @@ export default function TournamentView() {
   const ldPot = tournament.hasLongestDrive && tournament.longestDriveFee ? tournament.longestDriveFee * playerCount : 0;
 
   // Build projected leaderboard — practice rounds are excluded from standings
+  const withdrawnIds = new Set(tournament.withdrawnPlayerIds ?? []);
   const practiceRoundIds = new Set(rounds.filter(r => r.isPracticeRound).map(r => r.id));
   const allScores = Object.entries(scoresByRound)
     .filter(([rid]) => !practiceRoundIds.has(rid))
     .flatMap(([, ss]) => ss);
   const scoresByPlayer = new Map<string, Score[]>();
   for (const s of allScores) {
+    if (withdrawnIds.has(s.playerId)) continue;
     if (!scoresByPlayer.has(s.playerId)) scoresByPlayer.set(s.playerId, []);
     scoresByPlayer.get(s.playerId)!.push(s);
   }
@@ -85,6 +87,7 @@ export default function TournamentView() {
   });
   leaderboard.sort((a, b) => tournament.isNet ? a.totalNet - b.totalNet : a.totalGross - b.totalGross);
   const showLeaderboard = leaderboard.length > 0;
+  const wdPlayers = players.filter(p => withdrawnIds.has(p.id) && tournament.playerIds.includes(p.id));
 
   // Round progress + rank movement (practice rounds excluded from standings count)
   const scoredRoundsList = [...rounds]
@@ -290,6 +293,19 @@ export default function TournamentView() {
                     </tr>
                   );
                 })}
+                {wdPlayers.map(p => (
+                  <tr key={p.id} className="opacity-50">
+                    <td className="px-5 py-2.5 text-xs font-semibold text-stone-400">WD</td>
+                    <td className="px-3 py-2.5 font-medium text-stone-500 line-through">
+                      <Link to={`/players/${p.id}`} className="hover:underline">{p.name}</Link>
+                    </td>
+                    {tournament.isGross && <td className="px-3 py-2.5 text-center text-stone-400">—</td>}
+                    {tournament.isNet && <td className="px-3 py-2.5 text-center text-stone-400">—</td>}
+                    <td className="px-3 py-2.5 hidden sm:table-cell" />
+                    <td className="px-3 py-2.5" />
+                    {totalPot > 0 && <td className="px-3 py-2.5 text-center text-stone-400">—</td>}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -311,6 +327,7 @@ export default function TournamentView() {
                 expanded={expandedRound === round.id}
                 onToggle={() => setExpandedRound(expandedRound === round.id ? null : round.id)}
                 isNet={tournament.isNet}
+                withdrawnIds={withdrawnIds}
               />
             </div>
           ))}
@@ -327,6 +344,7 @@ function RoundCard({
   expanded,
   onToggle,
   isNet,
+  withdrawnIds,
 }: {
   round: Round;
   scores: Score[];
@@ -334,11 +352,12 @@ function RoundCard({
   expanded: boolean;
   onToggle: () => void;
   isNet: boolean;
+  withdrawnIds: Set<string>;
 }) {
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
-  const sorted = [...scores].sort((a, b) =>
-    isNet ? a.netTotal - b.netTotal : a.grossTotal - b.grossTotal
-  );
+  const sorted = [...scores]
+    .filter(s => !withdrawnIds.has(s.playerId))
+    .sort((a, b) => isNet ? a.netTotal - b.netTotal : a.grossTotal - b.grossTotal);
 
   return (
     <div className="card overflow-hidden">

@@ -663,15 +663,37 @@ export default function AdminTournamentSetup() {
               </p>
             ) : (
               <div className="grid sm:grid-cols-2 gap-1">
-                {players.map(p => (
-                  <label key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 cursor-pointer border border-stone-100">
-                    <input type="checkbox" className="rounded accent-sage-600"
-                      checked={selectedPlayerIds.includes(p.id)}
-                      onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
-                    <span className="flex-1 text-sm font-medium text-stone-700">{p.name}</span>
-                    <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
-                  </label>
-                ))}
+                {players.map(p => {
+                  const isEnrolled = selectedPlayerIds.includes(p.id);
+                  const isWD = tournament?.withdrawnPlayerIds?.includes(p.id) ?? false;
+                  return (
+                    <div key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 border border-stone-100">
+                      <input type="checkbox" className="rounded accent-sage-600"
+                        checked={isEnrolled}
+                        onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
+                      <span className={`flex-1 text-sm font-medium ${isWD ? 'line-through text-stone-400' : 'text-stone-700'}`}>{p.name}</span>
+                      <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
+                      {isEnrolled && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!tournament) return;
+                            const current = tournament.withdrawnPlayerIds ?? [];
+                            const updated = isWD ? current.filter(x => x !== p.id) : [...current, p.id];
+                            try {
+                              const t = await tournamentsApi.update(id!, { withdrawnPlayerIds: updated });
+                              setTournament(t);
+                            } catch (err: any) { toast.error(err.message); }
+                          }}
+                          className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${isWD ? 'bg-stone-200 text-stone-600 hover:bg-stone-300' : 'bg-stone-100 text-stone-400 hover:bg-red-100 hover:text-red-600'}`}
+                          title={isWD ? 'Remove WD' : 'Mark as withdrawn'}
+                        >
+                          {isWD ? 'WD ✕' : 'WD'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
