@@ -162,6 +162,7 @@ interface Tournament {
   entryFee: number;
   payoutStructure: { place: number; label: string; payoutType?: 'percentage' | 'flat'; percentage: number; amount?: number }[];
   playerIds: string[];
+  withdrawnPlayerIds?: string[];
   roundIds: string[];
   startDate: string;
   endDate?: string;

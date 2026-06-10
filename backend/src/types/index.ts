@@ -64,6 +64,7 @@ export interface Tournament {
   entryFee: number;
   payoutStructure: PayoutEntry[];
   playerIds: string[];
+  withdrawnPlayerIds?: string[];
   roundIds: string[];
   startDate: string;
   endDate?: string;
