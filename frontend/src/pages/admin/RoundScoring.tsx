@@ -527,7 +527,6 @@ export default function AdminRoundScoring() {
       ) : (
         /* Player picker — shown when not actively entering a score */
         players.length > 0 && (() => {
-          const displayPlayers = needsScoring.length > 0 ? needsScoring : players;
           const groups = round.teeTimeGroups ?? [];
           const hasGroups = groups.length > 0;
 
@@ -537,11 +536,15 @@ export default function AdminRoundScoring() {
               <button
                 key={p.id}
                 onClick={() => startScoring(p)}
-                className="flex flex-col items-start p-3 bg-stone-50 hover:bg-sage-50 border border-stone-200 hover:border-sage-300 rounded-lg transition-colors text-left"
+                className={`flex flex-col items-start p-3 border rounded-lg transition-colors text-left ${
+                  hasScore
+                    ? 'bg-sage-50 hover:bg-sage-100 border-sage-200 hover:border-sage-300'
+                    : 'bg-stone-50 hover:bg-sage-50 border-stone-200 hover:border-sage-300'
+                }`}
               >
                 <span className="font-medium text-stone-900 text-sm">{p.name}</span>
-                <span className="text-xs text-stone-400 mt-0.5">
-                  {hasScore ? 'Edit score' : `HCP ${p.handicapIndex.toFixed(1)}`}
+                <span className={`text-xs mt-0.5 ${hasScore ? 'text-sage-600' : 'text-stone-400'}`}>
+                  {hasScore ? '✓ Edit score' : `HCP ${p.handicapIndex.toFixed(1)}`}
                 </span>
               </button>
             );
@@ -549,14 +552,14 @@ export default function AdminRoundScoring() {
 
           if (hasGroups) {
             const assignedIds = new Set(groups.flatMap(g => g.playerIds));
-            const ungrouped = displayPlayers.filter(p => !assignedIds.has(p.id));
+            const ungrouped = players.filter(p => !assignedIds.has(p.id));
             return (
               <div className="card p-4 space-y-4">
                 <h2 className="font-semibold text-stone-700 text-sm uppercase tracking-wide">
-                  {needsScoring.length > 0 ? 'Enter Score For' : 'Edit Scores'}
+                  {needsScoring.length > 0 ? `Enter Score For · ${needsScoring.length} remaining` : 'Edit Scores'}
                 </h2>
                 {groups.map(g => {
-                  const groupPlayers = displayPlayers.filter(p => g.playerIds.includes(p.id));
+                  const groupPlayers = players.filter(p => g.playerIds.includes(p.id));
                   if (groupPlayers.length === 0) return null;
                   return (
                     <div key={g.groupNumber}>
@@ -585,10 +588,10 @@ export default function AdminRoundScoring() {
           return (
             <div className="card p-4">
               <h2 className="font-semibold text-stone-700 mb-3 text-sm uppercase tracking-wide">
-                {needsScoring.length > 0 ? 'Enter Score For' : 'Edit Scores'}
+                {needsScoring.length > 0 ? `Enter Score For · ${needsScoring.length} remaining` : 'Edit Scores'}
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {displayPlayers.map(p => <PlayerBtn key={p.id} p={p} />)}
+                {players.map(p => <PlayerBtn key={p.id} p={p} />)}
               </div>
             </div>
           );
