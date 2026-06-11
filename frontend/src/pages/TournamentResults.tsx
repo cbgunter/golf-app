@@ -25,7 +25,9 @@ export default function TournamentResultsPage() {
   const { tournament, leaderboard, payouts, totalPot, ctpPot, ldPot, closestToPin, longestDrive } = results;
   const isNet = tournament.isNet;
   const withdrawnIds = new Set(tournament.withdrawnPlayerIds ?? []);
-  const activeLeaderboard = leaderboard.filter(e => !withdrawnIds.has(e.player.id));
+  const activeLeaderboard = leaderboard
+    .filter(e => !withdrawnIds.has(e.player.id))
+    .map((e, i) => ({ ...e, rank: i + 1 }));
   const wdEntries = leaderboard.filter(e => withdrawnIds.has(e.player.id));
 
   return (
