@@ -44,62 +44,6 @@ Split the single-SPA into two independently deployed frontends — a public site
 
 ---
 
-## Epic: Rebrand to Electric Phactory Visual Identity
-
-Apply the EP branding guidelines (`electric-phactory-branding-guidelines.md`) to the public site. The goal is warm, confident, unmistakably Philly — not country club, not generic SaaS.
-
-### 1. Fonts
-- Load **Outfit** (headings) and **DM Sans** (body) from Google Fonts in `index.html`
-- Update Tailwind config: set `fontFamily.sans` → DM Sans, add `fontFamily.heading` → Outfit
-- Replace all `font-*` classes that use the current default with the new font family classes
-
-### 2. Color palette
-Replace the current `sage` / `sand` / `stone` custom palette in `tailwind.config.js` with the EP palette:
-
-| Token | Name | Hex |
-|---|---|---|
-| `ep-cream` | Warm Cream | `#F5F0E8` |
-| `ep-green` | Midnight Green | `#004C54` |
-| `ep-orange` | Phactory Orange | `#D4691C` |
-| `ep-deep` | Deep Green | `#002B30` |
-| `ep-silver` | Stadium Silver | `#B8B5AF` |
-| `ep-sand` | Sand | `#EDE6DA` |
-
-- Update `index.css` shared utility classes (`btn-primary`, `btn-secondary`, `btn-gold`, `card`, `badge-*`, `label`, `input`, `page-header`, `section-title`) to use new tokens
-- Replace inline Tailwind color classes across all public pages and components
-
-### 3. Page background and surfaces
-- Set default page background to `ep-cream` (`#F5F0E8`) — no pure white
-- Cards → `ep-sand` background
-- Dark sections (footer, overlays) → `ep-deep`
-
-### 4. Typography scale
-- Hero headlines: Outfit ExtraBold (800), 36–48px, letter-spacing −0.035em
-- Section headings: Outfit ExtraBold (800), 26–32px, letter-spacing −0.03em
-- Subheads: Outfit 600–700, 18–22px
-- Body: DM Sans 400, 16px, line-height 1.7
-- Labels/tags: Outfit 600, 12–13px, uppercase, wide letter-spacing
-- Captions/meta: DM Sans 400, 13–14px, `ep-silver` color
-
-### 5. Buttons and CTAs
-- Primary CTA → `ep-orange` background, `ep-cream` text (replaces current `btn-primary`)
-- Secondary → `ep-green` background, `ep-cream` text
-- Danger/outline → `ep-green` border, `ep-green` text
-- Remove `btn-gold` or remap to orange
-
-### 6. Nav and footer
-- Sticky nav: frosted-glass `ep-cream` background, EP wordmark left (placeholder text until logo asset exists), minimal links right
-- Footer: `ep-deep` background, `ep-cream` wordmark text, `ep-orange` links
-
-### 7. Status and data colors
-- Existing color-coded score cells (eagle/birdie/par) and `StatusBadge` values need mapping to the warm palette — desaturate greens/reds into the EP color family per the "no additional colors" rule
-
-### 8. Mobile audit
-- Walk all public pages at 375px width after rebrand; fix any layout regressions
-- Score entry and PIN flow (`/score`, `/score/:pin`) are already full-screen mobile — verify they still feel cohesive with new palette
-
----
-
 ## Epic: Admin — Next-Action-Focused Event Management
 
 Redesign the admin event experience around a single guiding principle: **always surface the one thing that needs to happen next.** Rather than a rigid wizard or tab layout, the event page computes its current state and leads with a prominent action card telling the admin exactly what to do. Secondary details (rounds, players, game types) are accessible but not the focus.
@@ -184,3 +128,10 @@ Replace the per-round breakdown on the public tournament view with one unified l
 ---
 
 <!-- Add items below -->
+
+---
+
+## Completed
+
+### Epic: Rebrand to Electric Phactory Visual Identity
+EP color tokens (`ep-cream`, `ep-green`, `ep-orange`, `ep-deep`, `ep-silver`, `ep-sand`) and fonts (`Outfit` heading / `DM Sans` body) applied to all public pages. Shared utility classes in `index.css` updated. Admin pages retain legacy `sage`/`stone`/`sand` tokens (out of scope).

@@ -1,18 +1,19 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, useMemo, useRef, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { tournamentsApi, playersApi, roundsApi, Tournament, Player, Round } from '../../api/client';
+import { tournamentsApi, playersApi, roundsApi, scoringApi, Tournament, Player, Round, DraftScorecard } from '../../api/client';
 import { coursesApi } from '../../api/client';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/StatusBadge';
-import { Plus, Save, ChevronRight, X, Check, Search, Loader2, Trash2, Users, Pencil } from 'lucide-react';
+import { Plus, Save, ChevronRight, ChevronDown, ChevronUp, X, Check, Search, Loader2, Trash2, Users, Pencil } from 'lucide-react';
 import { parseLocalDate } from '../../lib/dates';
+import { computeEventState } from '../../lib/eventState';
 
 const isNew = (id: string) => id === 'new';
 
 function convertTo24h(display: string): string {
   if (!display) return '';
   const match = display.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!match) return ''; // return empty so <input type="time"> shows blank rather than corrupt value
+  if (!match) return '';
   let h = parseInt(match[1], 10);
   const m = match[2];
   const period = match[3].toUpperCase();
@@ -31,7 +32,6 @@ function convertTo12h(time24: string): string {
   return `${h}:${mStr} ${period}`;
 }
 
-// Map GHIN TeeSets array to flat tee list with hole data
 function flattenTees(teeSets: any[]): { label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[] {
   if (!Array.isArray(teeSets)) return [];
   const out: { label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[] = [];
@@ -52,6 +52,33 @@ function flattenTees(teeSets: any[]): { label: string; courseRating: number; slo
   return out;
 }
 
+function AccordionSection({
+  title, badge, open, onToggle, children,
+}: {
+  title: string; badge?: string | number; open: boolean; onToggle: () => void; children: React.ReactNode;
+}) {
+  return (
+    <div className="card">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3.5 sm:px-5 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-stone-800">{title}</span>
+          {badge !== undefined && (
+            <span className="text-xs bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded-full">{badge}</span>
+          )}
+        </div>
+        {open
+          ? <ChevronUp size={16} className="text-stone-400 shrink-0" />
+          : <ChevronDown size={16} className="text-stone-400 shrink-0" />}
+      </button>
+      {open && <div className="border-t border-stone-100 px-4 py-4 sm:px-5 sm:py-5">{children}</div>}
+    </div>
+  );
+}
+
 export default function AdminTournamentSetup() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -60,8 +87,21 @@ export default function AdminTournamentSetup() {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [rounds, setRounds] = useState<Round[]>([]);
+  const [drafts, setDrafts] = useState<DraftScorecard[]>([]);
   const [loading, setLoading] = useState(!creating);
-  const [tab, setTab] = useState<'details' | 'players' | 'rounds'>('details');
+
+  // Accordion open states
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [playersOpen, setPlayersOpen] = useState(false);
+  const [roundsOpen, setRoundsOpen] = useState(false);
+
+  // Mark complete loading
+  const [markingComplete, setMarkingComplete] = useState(false);
+
+  // Draft confirmation
+  const [confirmingGroup, setConfirmingGroup] = useState<string | null>(null);
+  const [expandedDraft, setExpandedDraft] = useState<string | null>(null);
+  const confirmPanelRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     name: '', description: '', startDate: '', endDate: '',
@@ -86,7 +126,7 @@ export default function AdminTournamentSetup() {
   const [courseTees, setCourseTees] = useState<{ label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[]>([]);
   const [courseSearching, setCourseSearching] = useState(false);
 
-  // Inline new player form (Players tab)
+  // Inline new player form
   const [showNewPlayer, setShowNewPlayer] = useState(false);
   const [newPlayerForm, setNewPlayerForm] = useState({ name: '', handicapIndex: '', email: '' });
   const [savingNewPlayer, setSavingNewPlayer] = useState(false);
@@ -114,11 +154,90 @@ export default function AdminTournamentSetup() {
         });
         setPayoutRows(t.payoutStructure.map(p => ({ ...p, payoutType: p.payoutType ?? 'percentage', percentage: String(p.percentage), flatAmount: p.payoutType === 'flat' ? String(p.amount ?? '') : '' })));
         setSelectedPlayerIds(t.playerIds);
+
+        // Fetch drafts and compute initial accordion open state
+        let allDrafts: DraftScorecard[] = [];
+        if (t.status !== 'completed' && rs.length > 0) {
+          try {
+            allDrafts = (await Promise.all(rs.map(r => scoringApi.getDrafts(r.id)))).flat();
+            setDrafts(allDrafts);
+          } catch { /* silently ignore */ }
+        }
+
+        const state = computeEventState(t, rs, allDrafts);
+        setDetailsOpen(state.ctaTarget === 'details');
+        setPlayersOpen(state.ctaTarget === 'players');
+        setRoundsOpen(state.ctaTarget === 'rounds' || state.ctaTarget === 'complete');
       }
       setLoading(false);
     };
     load();
   }, [id, creating]);
+
+  const eventState = useMemo(
+    () => tournament ? computeEventState(tournament, rounds, drafts) : null,
+    [tournament, rounds, drafts]
+  );
+
+  async function reloadDrafts() {
+    if (rounds.length === 0) return;
+    try {
+      const allDrafts = (await Promise.all(rounds.map(r => scoringApi.getDrafts(r.id)))).flat();
+      setDrafts(allDrafts);
+    } catch { /* silently ignore */ }
+  }
+
+  async function handleConfirmDraft(roundId: string, groupNumber: number) {
+    const key = `${roundId}-${groupNumber}`;
+    setConfirmingGroup(key);
+    try {
+      await scoringApi.confirmDraft(roundId, groupNumber);
+      await reloadDrafts();
+      toast.success(`Pairing ${groupNumber} scores confirmed`);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setConfirmingGroup(null);
+    }
+  }
+
+  async function handleMarkComplete() {
+    if (!confirm('Mark this event as complete? Final results will be published.')) return;
+    setMarkingComplete(true);
+    try {
+      const updated = await tournamentsApi.update(id!, { status: 'completed' });
+      setTournament(updated);
+      toast.success('Event completed — results are now public');
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setMarkingComplete(false);
+    }
+  }
+
+  function handleCtaAction() {
+    if (!eventState) return;
+    switch (eventState.ctaTarget) {
+      case 'details':
+        setDetailsOpen(true);
+        break;
+      case 'players':
+        setPlayersOpen(true);
+        break;
+      case 'rounds':
+        setRoundsOpen(true);
+        break;
+      case 'confirm':
+        confirmPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        break;
+      case 'complete':
+        handleMarkComplete();
+        break;
+      case 'results':
+        navigate(`/tournament/${id}/results`);
+        break;
+    }
+  }
 
   async function searchCourses() {
     if (courseQuery.length < 2) return;
@@ -264,7 +383,6 @@ export default function AdminTournamentSetup() {
   async function handleSaveGroups(roundId: string) {
     if (!editGroups) return;
 
-    // Validate: no empty groups, no duplicate players across groups
     const emptyGroups = editGroups.groups.filter(g => g.playerIds.length === 0);
     if (emptyGroups.length > 0) {
       toast.error(`Group${emptyGroups.length > 1 ? 's' : ''} ${emptyGroups.map(g => g.groupNumber).join(', ')} ${emptyGroups.length > 1 ? 'have' : 'has'} no players`);
@@ -278,7 +396,6 @@ export default function AdminTournamentSetup() {
       return;
     }
 
-    // Assign a unique 4-digit PIN to any group that doesn't have one
     const usedPins = new Set(editGroups.groups.map(g => g.pin).filter(Boolean));
     const groupsWithPins = editGroups.groups.map(g => {
       if (g.pin) return g;
@@ -319,6 +436,523 @@ export default function AdminTournamentSetup() {
   const payoutPctRows = payoutRows.filter(r => r.payoutType === 'percentage');
   const payoutTotal = payoutPctRows.reduce((s, r) => s + Number(r.percentage || 0), 0);
 
+  // ── Details form content (shared between create and accordion) ──
+  const detailsFormContent = (
+    <div className="space-y-4">
+      <div className="card p-4 sm:p-5 space-y-4">
+        <p className="section-title">Tournament Details</p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <label className="label">Tournament Name *</label>
+            <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Annual Golf Trip" />
+          </div>
+          <div>
+            <label className="label">Format</label>
+            <select className="input" value={form.format} onChange={e => setForm(f => ({ ...f, format: e.target.value }))}>
+              <option value="stroke_play">Stroke Play</option>
+              <option value="stableford">Stableford</option>
+              <option value="match_play">Match Play</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Entry Fee ($)</label>
+            <input className="input" type="number" min="0" step="1" value={form.entryFee} onChange={e => setForm(f => ({ ...f, entryFee: e.target.value }))} />
+          </div>
+          <div>
+            <label className="label">Start Date *</label>
+            <input className="input" type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} required />
+          </div>
+          <div>
+            <label className="label">End Date</label>
+            <input className="input" type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">Scoring Options</label>
+            <div className="flex flex-wrap gap-x-6 gap-y-2 mt-1">
+              {[
+                { key: 'isGross', label: 'Gross Scores' },
+                { key: 'isNet', label: 'Net Scores' },
+              ].map(({ key, label }) => (
+                <label key={key} className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
+                  <input type="checkbox" className="rounded accent-sage-600"
+                    checked={form[key as keyof typeof form] as boolean}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">Side Contests</label>
+            <div className="space-y-2 mt-1">
+              <div className="flex items-center gap-4 flex-wrap">
+                <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
+                  <input type="checkbox" className="rounded accent-sage-600"
+                    checked={form.hasClosestToPin}
+                    onChange={e => setForm(f => ({ ...f, hasClosestToPin: e.target.checked }))} />
+                  Closest to Pin
+                </label>
+                {form.hasClosestToPin && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-stone-400">Ante per player</span>
+                    <div className="relative w-24">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                      <input className="input pl-5" type="number" min="0" step="1" value={form.closestToPinFee}
+                        onChange={e => setForm(f => ({ ...f, closestToPinFee: e.target.value }))} placeholder="0" />
+                    </div>
+                    {Number(form.closestToPinFee) > 0 && selectedPlayerIds.length > 0 && (
+                      <span className="text-xs text-sand-600">${(Number(form.closestToPinFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-4 flex-wrap">
+                <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
+                  <input type="checkbox" className="rounded accent-sage-600"
+                    checked={form.hasLongestDrive}
+                    onChange={e => setForm(f => ({ ...f, hasLongestDrive: e.target.checked }))} />
+                  Longest Drive
+                </label>
+                {form.hasLongestDrive && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-stone-400">Ante per player</span>
+                    <div className="relative w-24">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                      <input className="input pl-5" type="number" min="0" step="1" value={form.longestDriveFee}
+                        onChange={e => setForm(f => ({ ...f, longestDriveFee: e.target.value }))} placeholder="0" />
+                    </div>
+                    {Number(form.longestDriveFee) > 0 && selectedPlayerIds.length > 0 && (
+                      <span className="text-xs text-sand-600">${(Number(form.longestDriveFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">Notes</label>
+            <textarea className="input" rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Optional notes…" />
+          </div>
+        </div>
+      </div>
+
+      {/* Payout structure */}
+      <div className="card p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-3">
+          <p className="section-title">Payout Structure</p>
+          <button type="button" onClick={() => setPayoutRows(r => [...r, { place: r.length + 1, label: `${r.length + 1}${['st','nd','rd'][r.length] ?? 'th'} Place`, payoutType: 'percentage', percentage: '', flatAmount: '' }])} className="btn-secondary text-xs">
+            <Plus size={13} /> Add Place
+          </button>
+        </div>
+        {payoutRows.length === 0 ? (
+          <p className="text-sm text-stone-400">No payouts configured.</p>
+        ) : (
+          <div className="space-y-2">
+            {payoutRows.map((row, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span className="w-5 text-xs text-stone-400 text-center shrink-0">{row.place}</span>
+                <input className="input flex-1 min-w-0" value={row.label} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
+                <div className="flex rounded-md border border-stone-200 overflow-hidden shrink-0 text-xs">
+                  <button type="button"
+                    className={`px-2 py-1 ${row.payoutType === 'percentage' ? 'bg-sage-600 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'}`}
+                    onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'percentage' } : x))}>%</button>
+                  <button type="button"
+                    className={`px-2 py-1 ${row.payoutType === 'flat' ? 'bg-sage-600 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'}`}
+                    onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'flat' } : x))}>$</button>
+                </div>
+                {row.payoutType === 'flat' ? (
+                  <div className="relative w-24 shrink-0">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                    <input className="input pl-5 text-right" type="number" min="0" step="1" value={row.flatAmount} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, flatAmount: e.target.value } : x))} placeholder="0" />
+                  </div>
+                ) : (
+                  <div className="relative w-24 shrink-0">
+                    <input className="input pr-5 text-right" type="number" min="0" max="100" step="0.5" value={row.percentage} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, percentage: e.target.value } : x))} placeholder="0" />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">%</span>
+                  </div>
+                )}
+                {Number(form.entryFee) > 0 && selectedPlayerIds.length > 0 && (
+                  <span className="text-xs text-sand-600 w-14 text-right shrink-0">
+                    {row.payoutType === 'flat'
+                      ? `$${Number(row.flatAmount || 0).toFixed(0)}`
+                      : `$${((Number(row.percentage || 0) / 100) * Number(form.entryFee) * selectedPlayerIds.length).toFixed(0)}`}
+                  </span>
+                )}
+                <button type="button" onClick={() => setPayoutRows(r => r.filter((_, j) => j !== i))} className="text-stone-300 hover:text-red-400 shrink-0"><X size={14} /></button>
+              </div>
+            ))}
+            {payoutPctRows.length > 0 && (
+              <p className={`text-xs mt-1 ${Math.abs(payoutTotal - 100) > 0.01 ? 'text-red-400' : 'text-sage-600'}`}>
+                % total: {payoutTotal}% {Math.abs(payoutTotal - 100) < 0.01 ? '✓' : '— must equal 100%'}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // ── Rounds section content ──
+  const roundsSectionContent = (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="section-title">Rounds ({rounds.length})</p>
+        <button onClick={() => { setEditingRound(null); setShowRoundForm(!showRoundForm); setCourseTees([]); setCourseQuery(''); }} className="btn-primary">
+          <Plus size={14} /> Add Round
+        </button>
+      </div>
+
+      {/* Round form */}
+      {showRoundForm && (
+        <div className="card p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-stone-700">{editingRound ? 'Edit Round' : 'New Round'}</h3>
+            <button type="button" onClick={() => setShowRoundForm(false)} className="text-stone-300 hover:text-stone-500 p-1"><X size={18} /></button>
+          </div>
+          <form onSubmit={handleAddRound} className="space-y-4">
+            <div>
+              <label className="label">Search for a Course</label>
+              <div className="flex gap-2">
+                <input
+                  className="input flex-1"
+                  value={courseQuery}
+                  onChange={e => setCourseQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), searchCourses())}
+                  placeholder="Course name or city…"
+                />
+                <button type="button" onClick={searchCourses} disabled={courseSearching} className="btn-secondary shrink-0">
+                  {courseSearching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                </button>
+              </div>
+              {courseResults.length > 0 && (
+                <div className="mt-1.5 border border-stone-200 rounded-lg divide-y divide-stone-100 max-h-52 overflow-y-auto shadow-sm">
+                  {courseResults.slice(0, 15).map((c, i) => (
+                    <button key={i} type="button" onClick={() => selectCourseResult(c)}
+                      className="w-full text-left px-3 py-2.5 hover:bg-sage-50 transition-colors">
+                      <div className="text-sm font-medium text-stone-800">{c.CourseName ?? c.FacilityName ?? c.club_name ?? c.course_name}</div>
+                      <div className="text-xs text-stone-400">{[c.City ?? c.location?.city, c.State ?? c.location?.state].filter(Boolean).join(', ')}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {courseTees.length > 0 && (
+              <div>
+                <label className="label">Select Tee</label>
+                <select className="input" value={roundForm.tee} onChange={e => selectTee(e.target.value)}>
+                  {courseTees.map(t => (
+                    <option key={t.label} value={t.label}>{t.label} — Par {t.par} · Rating {t.courseRating} · Slope {t.slopeRating}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className="label">Course Name *</label>
+                <input className="input" value={roundForm.courseName} onChange={e => setRoundForm(f => ({ ...f, courseName: e.target.value }))} required placeholder="Pebble Beach" />
+              </div>
+              {courseTees.length === 0 && (
+                <div className="col-span-2">
+                  <label className="label">Tee Name *</label>
+                  <input className="input" value={roundForm.tee} onChange={e => setRoundForm(f => ({ ...f, tee: e.target.value }))} required placeholder="White" />
+                </div>
+              )}
+              <div>
+                <label className="label">Course Rating *</label>
+                <input className="input" type="number" step="0.1" value={roundForm.courseRating} onChange={e => setRoundForm(f => ({ ...f, courseRating: e.target.value }))} required placeholder="71.4" />
+              </div>
+              <div>
+                <label className="label">Slope Rating *</label>
+                <input className="input" type="number" value={roundForm.slopeRating} onChange={e => setRoundForm(f => ({ ...f, slopeRating: e.target.value }))} required placeholder="128" />
+              </div>
+              <div>
+                <label className="label">Par *</label>
+                <input className="input" type="number" value={roundForm.par} onChange={e => setRoundForm(f => ({ ...f, par: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="label">Date *</label>
+                <input className="input" type="date" value={roundForm.date} onChange={e => setRoundForm(f => ({ ...f, date: e.target.value }))} required />
+              </div>
+              {tournament?.hasClosestToPin && (
+                <div>
+                  <label className="label">CTP Hole</label>
+                  <input className="input" type="number" min="1" max="18" value={roundForm.closestToPinHole} onChange={e => setRoundForm(f => ({ ...f, closestToPinHole: e.target.value }))} placeholder="e.g. 7" />
+                </div>
+              )}
+              {tournament?.hasLongestDrive && (
+                <div>
+                  <label className="label">LD Hole</label>
+                  <input className="input" type="number" min="1" max="18" value={roundForm.longestDriveHole} onChange={e => setRoundForm(f => ({ ...f, longestDriveHole: e.target.value }))} placeholder="e.g. 14" />
+                </div>
+              )}
+            </div>
+
+            <div className="col-span-2">
+              <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
+                <input type="checkbox" className="rounded accent-sage-600"
+                  checked={roundForm.isPracticeRound}
+                  onChange={e => setRoundForm(f => ({ ...f, isPracticeRound: e.target.checked }))} />
+                Practice Round
+                <span className="text-xs text-stone-400">(counts toward handicap, excluded from standings)</span>
+              </label>
+            </div>
+
+            <div className="flex gap-2">
+              <button type="submit" className="btn-primary"><Check size={14} /> {editingRound ? 'Save Changes' : 'Add Round'}</button>
+              <button type="button" onClick={resetRoundForm} className="btn-secondary">Cancel</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {rounds.length === 0 ? (
+        <div className="card p-8 text-center text-stone-400 text-sm">No rounds yet.</div>
+      ) : (
+        <div className="card divide-y divide-stone-100">
+          {rounds.map(r => {
+            const isExpanded = expandedRoundId === r.id;
+            const assignedIds = new Set((editGroups?.groups ?? []).flatMap(g => g.playerIds));
+            const unassigned = isExpanded
+              ? (tournament?.playerIds ?? selectedPlayerIds).filter(pid => !assignedIds.has(pid))
+              : [];
+            return (
+              <div key={r.id}>
+                <div className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors group">
+                  <Link to={`/admin/rounds/${r.id}/scoring`} className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <StatusBadge status={r.status} />
+                      <span className="text-xs text-stone-400">{r.tee}</span>
+                      {r.isPracticeRound && (
+                        <span className="text-xs bg-blue-100 text-blue-600 font-medium px-1.5 py-0.5 rounded">Practice</span>
+                      )}
+                      {r.teeTimeGroups && r.teeTimeGroups.length > 0 && (
+                        <span className="flex items-center gap-0.5 text-xs text-sage-600 font-medium">
+                          <Users size={11} /> {r.teeTimeGroups.length} pairing{r.teeTimeGroups.length !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-medium text-stone-800 group-hover:text-sage-700">{r.courseName}</div>
+                    <div className="text-xs text-stone-400 mt-0.5">
+                      {parseLocalDate(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
+                    </div>
+                  </Link>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleExpandRound(r)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        isExpanded
+                          ? 'bg-sage-100 text-sage-700'
+                          : 'text-stone-400 hover:text-sage-600 hover:bg-sage-50'
+                      }`}
+                      title="Manage tee time pairings"
+                    >
+                      <Users size={13} /> Pairings
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingRound(r);
+                        setRoundForm({
+                          courseId: r.courseId,
+                          courseName: r.courseName,
+                          tee: r.tee,
+                          courseRating: String(r.courseRating),
+                          slopeRating: String(r.slopeRating),
+                          par: String(r.par),
+                          date: r.date,
+                          closestToPinHole: r.closestToPinHole ? String(r.closestToPinHole) : '',
+                          longestDriveHole: r.longestDriveHole ? String(r.longestDriveHole) : '',
+                          notes: r.notes ?? '',
+                          isPracticeRound: r.isPracticeRound ?? false,
+                          holes: r.holes ?? [],
+                        });
+                        setShowRoundForm(true);
+                      }}
+                      className="p-1.5 text-stone-300 hover:text-sage-600 transition-colors rounded"
+                      title="Edit round"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Delete round at ${r.courseName}? This cannot be undone.`)) return;
+                        try {
+                          await roundsApi.delete(r.id);
+                          setRounds(rs => rs.filter(x => x.id !== r.id));
+                          if (expandedRoundId === r.id) { setExpandedRoundId(null); setEditGroups(null); }
+                          toast.success('Round deleted');
+                        } catch (e: any) { toast.error(e.message); }
+                      }}
+                      className="p-1.5 text-stone-300 hover:text-red-400 transition-colors rounded"
+                      title="Delete round"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                    <ChevronRight size={15} className="text-stone-300" />
+                  </div>
+                </div>
+
+                {/* Tee time groups accordion */}
+                {isExpanded && editGroups && (
+                  <div className="border-t border-stone-100 bg-stone-50/50 px-4 py-4 space-y-4">
+                    <div>
+                      <p className="label mb-1.5">Start Format</p>
+                      <div className="flex rounded-lg border border-stone-200 overflow-hidden w-fit text-sm">
+                        {(['sequential', 'shotgun'] as const).map(fmt => (
+                          <button
+                            key={fmt}
+                            type="button"
+                            onClick={() => setEditGroups(g => g ? { ...g, startFormat: fmt } : g)}
+                            className={`px-4 py-1.5 font-medium capitalize transition-colors ${
+                              editGroups.startFormat === fmt
+                                ? 'bg-sage-600 text-white'
+                                : 'bg-white text-stone-500 hover:bg-stone-50'
+                            }`}
+                          >
+                            {fmt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {editGroups.groups.map((group, gIdx) => (
+                        <div key={gIdx} className="bg-white rounded-lg border border-stone-200 p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-stone-700">Pairing {group.groupNumber}</span>
+                              {group.pin && (
+                                <span className="text-xs font-mono bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">PIN: {group.pin}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="time"
+                                className="input py-1 text-sm w-32"
+                                value={convertTo24h(group.teeTime)}
+                                onChange={e => {
+                                  const display = convertTo12h(e.target.value);
+                                  setEditGroups(g => {
+                                    if (!g) return g;
+                                    const updated = [...g.groups];
+                                    updated[gIdx] = { ...updated[gIdx], teeTime: display };
+                                    return { ...g, groups: updated };
+                                  });
+                                }}
+                              />
+                              {editGroups.startFormat === 'shotgun' && (
+                                <input
+                                  type="number" min="1" max="18"
+                                  placeholder="Hole #"
+                                  className="input py-1 text-sm w-24"
+                                  value={group.startingHole ?? ''}
+                                  onChange={e => {
+                                    const val = e.target.value ? Number(e.target.value) : undefined;
+                                    setEditGroups(g => {
+                                      if (!g) return g;
+                                      const updated = [...g.groups];
+                                      updated[gIdx] = { ...updated[gIdx], startingHole: val };
+                                      return { ...g, groups: updated };
+                                    });
+                                  }}
+                                />
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setEditGroups(g => {
+                                  if (!g) return g;
+                                  return { ...g, groups: g.groups.filter((_, i) => i !== gIdx).map((grp, i) => ({ ...grp, groupNumber: i + 1 })) };
+                                })}
+                                className="p-1 text-stone-300 hover:text-red-400"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5 min-h-[28px]">
+                            {group.playerIds.map(pid => {
+                              const p = players.find(pl => pl.id === pid);
+                              if (!p) return null;
+                              return (
+                                <button
+                                  key={pid}
+                                  type="button"
+                                  title="Remove from group"
+                                  onClick={() => setEditGroups(g => {
+                                    if (!g) return g;
+                                    const updated = [...g.groups];
+                                    updated[gIdx] = { ...updated[gIdx], playerIds: updated[gIdx].playerIds.filter(x => x !== pid) };
+                                    return { ...g, groups: updated };
+                                  })}
+                                  className="flex items-center gap-1 bg-sage-100 text-sage-800 text-xs px-2 py-0.5 rounded-full hover:bg-red-100 hover:text-red-700 transition-colors"
+                                >
+                                  {p.name} <X size={10} />
+                                </button>
+                              );
+                            })}
+                            {group.playerIds.length === 0 && (
+                              <span className="text-xs text-stone-400 italic">No players yet</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setEditGroups(g => g ? { ...g, groups: [...g.groups, { groupNumber: g.groups.length + 1, teeTime: '', playerIds: [] }] } : g)}
+                      className="btn-secondary text-xs"
+                    >
+                      <Plus size={13} /> Add Pairing
+                    </button>
+
+                    {unassigned.length > 0 && (
+                      <div>
+                        <p className="label mb-1.5">Unassigned Players — click to add to a pairing</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {unassigned.map(pid => {
+                            const p = players.find(pl => pl.id === pid);
+                            if (!p) return null;
+                            return (
+                              <UnassignedChip
+                                key={pid}
+                                name={p.name}
+                                groups={editGroups.groups}
+                                onAssign={gIdx => setEditGroups(g => {
+                                  if (!g) return g;
+                                  const updated = [...g.groups];
+                                  updated[gIdx] = { ...updated[gIdx], playerIds: [...updated[gIdx].playerIds, pid] };
+                                  return { ...g, groups: updated };
+                                })}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-1 border-t border-stone-100">
+                      <button
+                        type="button"
+                        onClick={() => handleSaveGroups(r.id)}
+                        disabled={savingGroups}
+                        className="btn-primary"
+                      >
+                        {savingGroups ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                        Save Tee Sheet
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -328,21 +962,6 @@ export default function AdminTournamentSetup() {
           <h1 className="page-header mt-1">{creating ? 'New Tournament' : tournament?.name}</h1>
           {tournament && <div className="mt-1"><StatusBadge status={tournament.status} /></div>}
         </div>
-        {!creating && tournament?.status === 'active' && (
-          <button
-            onClick={async () => {
-              if (!confirm('Mark this tournament as completed?')) return;
-              try {
-                const updated = await tournamentsApi.update(id!, { status: 'completed' });
-                setTournament(updated);
-                toast.success('Tournament completed');
-              } catch (e: any) { toast.error(e.message); }
-            }}
-            className="btn-secondary text-xs shrink-0"
-          >
-            <Check size={13} /> Mark Completed
-          </button>
-        )}
         {!creating && tournament?.status === 'completed' && (
           <div className="flex gap-2 shrink-0">
             <Link to={`/tournament/${id}/results`} className="btn-gold">Results</Link>
@@ -351,724 +970,338 @@ export default function AdminTournamentSetup() {
         )}
       </div>
 
-      {/* Tabs */}
-      {!creating && (
-        <div className="flex border-b border-stone-200 gap-1">
-          {(['details', 'players', 'rounds'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-3 pb-2.5 pt-1 text-sm font-medium capitalize border-b-2 transition-colors -mb-px ${
-                tab === t ? 'border-sage-600 text-sage-700' : 'border-transparent text-stone-400 hover:text-stone-600'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Next-steps guidance banner */}
-      {!creating && tournament && tournament.status !== 'completed' && tournament.status !== 'archived' && (() => {
-        const allComplete = rounds.length > 0 && rounds.every(r => r.status === 'completed');
-        const allScheduled = rounds.length > 0 && rounds.every(r => r.status === 'scheduled');
-        const msg = selectedPlayerIds.length === 0
-          ? { text: 'Add players to the tournament before adding rounds.', tab: 'players' as const, label: 'Go to Players' }
-          : rounds.length === 0
-          ? { text: 'Add at least one round to get started.', tab: 'rounds' as const, label: 'Go to Rounds' }
-          : allComplete
-          ? { text: 'All rounds are complete — mark the tournament as completed above.', tab: null, label: null }
-          : allScheduled
-          ? { text: `${rounds.length} round${rounds.length > 1 ? 's' : ''} ready. Click a round to enter scores.`, tab: 'rounds' as const, label: 'Go to Rounds' }
-          : null;
-        if (!msg) return null;
-        return (
-          <div className="flex items-center gap-3 bg-sage-50 border border-sage-200 rounded-lg px-4 py-2.5 text-sm text-sage-800">
-            <span className="text-sage-500">→</span>
-            <span className="flex-1">{msg.text}</span>
-            {msg.tab && (
-              <button onClick={() => setTab(msg.tab!)} className="text-sage-700 font-medium hover:underline text-xs shrink-0">
-                {msg.label}
-              </button>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* ── Details ── */}
-      {(creating || tab === 'details') && (
+      {/* ── Create flow ── */}
+      {creating && (
         <form onSubmit={handleSaveDetails} className="space-y-4">
-          <div className="card p-4 sm:p-5 space-y-4">
-            <p className="section-title">Tournament Details</p>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className="label">Tournament Name *</label>
-                <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Annual Golf Trip" />
-              </div>
-              <div>
-                <label className="label">Format</label>
-                <select className="input" value={form.format} onChange={e => setForm(f => ({ ...f, format: e.target.value }))}>
-                  <option value="stroke_play">Stroke Play</option>
-                  <option value="stableford">Stableford</option>
-                  <option value="match_play">Match Play</option>
-                </select>
-              </div>
-              <div>
-                <label className="label">Entry Fee ($)</label>
-                <input className="input" type="number" min="0" step="1" value={form.entryFee} onChange={e => setForm(f => ({ ...f, entryFee: e.target.value }))} />
-              </div>
-              <div>
-                <label className="label">Start Date *</label>
-                <input className="input" type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} required />
-              </div>
-              <div>
-                <label className="label">End Date</label>
-                <input className="input" type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="label">Scoring Options</label>
-                <div className="flex flex-wrap gap-x-6 gap-y-2 mt-1">
-                  {[
-                    { key: 'isGross', label: 'Gross Scores' },
-                    { key: 'isNet', label: 'Net Scores' },
-                  ].map(({ key, label }) => (
-                    <label key={key} className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
-                      <input type="checkbox" className="rounded accent-sage-600"
-                        checked={form[key as keyof typeof form] as boolean}
-                        onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="label">Side Contests</label>
-                <div className="space-y-2 mt-1">
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
-                      <input type="checkbox" className="rounded accent-sage-600"
-                        checked={form.hasClosestToPin}
-                        onChange={e => setForm(f => ({ ...f, hasClosestToPin: e.target.checked }))} />
-                      Closest to Pin
-                    </label>
-                    {form.hasClosestToPin && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-stone-400">Ante per player</span>
-                        <div className="relative w-24">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
-                          <input className="input pl-5" type="number" min="0" step="1" value={form.closestToPinFee}
-                            onChange={e => setForm(f => ({ ...f, closestToPinFee: e.target.value }))} placeholder="0" />
-                        </div>
-                        {Number(form.closestToPinFee) > 0 && selectedPlayerIds.length > 0 && (
-                          <span className="text-xs text-sand-600">${(Number(form.closestToPinFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
-                      <input type="checkbox" className="rounded accent-sage-600"
-                        checked={form.hasLongestDrive}
-                        onChange={e => setForm(f => ({ ...f, hasLongestDrive: e.target.checked }))} />
-                      Longest Drive
-                    </label>
-                    {form.hasLongestDrive && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-stone-400">Ante per player</span>
-                        <div className="relative w-24">
-                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
-                          <input className="input pl-5" type="number" min="0" step="1" value={form.longestDriveFee}
-                            onChange={e => setForm(f => ({ ...f, longestDriveFee: e.target.value }))} placeholder="0" />
-                        </div>
-                        {Number(form.longestDriveFee) > 0 && selectedPlayerIds.length > 0 && (
-                          <span className="text-xs text-sand-600">${(Number(form.longestDriveFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="label">Notes</label>
-                <textarea className="input" rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Optional notes…" />
-              </div>
-            </div>
-          </div>
+          {detailsFormContent}
 
-          {/* Payout structure */}
+          {/* Players picker on create */}
           <div className="card p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="section-title">Payout Structure</p>
-              <button type="button" onClick={() => setPayoutRows(r => [...r, { place: r.length + 1, label: `${r.length + 1}${['st','nd','rd'][r.length] ?? 'th'} Place`, payoutType: 'percentage', percentage: '', flatAmount: '' }])} className="btn-secondary text-xs">
-                <Plus size={13} /> Add Place
-              </button>
-            </div>
-            {payoutRows.length === 0 ? (
-              <p className="text-sm text-stone-400">No payouts configured.</p>
+            <p className="section-title mb-3">Players ({selectedPlayerIds.length})</p>
+            {players.length === 0 ? (
+              <p className="text-sm text-stone-400">No players yet. <Link to="/admin/players" className="text-sage-600 hover:underline">Add players first.</Link></p>
             ) : (
-              <div className="space-y-2">
-                {payoutRows.map((row, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <span className="w-5 text-xs text-stone-400 text-center shrink-0">{row.place}</span>
-                    <input className="input flex-1 min-w-0" value={row.label} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
-                    {/* Type toggle */}
-                    <div className="flex rounded-md border border-stone-200 overflow-hidden shrink-0 text-xs">
-                      <button type="button"
-                        className={`px-2 py-1 ${row.payoutType === 'percentage' ? 'bg-sage-600 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'}`}
-                        onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'percentage' } : x))}>%</button>
-                      <button type="button"
-                        className={`px-2 py-1 ${row.payoutType === 'flat' ? 'bg-sage-600 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'}`}
-                        onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'flat' } : x))}>$</button>
-                    </div>
-                    {row.payoutType === 'flat' ? (
-                      <div className="relative w-24 shrink-0">
-                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
-                        <input className="input pl-5 text-right" type="number" min="0" step="1" value={row.flatAmount} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, flatAmount: e.target.value } : x))} placeholder="0" />
-                      </div>
-                    ) : (
-                      <div className="relative w-24 shrink-0">
-                        <input className="input pr-5 text-right" type="number" min="0" max="100" step="0.5" value={row.percentage} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, percentage: e.target.value } : x))} placeholder="0" />
-                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">%</span>
-                      </div>
-                    )}
-                    {Number(form.entryFee) > 0 && selectedPlayerIds.length > 0 && (
-                      <span className="text-xs text-sand-600 w-14 text-right shrink-0">
-                        {row.payoutType === 'flat'
-                          ? `$${Number(row.flatAmount || 0).toFixed(0)}`
-                          : `$${((Number(row.percentage || 0) / 100) * Number(form.entryFee) * selectedPlayerIds.length).toFixed(0)}`}
-                      </span>
-                    )}
-                    <button type="button" onClick={() => setPayoutRows(r => r.filter((_, j) => j !== i))} className="text-stone-300 hover:text-red-400 shrink-0"><X size={14} /></button>
-                  </div>
+              <div className="grid sm:grid-cols-2 gap-1">
+                {players.map(p => (
+                  <label key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 cursor-pointer">
+                    <input type="checkbox" className="rounded accent-sage-600"
+                      checked={selectedPlayerIds.includes(p.id)}
+                      onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
+                    <span className="flex-1 text-sm text-stone-700">{p.name}</span>
+                    <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
+                  </label>
                 ))}
-                {payoutPctRows.length > 0 && (
-                  <p className={`text-xs mt-1 ${Math.abs(payoutTotal - 100) > 0.01 ? 'text-red-400' : 'text-sage-600'}`}>
-                    % total: {payoutTotal}% {Math.abs(payoutTotal - 100) < 0.01 ? '✓' : '— must equal 100%'}
-                  </p>
-                )}
               </div>
             )}
           </div>
-
-          {/* Players (on create) */}
-          {creating && (
-            <div className="card p-4 sm:p-5">
-              <p className="section-title mb-3">Players ({selectedPlayerIds.length})</p>
-              {players.length === 0 ? (
-                <p className="text-sm text-stone-400">No players yet. <Link to="/admin/players" className="text-sage-600 hover:underline">Add players first.</Link></p>
-              ) : (
-                <div className="grid sm:grid-cols-2 gap-1">
-                  {players.map(p => (
-                    <label key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 cursor-pointer">
-                      <input type="checkbox" className="rounded accent-sage-600"
-                        checked={selectedPlayerIds.includes(p.id)}
-                        onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
-                      <span className="flex-1 text-sm text-stone-700">{p.name}</span>
-                      <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
           <button type="submit" className="btn-primary">
-            <Save size={14} /> {creating ? 'Create Tournament' : 'Save Changes'}
+            <Save size={14} /> Create Tournament
           </button>
         </form>
       )}
 
-      {/* ── Players tab ── */}
-      {!creating && tab === 'players' && (
-        <div className="space-y-3">
-          {/* Inline add new player */}
-          {showNewPlayer ? (
-            <div className="card p-4 sm:p-5 border-l-4 border-sage-400">
-              <div className="flex items-center justify-between mb-3">
-                <p className="font-semibold text-stone-800 text-sm">New Player</p>
-                <button onClick={() => { setShowNewPlayer(false); setNewPlayerForm({ name: '', handicapIndex: '', email: '' }); }}
-                  className="text-stone-300 hover:text-stone-500"><X size={16} /></button>
+      {/* ── Existing tournament: next-action layout ── */}
+      {!creating && tournament && (
+        <>
+          {/* Next-action card */}
+          {eventState && (
+            <div className={`rounded-xl border p-4 sm:p-5 flex items-start sm:items-center justify-between gap-4 ${
+              eventState.urgent
+                ? 'border-amber-300 bg-amber-50'
+                : 'border-stone-200 bg-white'
+            }`}>
+              <div className="flex-1 min-w-0">
+                <div className={`text-xs font-semibold uppercase tracking-widest mb-1 ${
+                  eventState.urgent ? 'text-amber-600' : 'text-stone-400'
+                }`}>
+                  {eventState.label}
+                </div>
+                <p className="text-sm text-stone-700">{eventState.description}</p>
               </div>
-              <form
-                onSubmit={async e => {
-                  e.preventDefault();
-                  if (!newPlayerForm.name.trim()) return;
-                  setSavingNewPlayer(true);
-                  try {
-                    const created = await playersApi.create({
-                      name: newPlayerForm.name.trim(),
-                      handicapIndex: Number(newPlayerForm.handicapIndex) || 0,
-                      email: newPlayerForm.email.trim() || undefined,
-                      handicapHistory: [],
-                    });
-                    setPlayers(ps => [...ps, created]);
-                    const updatedIds = [...selectedPlayerIds, created.id];
-                    setSelectedPlayerIds(updatedIds);
-                    await tournamentsApi.update(id!, { playerIds: updatedIds });
-                    setShowNewPlayer(false);
-                    setNewPlayerForm({ name: '', handicapIndex: '', email: '' });
-                    toast.success(`${created.name} added to tournament`);
-                  } catch (err: any) {
-                    toast.error(err.message);
-                  } finally {
-                    setSavingNewPlayer(false);
-                  }
-                }}
-                className="grid sm:grid-cols-3 gap-3"
-              >
-                <div className="sm:col-span-1">
-                  <label className="label">Name *</label>
-                  <input className="input" value={newPlayerForm.name} required
-                    onChange={e => setNewPlayerForm(f => ({ ...f, name: e.target.value }))} placeholder="Casey Hunter" />
-                </div>
-                <div>
-                  <label className="label">Handicap Index</label>
-                  <input className="input" type="number" min="0" max="54" step="0.1"
-                    value={newPlayerForm.handicapIndex}
-                    onChange={e => setNewPlayerForm(f => ({ ...f, handicapIndex: e.target.value }))} placeholder="0.0" />
-                </div>
-                <div>
-                  <label className="label">Email (optional)</label>
-                  <input className="input" type="email" value={newPlayerForm.email}
-                    onChange={e => setNewPlayerForm(f => ({ ...f, email: e.target.value }))} placeholder="email@example.com" />
-                </div>
-                <div className="sm:col-span-3 flex gap-2">
-                  <button type="submit" disabled={savingNewPlayer} className="btn-primary">
-                    {savingNewPlayer ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                    Add to Tournament
-                  </button>
-                  <button type="button" onClick={() => { setShowNewPlayer(false); setNewPlayerForm({ name: '', handicapIndex: '', email: '' }); }}
-                    className="btn-secondary">Cancel</button>
-                </div>
-              </form>
-            </div>
-          ) : null}
-
-          <div className="card p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <p className="section-title">Tournament Players ({selectedPlayerIds.length})</p>
-              <div className="flex gap-2">
-                <button onClick={() => setShowNewPlayer(true)} className="btn-secondary text-xs">
-                  <Plus size={13} /> New Player
+              {eventState.ctaTarget && (
+                <button
+                  type="button"
+                  onClick={handleCtaAction}
+                  disabled={markingComplete}
+                  className={`shrink-0 ${eventState.urgent ? 'btn-primary' : 'btn-secondary'}`}
+                >
+                  {markingComplete && <Loader2 size={14} className="animate-spin" />}
+                  {eventState.cta}
                 </button>
-                <button onClick={async () => {
-                  try { await tournamentsApi.update(id!, { playerIds: selectedPlayerIds }); toast.success('Saved'); }
-                  catch (e: any) { toast.error(e.message); }
-                }} className="btn-primary text-xs"><Save size={13} /> Save</button>
-              </div>
+              )}
             </div>
-            {players.length === 0 ? (
-              <p className="text-sm text-stone-400 text-center py-4">
-                No players yet. Use "New Player" to add someone.
-              </p>
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-1">
-                {players.map(p => {
-                  const isEnrolled = selectedPlayerIds.includes(p.id);
-                  const isWD = tournament?.withdrawnPlayerIds?.includes(p.id) ?? false;
+          )}
+
+          {/* Score confirmation panel — shown when any groups have submitted */}
+          {drafts.some(d => d.status === 'submitted' || d.status === 'confirmed') && (
+            <div ref={confirmPanelRef} className="card p-5">
+              <h2 className="font-semibold text-stone-800 mb-3 text-sm uppercase tracking-wide">Scorecard Submissions</h2>
+              <div className="space-y-2">
+                {drafts.map(draft => {
+                  const round = rounds.find(r => r.id === draft.roundId);
+                  const group = round?.teeTimeGroups?.find(g => g.groupNumber === draft.groupNumber);
+                  const groupPlayers = players.filter(p => group?.playerIds.includes(p.id));
+                  const allHoleNums = round?.holes?.length
+                    ? round.holes.map(h => h.number)
+                    : Array.from({ length: 18 }, (_, i) => i + 1);
+                  const draftKey = `${draft.roundId}-${draft.groupNumber}`;
+                  const isExpanded = expandedDraft === draftKey;
+                  const isSubmitted = draft.status === 'submitted';
+                  const isConfirmed = draft.status === 'confirmed';
+                  const confirming = confirmingGroup === draftKey;
+
                   return (
-                    <div key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 border border-stone-100">
-                      <input type="checkbox" className="rounded accent-sage-600"
-                        checked={isEnrolled}
-                        onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
-                      <span className={`flex-1 text-sm font-medium ${isWD ? 'line-through text-stone-400' : 'text-stone-700'}`}>{p.name}</span>
-                      <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
-                      {isEnrolled && (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (!tournament) return;
-                            const current = tournament.withdrawnPlayerIds ?? [];
-                            const updated = isWD ? current.filter(x => x !== p.id) : [...current, p.id];
-                            try {
-                              const t = await tournamentsApi.update(id!, { withdrawnPlayerIds: updated });
-                              setTournament(t);
-                            } catch (err: any) { toast.error(err.message); }
-                          }}
-                          className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${isWD ? 'bg-stone-200 text-stone-600 hover:bg-stone-300' : 'bg-stone-100 text-stone-400 hover:bg-red-100 hover:text-red-600'}`}
-                          title={isWD ? 'Remove WD' : 'Mark as withdrawn'}
-                        >
-                          {isWD ? 'WD ✕' : 'WD'}
-                        </button>
+                    <div key={draftKey} className={`border rounded-lg ${isSubmitted ? 'border-sage-200 bg-sage-50' : 'border-stone-200'}`}>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedDraft(isExpanded ? null : draftKey)}
+                        className="w-full flex items-center justify-between px-4 py-3 text-left"
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-stone-800">Pairing {draft.groupNumber}</span>
+                          {rounds.length > 1 && round && (
+                            <span className="text-xs text-stone-400">{round.courseName}</span>
+                          )}
+                          {group?.teeTime && <span className="text-xs text-stone-400">{group.teeTime}</span>}
+                          {isConfirmed ? (
+                            <span className="text-xs bg-sage-100 text-sage-700 px-2 py-0.5 rounded-full">Confirmed</span>
+                          ) : isSubmitted ? (
+                            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Submitted — awaiting review</span>
+                          ) : (
+                            <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">In progress</span>
+                          )}
+                        </div>
+                        {isExpanded
+                          ? <ChevronUp size={15} className="text-stone-400 shrink-0" />
+                          : <ChevronDown size={15} className="text-stone-400 shrink-0" />}
+                      </button>
+
+                      {isExpanded && (
+                        <div className="px-4 pb-4 border-t border-stone-100">
+                          <div className="overflow-x-auto mt-3">
+                            <table className="w-full text-xs">
+                              <thead>
+                                <tr className="bg-stone-50">
+                                  <th className="text-left px-2 py-1.5 font-medium text-stone-500">Player</th>
+                                  {allHoleNums.slice(0, 9).map(n => (
+                                    <th key={n} className="px-1 py-1.5 text-center text-stone-400 font-normal w-6">{n}</th>
+                                  ))}
+                                  <th className="px-2 py-1.5 text-center font-medium text-stone-500 bg-stone-100">Out</th>
+                                  {allHoleNums.slice(9).map(n => (
+                                    <th key={n} className="px-1 py-1.5 text-center text-stone-400 font-normal w-6">{n}</th>
+                                  ))}
+                                  <th className="px-2 py-1.5 text-center font-medium text-stone-500 bg-stone-100">In</th>
+                                  <th className="px-2 py-1.5 text-center font-medium text-stone-600 bg-stone-200">Tot</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {groupPlayers.map(player => {
+                                  const front = allHoleNums.slice(0, 9).reduce((sum, n) => sum + (draft.holes[player.id]?.[String(n)] ?? 0), 0);
+                                  const back = allHoleNums.slice(9).reduce((sum, n) => sum + (draft.holes[player.id]?.[String(n)] ?? 0), 0);
+                                  const total = front + back;
+                                  return (
+                                    <tr key={player.id} className="border-t border-stone-100">
+                                      <td className="px-2 py-2 font-medium text-stone-700 whitespace-nowrap">{player.name}</td>
+                                      {allHoleNums.slice(0, 9).map(n => {
+                                        const s = draft.holes[player.id]?.[String(n)];
+                                        const hInfo = round?.holes?.find(h => h.number === n);
+                                        const diff = s != null && hInfo ? s - hInfo.par : null;
+                                        return (
+                                          <td key={n} className="px-1 py-2 text-center">
+                                            <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
+                                              s == null ? 'text-stone-300' :
+                                              diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
+                                              diff === -1 ? 'bg-red-200' :
+                                              diff === 0 ? 'bg-green-100' : ''
+                                            }`}>{s ?? '–'}</span>
+                                          </td>
+                                        );
+                                      })}
+                                      <td className="px-2 py-2 text-center font-semibold text-stone-700 bg-stone-100">{front || '–'}</td>
+                                      {allHoleNums.slice(9).map(n => {
+                                        const s = draft.holes[player.id]?.[String(n)];
+                                        const hInfo = round?.holes?.find(h => h.number === n);
+                                        const diff = s != null && hInfo ? s - hInfo.par : null;
+                                        return (
+                                          <td key={n} className="px-1 py-2 text-center">
+                                            <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
+                                              s == null ? 'text-stone-300' :
+                                              diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
+                                              diff === -1 ? 'bg-red-200' :
+                                              diff === 0 ? 'bg-green-100' : ''
+                                            }`}>{s ?? '–'}</span>
+                                          </td>
+                                        );
+                                      })}
+                                      <td className="px-2 py-2 text-center font-semibold text-stone-700 bg-stone-100">{back || '–'}</td>
+                                      <td className="px-2 py-2 text-center font-bold text-stone-800 bg-stone-200">{total || '–'}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                          {isSubmitted && !isConfirmed && (
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmDraft(draft.roundId, draft.groupNumber)}
+                              disabled={!!confirmingGroup}
+                              className="btn-primary mt-3 text-sm"
+                            >
+                              {confirming ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                              {confirming ? 'Confirming…' : '✓ Confirm Scores'}
+                            </button>
+                          )}
+                          {isConfirmed && (
+                            <p className="text-xs text-sage-600 mt-2">Scores have been confirmed and finalized.</p>
+                          )}
+                        </div>
                       )}
                     </div>
                   );
                 })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Rounds tab ── */}
-      {!creating && tab === 'rounds' && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="section-title">Rounds ({rounds.length})</p>
-            <button onClick={() => { setEditingRound(null); setShowRoundForm(!showRoundForm); setCourseTees([]); setCourseQuery(''); }} className="btn-primary">
-              <Plus size={14} /> Add Round
-            </button>
-          </div>
-
-          {/* Round form */}
-          {showRoundForm && (
-            <div className="card p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-stone-700">New Round</h3>
-                <button type="button" onClick={() => setShowRoundForm(false)} className="text-stone-300 hover:text-stone-500 p-1"><X size={18} /></button>
-              </div>
-              <form onSubmit={handleAddRound} className="space-y-4">
-
-                {/* Course search */}
-                <div>
-                  <label className="label">Search for a Course</label>
-                  <div className="flex gap-2">
-                    <input
-                      className="input flex-1"
-                      value={courseQuery}
-                      onChange={e => setCourseQuery(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), searchCourses())}
-                      placeholder="Course name or city…"
-                    />
-                    <button type="button" onClick={searchCourses} disabled={courseSearching} className="btn-secondary shrink-0">
-                      {courseSearching ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-                    </button>
-                  </div>
-
-                  {courseResults.length > 0 && (
-                    <div className="mt-1.5 border border-stone-200 rounded-lg divide-y divide-stone-100 max-h-52 overflow-y-auto shadow-sm">
-                      {courseResults.slice(0, 15).map((c, i) => (
-                        <button key={i} type="button" onClick={() => selectCourseResult(c)}
-                          className="w-full text-left px-3 py-2.5 hover:bg-sage-50 transition-colors">
-                          <div className="text-sm font-medium text-stone-800">{c.CourseName ?? c.FacilityName ?? c.club_name ?? c.course_name}</div>
-                          <div className="text-xs text-stone-400">{[c.City ?? c.location?.city, c.State ?? c.location?.state].filter(Boolean).join(', ')}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Tee picker — shown after a course is selected */}
-                {courseTees.length > 0 && (
-                  <div>
-                    <label className="label">Select Tee</label>
-                    <select className="input" value={roundForm.tee} onChange={e => selectTee(e.target.value)}>
-                      {courseTees.map(t => (
-                        <option key={t.label} value={t.label}>{t.label} — Par {t.par} · Rating {t.courseRating} · Slope {t.slopeRating}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Course fields — editable after selection or fully manual */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2">
-                    <label className="label">Course Name *</label>
-                    <input className="input" value={roundForm.courseName} onChange={e => setRoundForm(f => ({ ...f, courseName: e.target.value }))} required placeholder="Pebble Beach" />
-                  </div>
-                  {courseTees.length === 0 && (
-                    <div className="col-span-2">
-                      <label className="label">Tee Name *</label>
-                      <input className="input" value={roundForm.tee} onChange={e => setRoundForm(f => ({ ...f, tee: e.target.value }))} required placeholder="White" />
-                    </div>
-                  )}
-                  <div>
-                    <label className="label">Course Rating *</label>
-                    <input className="input" type="number" step="0.1" value={roundForm.courseRating} onChange={e => setRoundForm(f => ({ ...f, courseRating: e.target.value }))} required placeholder="71.4" />
-                  </div>
-                  <div>
-                    <label className="label">Slope Rating *</label>
-                    <input className="input" type="number" value={roundForm.slopeRating} onChange={e => setRoundForm(f => ({ ...f, slopeRating: e.target.value }))} required placeholder="128" />
-                  </div>
-                  <div>
-                    <label className="label">Par *</label>
-                    <input className="input" type="number" value={roundForm.par} onChange={e => setRoundForm(f => ({ ...f, par: e.target.value }))} required />
-                  </div>
-                  <div>
-                    <label className="label">Date *</label>
-                    <input className="input" type="date" value={roundForm.date} onChange={e => setRoundForm(f => ({ ...f, date: e.target.value }))} required />
-                  </div>
-                  {tournament?.hasClosestToPin && (
-                    <div>
-                      <label className="label">CTP Hole</label>
-                      <input className="input" type="number" min="1" max="18" value={roundForm.closestToPinHole} onChange={e => setRoundForm(f => ({ ...f, closestToPinHole: e.target.value }))} placeholder="e.g. 7" />
-                    </div>
-                  )}
-                  {tournament?.hasLongestDrive && (
-                    <div>
-                      <label className="label">LD Hole</label>
-                      <input className="input" type="number" min="1" max="18" value={roundForm.longestDriveHole} onChange={e => setRoundForm(f => ({ ...f, longestDriveHole: e.target.value }))} placeholder="e.g. 14" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="col-span-2">
-                  <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
-                    <input type="checkbox" className="rounded accent-sage-600"
-                      checked={roundForm.isPracticeRound}
-                      onChange={e => setRoundForm(f => ({ ...f, isPracticeRound: e.target.checked }))} />
-                    Practice Round
-                    <span className="text-xs text-stone-400">(counts toward handicap, excluded from standings)</span>
-                  </label>
-                </div>
-
-                <div className="flex gap-2">
-                  <button type="submit" className="btn-primary"><Check size={14} /> {editingRound ? 'Save Changes' : 'Add Round'}</button>
-                  <button type="button" onClick={resetRoundForm} className="btn-secondary">Cancel</button>
-                </div>
-              </form>
             </div>
+          </div>
           )}
 
-          {rounds.length === 0 ? (
-            <div className="card p-8 text-center text-stone-400 text-sm">No rounds yet.</div>
-          ) : (
-            <div className="card divide-y divide-stone-100">
-              {rounds.map(r => {
-                const isExpanded = expandedRoundId === r.id;
-                const assignedIds = new Set((editGroups?.groups ?? []).flatMap(g => g.playerIds));
-                const unassigned = isExpanded
-                  ? (tournament?.playerIds ?? selectedPlayerIds).filter(pid => !assignedIds.has(pid))
-                  : [];
-                return (
-                  <div key={r.id}>
-                    {/* Row header — click navigates to scoring; Groups button toggles accordion */}
-                    <div className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors group">
-                      <Link to={`/admin/rounds/${r.id}/scoring`} className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <StatusBadge status={r.status} />
-                          <span className="text-xs text-stone-400">{r.tee}</span>
-                          {r.isPracticeRound && (
-                            <span className="text-xs bg-blue-100 text-blue-600 font-medium px-1.5 py-0.5 rounded">Practice</span>
-                          )}
-                          {r.teeTimeGroups && r.teeTimeGroups.length > 0 && (
-                            <span className="flex items-center gap-0.5 text-xs text-sage-600 font-medium">
-                              <Users size={11} /> {r.teeTimeGroups.length} pairing{r.teeTimeGroups.length !== 1 ? 's' : ''}
-                            </span>
-                          )}
-                        </div>
-                        <div className="font-medium text-stone-800 group-hover:text-sage-700">{r.courseName}</div>
-                        <div className="text-xs text-stone-400 mt-0.5">
-                          {parseLocalDate(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
-                        </div>
-                      </Link>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => handleExpandRound(r)}
-                          className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
-                            isExpanded
-                              ? 'bg-sage-100 text-sage-700'
-                              : 'text-stone-400 hover:text-sage-600 hover:bg-sage-50'
-                          }`}
-                          title="Manage tee time pairings"
-                        >
-                          <Users size={13} /> Pairings
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingRound(r);
-                            setRoundForm({
-                              courseId: r.courseId,
-                              courseName: r.courseName,
-                              tee: r.tee,
-                              courseRating: String(r.courseRating),
-                              slopeRating: String(r.slopeRating),
-                              par: String(r.par),
-                              date: r.date,
-                              closestToPinHole: r.closestToPinHole ? String(r.closestToPinHole) : '',
-                              longestDriveHole: r.longestDriveHole ? String(r.longestDriveHole) : '',
-                              notes: r.notes ?? '',
-                              isPracticeRound: r.isPracticeRound ?? false,
-                              holes: r.holes ?? [],
-                            });
-                            setShowRoundForm(true);
-                          }}
-                          className="p-1.5 text-stone-300 hover:text-sage-600 transition-colors rounded"
-                          title="Edit round"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (!confirm(`Delete round at ${r.courseName}? This cannot be undone.`)) return;
-                            try {
-                              await roundsApi.delete(r.id);
-                              setRounds(rs => rs.filter(x => x.id !== r.id));
-                              if (expandedRoundId === r.id) { setExpandedRoundId(null); setEditGroups(null); }
-                              toast.success('Round deleted');
-                            } catch (e: any) { toast.error(e.message); }
-                          }}
-                          className="p-1.5 text-stone-300 hover:text-red-400 transition-colors rounded"
-                          title="Delete round"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                        <ChevronRight size={15} className="text-stone-300" />
-                      </div>
+          {/* Accordion sections */}
+          <AccordionSection title="Event Details" open={detailsOpen} onToggle={() => setDetailsOpen(o => !o)}>
+            <form onSubmit={handleSaveDetails} className="space-y-4">
+              {detailsFormContent}
+              <button type="submit" className="btn-primary">
+                <Save size={14} /> Save Changes
+              </button>
+            </form>
+          </AccordionSection>
+
+          <AccordionSection title="Players" badge={selectedPlayerIds.length} open={playersOpen} onToggle={() => setPlayersOpen(o => !o)}>
+            <div className="space-y-3">
+              {showNewPlayer ? (
+                <div className="card p-4 sm:p-5 border-l-4 border-sage-400">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-semibold text-stone-800 text-sm">New Player</p>
+                    <button type="button" onClick={() => { setShowNewPlayer(false); setNewPlayerForm({ name: '', handicapIndex: '', email: '' }); }}
+                      className="text-stone-300 hover:text-stone-500"><X size={16} /></button>
+                  </div>
+                  <form
+                    onSubmit={async e => {
+                      e.preventDefault();
+                      if (!newPlayerForm.name.trim()) return;
+                      setSavingNewPlayer(true);
+                      try {
+                        const created = await playersApi.create({
+                          name: newPlayerForm.name.trim(),
+                          handicapIndex: Number(newPlayerForm.handicapIndex) || 0,
+                          email: newPlayerForm.email.trim() || undefined,
+                          handicapHistory: [],
+                        });
+                        setPlayers(ps => [...ps, created]);
+                        const updatedIds = [...selectedPlayerIds, created.id];
+                        setSelectedPlayerIds(updatedIds);
+                        await tournamentsApi.update(id!, { playerIds: updatedIds });
+                        setTournament(prev => prev ? { ...prev, playerIds: updatedIds } : null);
+                        setShowNewPlayer(false);
+                        setNewPlayerForm({ name: '', handicapIndex: '', email: '' });
+                        toast.success(`${created.name} added to tournament`);
+                      } catch (err: any) {
+                        toast.error(err.message);
+                      } finally {
+                        setSavingNewPlayer(false);
+                      }
+                    }}
+                    className="grid sm:grid-cols-3 gap-3"
+                  >
+                    <div className="sm:col-span-1">
+                      <label className="label">Name *</label>
+                      <input className="input" value={newPlayerForm.name} required
+                        onChange={e => setNewPlayerForm(f => ({ ...f, name: e.target.value }))} placeholder="Casey Hunter" />
                     </div>
+                    <div>
+                      <label className="label">Handicap Index</label>
+                      <input className="input" type="number" min="0" max="54" step="0.1"
+                        value={newPlayerForm.handicapIndex}
+                        onChange={e => setNewPlayerForm(f => ({ ...f, handicapIndex: e.target.value }))} placeholder="0.0" />
+                    </div>
+                    <div>
+                      <label className="label">Email (optional)</label>
+                      <input className="input" type="email" value={newPlayerForm.email}
+                        onChange={e => setNewPlayerForm(f => ({ ...f, email: e.target.value }))} placeholder="email@example.com" />
+                    </div>
+                    <div className="sm:col-span-3 flex gap-2">
+                      <button type="submit" disabled={savingNewPlayer} className="btn-primary">
+                        {savingNewPlayer ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                        Add to Tournament
+                      </button>
+                      <button type="button" onClick={() => { setShowNewPlayer(false); setNewPlayerForm({ name: '', handicapIndex: '', email: '' }); }}
+                        className="btn-secondary">Cancel</button>
+                    </div>
+                  </form>
+                </div>
+              ) : null}
 
-                    {/* Accordion: tee time groups */}
-                    {isExpanded && editGroups && (
-                      <div className="border-t border-stone-100 bg-stone-50/50 px-4 py-4 space-y-4">
-
-                        {/* Start format */}
-                        <div>
-                          <p className="label mb-1.5">Start Format</p>
-                          <div className="flex rounded-lg border border-stone-200 overflow-hidden w-fit text-sm">
-                            {(['sequential', 'shotgun'] as const).map(fmt => (
-                              <button
-                                key={fmt}
-                                type="button"
-                                onClick={() => setEditGroups(g => g ? { ...g, startFormat: fmt } : g)}
-                                className={`px-4 py-1.5 font-medium capitalize transition-colors ${
-                                  editGroups.startFormat === fmt
-                                    ? 'bg-sage-600 text-white'
-                                    : 'bg-white text-stone-500 hover:bg-stone-50'
-                                }`}
-                              >
-                                {fmt}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Groups */}
-                        <div className="space-y-3">
-                          {editGroups.groups.map((group, gIdx) => (
-                            <div key={gIdx} className="bg-white rounded-lg border border-stone-200 p-3 space-y-2">
-                              <div className="flex items-center justify-between gap-2 flex-wrap">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold text-stone-700">Pairing {group.groupNumber}</span>
-                                  {group.pin && (
-                                    <span className="text-xs font-mono bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">PIN: {group.pin}</span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="time"
-                                    className="input py-1 text-sm w-32"
-                                    value={convertTo24h(group.teeTime)}
-                                    onChange={e => {
-                                      const display = convertTo12h(e.target.value);
-                                      setEditGroups(g => {
-                                        if (!g) return g;
-                                        const updated = [...g.groups];
-                                        updated[gIdx] = { ...updated[gIdx], teeTime: display };
-                                        return { ...g, groups: updated };
-                                      });
-                                    }}
-                                  />
-                                  {editGroups.startFormat === 'shotgun' && (
-                                    <input
-                                      type="number" min="1" max="18"
-                                      placeholder="Hole #"
-                                      className="input py-1 text-sm w-24"
-                                      value={group.startingHole ?? ''}
-                                      onChange={e => {
-                                        const val = e.target.value ? Number(e.target.value) : undefined;
-                                        setEditGroups(g => {
-                                          if (!g) return g;
-                                          const updated = [...g.groups];
-                                          updated[gIdx] = { ...updated[gIdx], startingHole: val };
-                                          return { ...g, groups: updated };
-                                        });
-                                      }}
-                                    />
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditGroups(g => {
-                                      if (!g) return g;
-                                      return { ...g, groups: g.groups.filter((_, i) => i !== gIdx).map((grp, i) => ({ ...grp, groupNumber: i + 1 })) };
-                                    })}
-                                    className="p-1 text-stone-300 hover:text-red-400"
-                                  >
-                                    <X size={14} />
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap gap-1.5 min-h-[28px]">
-                                {group.playerIds.map(pid => {
-                                  const p = players.find(pl => pl.id === pid);
-                                  if (!p) return null;
-                                  return (
-                                    <button
-                                      key={pid}
-                                      type="button"
-                                      title="Remove from group"
-                                      onClick={() => setEditGroups(g => {
-                                        if (!g) return g;
-                                        const updated = [...g.groups];
-                                        updated[gIdx] = { ...updated[gIdx], playerIds: updated[gIdx].playerIds.filter(x => x !== pid) };
-                                        return { ...g, groups: updated };
-                                      })}
-                                      className="flex items-center gap-1 bg-sage-100 text-sage-800 text-xs px-2 py-0.5 rounded-full hover:bg-red-100 hover:text-red-700 transition-colors"
-                                    >
-                                      {p.name} <X size={10} />
-                                    </button>
-                                  );
-                                })}
-                                {group.playerIds.length === 0 && (
-                                  <span className="text-xs text-stone-400 italic">No players yet</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setEditGroups(g => g ? { ...g, groups: [...g.groups, { groupNumber: g.groups.length + 1, teeTime: '', playerIds: [] }] } : g)}
-                          className="btn-secondary text-xs"
-                        >
-                          <Plus size={13} /> Add Pairing
-                        </button>
-
-                        {/* Unassigned players */}
-                        {unassigned.length > 0 && (
-                          <div>
-                            <p className="label mb-1.5">Unassigned Players — click to add to a pairing</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {unassigned.map(pid => {
-                                const p = players.find(pl => pl.id === pid);
-                                if (!p) return null;
-                                return (
-                                  <UnassignedChip
-                                    key={pid}
-                                    name={p.name}
-                                    groups={editGroups.groups}
-                                    onAssign={gIdx => setEditGroups(g => {
-                                      if (!g) return g;
-                                      const updated = [...g.groups];
-                                      updated[gIdx] = { ...updated[gIdx], playerIds: [...updated[gIdx].playerIds, pid] };
-                                      return { ...g, groups: updated };
-                                    })}
-                                  />
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex justify-end pt-1 border-t border-stone-100">
+              <div className="flex items-center justify-between mb-3">
+                <p className="section-title">Tournament Players ({selectedPlayerIds.length})</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setShowNewPlayer(true)} className="btn-secondary text-xs">
+                    <Plus size={13} /> New Player
+                  </button>
+                  <button type="button" onClick={async () => {
+                    try {
+                      await tournamentsApi.update(id!, { playerIds: selectedPlayerIds });
+                      setTournament(prev => prev ? { ...prev, playerIds: selectedPlayerIds } : null);
+                      toast.success('Saved');
+                    }
+                    catch (e: any) { toast.error(e.message); }
+                  }} className="btn-primary text-xs"><Save size={13} /> Save</button>
+                </div>
+              </div>
+              {players.length === 0 ? (
+                <p className="text-sm text-stone-400 text-center py-4">
+                  No players yet. Use "New Player" to add someone.
+                </p>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-1">
+                  {players.map(p => {
+                    const isEnrolled = selectedPlayerIds.includes(p.id);
+                    const isWD = tournament?.withdrawnPlayerIds?.includes(p.id) ?? false;
+                    return (
+                      <div key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 border border-stone-100">
+                        <input type="checkbox" className="rounded accent-sage-600"
+                          checked={isEnrolled}
+                          onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
+                        <span className={`flex-1 text-sm font-medium ${isWD ? 'line-through text-stone-400' : 'text-stone-700'}`}>{p.name}</span>
+                        <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
+                        {isEnrolled && (
                           <button
                             type="button"
-                            onClick={() => handleSaveGroups(r.id)}
-                            disabled={savingGroups}
-                            className="btn-primary"
+                            onClick={async () => {
+                              if (!tournament) return;
+                              const current = tournament.withdrawnPlayerIds ?? [];
+                              const updated = isWD ? current.filter(x => x !== p.id) : [...current, p.id];
+                              try {
+                                const t = await tournamentsApi.update(id!, { withdrawnPlayerIds: updated });
+                                setTournament(t);
+                              } catch (err: any) { toast.error(err.message); }
+                            }}
+                            className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${isWD ? 'bg-stone-200 text-stone-600 hover:bg-stone-300' : 'bg-stone-100 text-stone-400 hover:bg-red-100 hover:text-red-600'}`}
+                            title={isWD ? 'Remove WD' : 'Mark as withdrawn'}
                           >
-                            {savingGroups ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                            Save Tee Sheet
+                            {isWD ? 'WD ✕' : 'WD'}
                           </button>
-                        </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </AccordionSection>
+
+          <AccordionSection title="Rounds & Tee Sheets" badge={rounds.length} open={roundsOpen} onToggle={() => setRoundsOpen(o => !o)}>
+            {roundsSectionContent}
+          </AccordionSection>
+        </>
       )}
     </div>
   );
