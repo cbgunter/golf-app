@@ -59,7 +59,7 @@ export default function AdminPlayers() {
     }
   }
 
-  if (loading) return <div className="text-stone-400 text-sm p-4">Loading…</div>;
+  if (loading) return <div className="text-ep-silver text-sm p-4">Loading…</div>;
 
   return (
     <div className="space-y-5">
@@ -74,8 +74,8 @@ export default function AdminPlayers() {
       {showForm && (
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-stone-700">{editId ? 'Edit Player' : 'New Player'}</h2>
-            <button onClick={() => setShowForm(false)} className="text-stone-300 hover:text-stone-500 p-1"><X size={18} /></button>
+            <h2 className="font-semibold text-ep-green">{editId ? 'Edit Player' : 'New Player'}</h2>
+            <button onClick={() => setShowForm(false)} className="text-ep-silver hover:text-ep-green p-1"><X size={18} /></button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -89,7 +89,7 @@ export default function AdminPlayers() {
             <div>
               <label className="label">Handicap Index *</label>
               <input className="input" type="number" step="0.1" min="0" max="54" value={form.handicapIndex} onChange={e => setForm(f => ({ ...f, handicapIndex: e.target.value }))} required placeholder="12.4" />
-              <p className="text-xs text-stone-400 mt-1">Enter current handicap index. It will auto-adjust after each round.</p>
+              <p className="text-xs text-ep-silver mt-1">Enter current handicap index. It will auto-adjust after each round.</p>
             </div>
             <div className="flex gap-2 pt-1">
               <button type="submit" className="btn-primary flex-1 justify-center">
@@ -103,36 +103,36 @@ export default function AdminPlayers() {
 
       {/* List */}
       {players.length === 0 ? (
-        <div className="card p-10 text-center text-stone-400 text-sm">No players yet.</div>
+        <div className="card p-10 text-center text-ep-silver text-sm">No players yet.</div>
       ) : (
-        <div className="card divide-y divide-stone-100">
+        <div className="card divide-y divide-ep-silver/20">
           {players.map(p => (
             <div key={p.id}>
               <div className="flex items-center gap-3 px-4 py-3.5">
                 {/* Avatar */}
-                <div className="w-9 h-9 rounded-full bg-sage-100 text-sage-700 flex items-center justify-center font-semibold text-sm shrink-0">
+                <div className="w-9 h-9 rounded-full bg-ep-green/10 text-ep-green flex items-center justify-center font-semibold text-sm shrink-0">
                   {p.name.charAt(0).toUpperCase()}
                 </div>
 
                 {/* Name + email */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-stone-800 truncate">{p.name}</div>
-                  {p.email && <div className="text-xs text-stone-400 truncate">{p.email}</div>}
+                  <div className="font-medium text-ep-green truncate">{p.name}</div>
+                  {p.email && <div className="text-xs text-ep-silver truncate">{p.email}</div>}
                 </div>
 
                 {/* HCP + actions */}
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="text-right">
-                    <div className="text-base font-semibold text-sage-700">{p.handicapIndex.toFixed(1)}</div>
-                    <div className="text-xs text-stone-400 leading-none">HCP</div>
+                    <div className="text-base font-semibold text-ep-orange">{p.handicapIndex.toFixed(1)}</div>
+                    <div className="text-xs text-ep-silver leading-none">HCP</div>
                   </div>
-                  <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 text-stone-300 hover:text-stone-500 rounded-lg hover:bg-stone-50">
+                  <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 text-ep-silver hover:text-ep-green rounded-lg hover:bg-ep-sand">
                     {expanded === p.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                   </button>
-                  <button onClick={() => openEdit(p)} className="p-1.5 text-stone-300 hover:text-sage-600 rounded-lg hover:bg-stone-50">
+                  <button onClick={() => openEdit(p)} className="p-1.5 text-ep-silver hover:text-ep-orange rounded-lg hover:bg-ep-sand">
                     <Pencil size={15} />
                   </button>
-                  <button onClick={() => handleDelete(p.id, p.name)} className="p-1.5 text-stone-300 hover:text-red-400 rounded-lg hover:bg-stone-50">
+                  <button onClick={() => handleDelete(p.id, p.name)} className="p-1.5 text-ep-silver hover:text-red-400 rounded-lg hover:bg-ep-sand">
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -140,22 +140,22 @@ export default function AdminPlayers() {
 
               {/* Handicap history */}
               {expanded === p.id && (
-                <div className="bg-stone-50 px-4 py-4 border-t border-stone-100">
+                <div className="bg-ep-sand/30 px-4 py-4 border-t border-ep-silver/20">
                   <p className="section-title mb-3">Handicap History</p>
                   {p.handicapHistory.length === 0 ? (
-                    <p className="text-sm text-stone-400">No rounds recorded yet.</p>
+                    <p className="text-sm text-ep-silver">No rounds recorded yet.</p>
                   ) : (
                     <div className="space-y-2">
                       {[...p.handicapHistory].reverse().map((h, i) => (
-                        <div key={i} className="bg-white rounded-lg border border-stone-200 p-3">
+                        <div key={i} className="bg-ep-cream rounded-lg border border-ep-silver/30 p-3">
                           <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <span className="font-medium text-stone-800 text-sm">
+                            <span className="font-medium text-ep-green text-sm">
                               HCP {h.handicapIndex.toFixed(1)}
-                              <span className="text-stone-400 font-normal ml-2 text-xs">diff {h.differential}</span>
+                              <span className="text-ep-silver font-normal ml-2 text-xs">diff {h.differential}</span>
                             </span>
-                            <span className="text-xs text-stone-400">{new Date(h.date).toLocaleDateString()}</span>
+                            <span className="text-xs text-ep-silver">{new Date(h.date).toLocaleDateString()}</span>
                           </div>
-                          {h.notes && <p className="text-xs text-stone-500 mt-1.5 leading-relaxed">{h.notes}</p>}
+                          {h.notes && <p className="text-xs text-ep-green/70 mt-1.5 leading-relaxed">{h.notes}</p>}
                         </div>
                       ))}
                     </div>
@@ -167,7 +167,7 @@ export default function AdminPlayers() {
         </div>
       )}
 
-      <p className="text-xs text-stone-400">{players.length} / 20 players</p>
+      <p className="text-xs text-ep-silver">{players.length} / 20 players</p>
     </div>
   );
 }

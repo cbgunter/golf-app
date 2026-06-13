@@ -22,8 +22,8 @@ export default function AdminLayout() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="text-stone-400 text-sm">Verifying session…</div>
+      <div className="min-h-screen flex items-center justify-center bg-ep-cream">
+        <div className="text-ep-silver text-sm">Verifying session…</div>
       </div>
     );
   }
@@ -35,25 +35,25 @@ export default function AdminLayout() {
 
   const navCls = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-      isActive ? 'bg-sage-600 text-white' : 'text-stone-600 hover:bg-stone-100'
+      isActive ? 'bg-ep-green text-ep-cream' : 'text-ep-green/70 hover:bg-ep-sand'
     }`;
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-ep-cream">
       {/* Top bar */}
-      <header className="bg-sage-700 text-white sticky top-0 z-30">
+      <header className="bg-ep-deep text-ep-cream sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 text-sm">
-            <a href="https://golf.caseyhunter.net" className="text-white/50 hover:text-white/80 transition-colors">⛳ CH Tournaments</a>
-            <span className="text-white/30">/</span>
-            <span className="font-medium">Admin</span>
+            <a href="https://golf.caseyhunter.net" className="text-ep-cream/50 hover:text-ep-cream/80 transition-colors font-heading font-extrabold tracking-[0.04em] uppercase text-xs">CH Tournaments</a>
+            <span className="text-ep-cream/30">/</span>
+            <span className="font-medium text-ep-cream/80">Admin</span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={logout} className="hidden sm:flex items-center gap-1.5 text-xs text-white/60 hover:text-white border border-white/20 px-2.5 py-1 rounded-full transition-colors">
+            <button onClick={logout} className="hidden sm:flex items-center gap-1.5 text-xs text-ep-cream/60 hover:text-ep-cream border border-ep-cream/20 px-2.5 py-1 rounded-full transition-colors">
               <LogOut size={12} /> Log out
             </button>
             {/* Mobile menu toggle */}
-            <button className="sm:hidden text-white/70 hover:text-white p-1" onClick={() => setMenuOpen(o => !o)}>
+            <button className="sm:hidden text-ep-cream/70 hover:text-ep-cream p-1" onClick={() => setMenuOpen(o => !o)}>
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
@@ -62,7 +62,7 @@ export default function AdminLayout() {
 
       {/* Mobile nav drawer */}
       {menuOpen && (
-        <div className="sm:hidden bg-white border-b border-stone-200 px-4 py-3 space-y-1 shadow-sm">
+        <div className="sm:hidden bg-ep-cream border-b border-ep-silver/20 px-4 py-3 space-y-1 shadow-sm">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} className={navCls} onClick={() => setMenuOpen(false)}>
               <Icon size={16} /> {label}
@@ -87,7 +87,7 @@ export default function AdminLayout() {
                 <Icon size={15} /> {label}
               </NavLink>
             ))}
-            <div className="pt-4 mt-2 border-t border-stone-200">
+            <div className="pt-4 mt-2 border-t border-ep-silver/20">
               <NavLink to="/players" className={navCls}>
                 <Users size={15} /> All Players
               </NavLink>

@@ -7,7 +7,7 @@ export default function Layout() {
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <span className="font-heading font-extrabold tracking-[0.04em] text-ep-green uppercase text-sm">
-              Electric Phactory
+              CH Tournaments
             </span>
           </Link>
           <nav className="flex items-center gap-5 text-sm">
@@ -35,7 +35,7 @@ export default function Layout() {
       </main>
 
       <footer className="bg-ep-deep text-ep-cream/60 text-xs text-center py-6 mt-12">
-        Electric Phactory
+        CH TOURNAMENTS
       </footer>
     </div>
   );

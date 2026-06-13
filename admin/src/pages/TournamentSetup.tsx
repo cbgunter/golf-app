@@ -65,16 +65,16 @@ function AccordionSection({
         className="w-full flex items-center justify-between px-4 py-3.5 sm:px-5 text-left"
       >
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-stone-800">{title}</span>
+          <span className="font-semibold text-ep-green">{title}</span>
           {badge !== undefined && (
-            <span className="text-xs bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded-full">{badge}</span>
+            <span className="text-xs bg-ep-sand text-ep-silver px-1.5 py-0.5 rounded-full">{badge}</span>
           )}
         </div>
         {open
-          ? <ChevronUp size={16} className="text-stone-400 shrink-0" />
-          : <ChevronDown size={16} className="text-stone-400 shrink-0" />}
+          ? <ChevronUp size={16} className="text-ep-silver shrink-0" />
+          : <ChevronDown size={16} className="text-ep-silver shrink-0" />}
       </button>
-      {open && <div className="border-t border-stone-100 px-4 py-4 sm:px-5 sm:py-5">{children}</div>}
+      {open && <div className="border-t border-ep-silver/20 px-4 py-4 sm:px-5 sm:py-5">{children}</div>}
     </div>
   );
 }
@@ -431,7 +431,7 @@ export default function AdminTournamentSetup() {
     }
   }
 
-  if (loading) return <div className="text-stone-400 text-sm p-4">Loading…</div>;
+  if (loading) return <div className="text-ep-silver text-sm p-4">Loading…</div>;
 
   const payoutPctRows = payoutRows.filter(r => r.payoutType === 'percentage');
   const payoutTotal = payoutPctRows.reduce((s, r) => s + Number(r.percentage || 0), 0);
@@ -473,8 +473,8 @@ export default function AdminTournamentSetup() {
                 { key: 'isGross', label: 'Gross Scores' },
                 { key: 'isNet', label: 'Net Scores' },
               ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
-                  <input type="checkbox" className="rounded accent-sage-600"
+                <label key={key} className="flex items-center gap-2 text-sm text-ep-green/80 cursor-pointer">
+                  <input type="checkbox" className="rounded accent-[#004C54]"
                     checked={form[key as keyof typeof form] as boolean}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} />
                   {label}
@@ -486,43 +486,43 @@ export default function AdminTournamentSetup() {
             <label className="label">Side Contests</label>
             <div className="space-y-2 mt-1">
               <div className="flex items-center gap-4 flex-wrap">
-                <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
-                  <input type="checkbox" className="rounded accent-sage-600"
+                <label className="flex items-center gap-2 text-sm text-ep-green/80 cursor-pointer">
+                  <input type="checkbox" className="rounded accent-[#004C54]"
                     checked={form.hasClosestToPin}
                     onChange={e => setForm(f => ({ ...f, hasClosestToPin: e.target.checked }))} />
                   Closest to Pin
                 </label>
                 {form.hasClosestToPin && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-stone-400">Ante per player</span>
+                    <span className="text-xs text-ep-silver">Ante per player</span>
                     <div className="relative w-24">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ep-silver text-xs">$</span>
                       <input className="input pl-5" type="number" min="0" step="1" value={form.closestToPinFee}
                         onChange={e => setForm(f => ({ ...f, closestToPinFee: e.target.value }))} placeholder="0" />
                     </div>
                     {Number(form.closestToPinFee) > 0 && selectedPlayerIds.length > 0 && (
-                      <span className="text-xs text-sand-600">${(Number(form.closestToPinFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
+                      <span className="text-xs text-ep-orange">${(Number(form.closestToPinFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
                     )}
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-4 flex-wrap">
-                <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
-                  <input type="checkbox" className="rounded accent-sage-600"
+                <label className="flex items-center gap-2 text-sm text-ep-green/80 cursor-pointer">
+                  <input type="checkbox" className="rounded accent-[#004C54]"
                     checked={form.hasLongestDrive}
                     onChange={e => setForm(f => ({ ...f, hasLongestDrive: e.target.checked }))} />
                   Longest Drive
                 </label>
                 {form.hasLongestDrive && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-stone-400">Ante per player</span>
+                    <span className="text-xs text-ep-silver">Ante per player</span>
                     <div className="relative w-24">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ep-silver text-xs">$</span>
                       <input className="input pl-5" type="number" min="0" step="1" value={form.longestDriveFee}
                         onChange={e => setForm(f => ({ ...f, longestDriveFee: e.target.value }))} placeholder="0" />
                     </div>
                     {Number(form.longestDriveFee) > 0 && selectedPlayerIds.length > 0 && (
-                      <span className="text-xs text-sand-600">${(Number(form.longestDriveFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
+                      <span className="text-xs text-ep-orange">${(Number(form.longestDriveFee) * selectedPlayerIds.length).toFixed(0)} prize</span>
                     )}
                   </div>
                 )}
@@ -545,44 +545,44 @@ export default function AdminTournamentSetup() {
           </button>
         </div>
         {payoutRows.length === 0 ? (
-          <p className="text-sm text-stone-400">No payouts configured.</p>
+          <p className="text-sm text-ep-silver">No payouts configured.</p>
         ) : (
           <div className="space-y-2">
             {payoutRows.map((row, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="w-5 text-xs text-stone-400 text-center shrink-0">{row.place}</span>
+                <span className="w-5 text-xs text-ep-silver text-center shrink-0">{row.place}</span>
                 <input className="input flex-1 min-w-0" value={row.label} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
-                <div className="flex rounded-md border border-stone-200 overflow-hidden shrink-0 text-xs">
+                <div className="flex rounded-md border border-ep-silver/30 overflow-hidden shrink-0 text-xs">
                   <button type="button"
-                    className={`px-2 py-1 ${row.payoutType === 'percentage' ? 'bg-sage-600 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'}`}
+                    className={`px-2 py-1 ${row.payoutType === 'percentage' ? 'bg-ep-green text-ep-cream' : 'bg-ep-cream text-ep-silver hover:bg-ep-sand'}`}
                     onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'percentage' } : x))}>%</button>
                   <button type="button"
-                    className={`px-2 py-1 ${row.payoutType === 'flat' ? 'bg-sage-600 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'}`}
+                    className={`px-2 py-1 ${row.payoutType === 'flat' ? 'bg-ep-green text-ep-cream' : 'bg-ep-cream text-ep-silver hover:bg-ep-sand'}`}
                     onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'flat' } : x))}>$</button>
                 </div>
                 {row.payoutType === 'flat' ? (
                   <div className="relative w-24 shrink-0">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">$</span>
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ep-silver text-xs">$</span>
                     <input className="input pl-5 text-right" type="number" min="0" step="1" value={row.flatAmount} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, flatAmount: e.target.value } : x))} placeholder="0" />
                   </div>
                 ) : (
                   <div className="relative w-24 shrink-0">
                     <input className="input pr-5 text-right" type="number" min="0" max="100" step="0.5" value={row.percentage} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, percentage: e.target.value } : x))} placeholder="0" />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs">%</span>
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ep-silver text-xs">%</span>
                   </div>
                 )}
                 {Number(form.entryFee) > 0 && selectedPlayerIds.length > 0 && (
-                  <span className="text-xs text-sand-600 w-14 text-right shrink-0">
+                  <span className="text-xs text-ep-orange w-14 text-right shrink-0">
                     {row.payoutType === 'flat'
                       ? `$${Number(row.flatAmount || 0).toFixed(0)}`
                       : `$${((Number(row.percentage || 0) / 100) * Number(form.entryFee) * selectedPlayerIds.length).toFixed(0)}`}
                   </span>
                 )}
-                <button type="button" onClick={() => setPayoutRows(r => r.filter((_, j) => j !== i))} className="text-stone-300 hover:text-red-400 shrink-0"><X size={14} /></button>
+                <button type="button" onClick={() => setPayoutRows(r => r.filter((_, j) => j !== i))} className="text-ep-silver/40 hover:text-red-400 shrink-0"><X size={14} /></button>
               </div>
             ))}
             {payoutPctRows.length > 0 && (
-              <p className={`text-xs mt-1 ${Math.abs(payoutTotal - 100) > 0.01 ? 'text-red-400' : 'text-sage-600'}`}>
+              <p className={`text-xs mt-1 ${Math.abs(payoutTotal - 100) > 0.01 ? 'text-red-400' : 'text-ep-orange'}`}>
                 % total: {payoutTotal}% {Math.abs(payoutTotal - 100) < 0.01 ? '✓' : '— must equal 100%'}
               </p>
             )}
@@ -606,8 +606,8 @@ export default function AdminTournamentSetup() {
       {showRoundForm && (
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-stone-700">{editingRound ? 'Edit Round' : 'New Round'}</h3>
-            <button type="button" onClick={() => setShowRoundForm(false)} className="text-stone-300 hover:text-stone-500 p-1"><X size={18} /></button>
+            <h3 className="font-semibold text-ep-green">{editingRound ? 'Edit Round' : 'New Round'}</h3>
+            <button type="button" onClick={() => setShowRoundForm(false)} className="text-ep-silver hover:text-ep-green p-1"><X size={18} /></button>
           </div>
           <form onSubmit={handleAddRound} className="space-y-4">
             <div>
@@ -625,12 +625,12 @@ export default function AdminTournamentSetup() {
                 </button>
               </div>
               {courseResults.length > 0 && (
-                <div className="mt-1.5 border border-stone-200 rounded-lg divide-y divide-stone-100 max-h-52 overflow-y-auto shadow-sm">
+                <div className="mt-1.5 border border-ep-silver/30 rounded-lg divide-y divide-ep-silver/20 max-h-52 overflow-y-auto shadow-sm">
                   {courseResults.slice(0, 15).map((c, i) => (
                     <button key={i} type="button" onClick={() => selectCourseResult(c)}
-                      className="w-full text-left px-3 py-2.5 hover:bg-sage-50 transition-colors">
-                      <div className="text-sm font-medium text-stone-800">{c.CourseName ?? c.FacilityName ?? c.club_name ?? c.course_name}</div>
-                      <div className="text-xs text-stone-400">{[c.City ?? c.location?.city, c.State ?? c.location?.state].filter(Boolean).join(', ')}</div>
+                      className="w-full text-left px-3 py-2.5 hover:bg-ep-sand transition-colors">
+                      <div className="text-sm font-medium text-ep-green">{c.CourseName ?? c.FacilityName ?? c.club_name ?? c.course_name}</div>
+                      <div className="text-xs text-ep-silver">{[c.City ?? c.location?.city, c.State ?? c.location?.state].filter(Boolean).join(', ')}</div>
                     </button>
                   ))}
                 </div>
@@ -690,12 +690,12 @@ export default function AdminTournamentSetup() {
             </div>
 
             <div className="col-span-2">
-              <label className="flex items-center gap-2 text-sm text-stone-600 cursor-pointer">
-                <input type="checkbox" className="rounded accent-sage-600"
+              <label className="flex items-center gap-2 text-sm text-ep-green/80 cursor-pointer">
+                <input type="checkbox" className="rounded accent-[#004C54]"
                   checked={roundForm.isPracticeRound}
                   onChange={e => setRoundForm(f => ({ ...f, isPracticeRound: e.target.checked }))} />
                 Practice Round
-                <span className="text-xs text-stone-400">(counts toward handicap, excluded from standings)</span>
+                <span className="text-xs text-ep-silver">(counts toward handicap, excluded from standings)</span>
               </label>
             </div>
 
@@ -708,9 +708,9 @@ export default function AdminTournamentSetup() {
       )}
 
       {rounds.length === 0 ? (
-        <div className="card p-8 text-center text-stone-400 text-sm">No rounds yet.</div>
+        <div className="card p-8 text-center text-ep-silver text-sm">No rounds yet.</div>
       ) : (
-        <div className="card divide-y divide-stone-100">
+        <div className="card divide-y divide-ep-silver/20">
           {rounds.map(r => {
             const isExpanded = expandedRoundId === r.id;
             const assignedIds = new Set((editGroups?.groups ?? []).flatMap(g => g.playerIds));
@@ -719,22 +719,22 @@ export default function AdminTournamentSetup() {
               : [];
             return (
               <div key={r.id}>
-                <div className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors group">
+                <div className="flex items-center justify-between px-4 py-3.5 hover:bg-ep-sand/50 transition-colors group">
                   <Link to={`/rounds/${r.id}/scoring`} className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <StatusBadge status={r.status} />
-                      <span className="text-xs text-stone-400">{r.tee}</span>
+                      <span className="text-xs text-ep-silver">{r.tee}</span>
                       {r.isPracticeRound && (
-                        <span className="text-xs bg-blue-100 text-blue-600 font-medium px-1.5 py-0.5 rounded">Practice</span>
+                        <span className="text-xs bg-ep-sand text-ep-green font-medium px-1.5 py-0.5 rounded">Practice</span>
                       )}
                       {r.teeTimeGroups && r.teeTimeGroups.length > 0 && (
-                        <span className="flex items-center gap-0.5 text-xs text-sage-600 font-medium">
+                        <span className="flex items-center gap-0.5 text-xs text-ep-orange font-medium">
                           <Users size={11} /> {r.teeTimeGroups.length} pairing{r.teeTimeGroups.length !== 1 ? 's' : ''}
                         </span>
                       )}
                     </div>
-                    <div className="font-medium text-stone-800 group-hover:text-sage-700">{r.courseName}</div>
-                    <div className="text-xs text-stone-400 mt-0.5">
+                    <div className="font-medium text-ep-green group-hover:text-ep-orange transition-colors">{r.courseName}</div>
+                    <div className="text-xs text-ep-silver mt-0.5">
                       {parseLocalDate(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
                     </div>
                   </Link>
@@ -743,8 +743,8 @@ export default function AdminTournamentSetup() {
                       onClick={() => handleExpandRound(r)}
                       className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
                         isExpanded
-                          ? 'bg-sage-100 text-sage-700'
-                          : 'text-stone-400 hover:text-sage-600 hover:bg-sage-50'
+                          ? 'bg-ep-green/10 text-ep-green'
+                          : 'text-ep-silver hover:text-ep-orange hover:bg-ep-sand/50'
                       }`}
                       title="Manage tee time pairings"
                     >
@@ -769,7 +769,7 @@ export default function AdminTournamentSetup() {
                         });
                         setShowRoundForm(true);
                       }}
-                      className="p-1.5 text-stone-300 hover:text-sage-600 transition-colors rounded"
+                      className="p-1.5 text-ep-silver hover:text-ep-orange transition-colors rounded"
                       title="Edit round"
                     >
                       <Pencil size={15} />
@@ -784,21 +784,21 @@ export default function AdminTournamentSetup() {
                           toast.success('Round deleted');
                         } catch (e: any) { toast.error(e.message); }
                       }}
-                      className="p-1.5 text-stone-300 hover:text-red-400 transition-colors rounded"
+                      className="p-1.5 text-ep-silver/40 hover:text-red-400 transition-colors rounded"
                       title="Delete round"
                     >
                       <Trash2 size={15} />
                     </button>
-                    <ChevronRight size={15} className="text-stone-300" />
+                    <ChevronRight size={15} className="text-ep-silver/40" />
                   </div>
                 </div>
 
                 {/* Tee time groups accordion */}
                 {isExpanded && editGroups && (
-                  <div className="border-t border-stone-100 bg-stone-50/50 px-4 py-4 space-y-4">
+                  <div className="border-t border-ep-silver/20 bg-ep-sand/20 px-4 py-4 space-y-4">
                     <div>
                       <p className="label mb-1.5">Start Format</p>
-                      <div className="flex rounded-lg border border-stone-200 overflow-hidden w-fit text-sm">
+                      <div className="flex rounded-lg border border-ep-silver/30 overflow-hidden w-fit text-sm">
                         {(['sequential', 'shotgun'] as const).map(fmt => (
                           <button
                             key={fmt}
@@ -806,8 +806,8 @@ export default function AdminTournamentSetup() {
                             onClick={() => setEditGroups(g => g ? { ...g, startFormat: fmt } : g)}
                             className={`px-4 py-1.5 font-medium capitalize transition-colors ${
                               editGroups.startFormat === fmt
-                                ? 'bg-sage-600 text-white'
-                                : 'bg-white text-stone-500 hover:bg-stone-50'
+                                ? 'bg-ep-green text-ep-cream'
+                                : 'bg-ep-cream text-ep-silver hover:bg-ep-sand'
                             }`}
                           >
                             {fmt}
@@ -818,12 +818,12 @@ export default function AdminTournamentSetup() {
 
                     <div className="space-y-3">
                       {editGroups.groups.map((group, gIdx) => (
-                        <div key={gIdx} className="bg-white rounded-lg border border-stone-200 p-3 space-y-2">
+                        <div key={gIdx} className="bg-ep-cream rounded-lg border border-ep-silver/30 p-3 space-y-2">
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-stone-700">Pairing {group.groupNumber}</span>
+                              <span className="text-sm font-semibold text-ep-green">Pairing {group.groupNumber}</span>
                               {group.pin && (
-                                <span className="text-xs font-mono bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">PIN: {group.pin}</span>
+                                <span className="text-xs font-mono bg-ep-sand text-ep-silver px-1.5 py-0.5 rounded">PIN: {group.pin}</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
@@ -864,7 +864,7 @@ export default function AdminTournamentSetup() {
                                   if (!g) return g;
                                   return { ...g, groups: g.groups.filter((_, i) => i !== gIdx).map((grp, i) => ({ ...grp, groupNumber: i + 1 })) };
                                 })}
-                                className="p-1 text-stone-300 hover:text-red-400"
+                                className="p-1 text-ep-silver/40 hover:text-red-400"
                               >
                                 <X size={14} />
                               </button>
@@ -885,14 +885,14 @@ export default function AdminTournamentSetup() {
                                     updated[gIdx] = { ...updated[gIdx], playerIds: updated[gIdx].playerIds.filter(x => x !== pid) };
                                     return { ...g, groups: updated };
                                   })}
-                                  className="flex items-center gap-1 bg-sage-100 text-sage-800 text-xs px-2 py-0.5 rounded-full hover:bg-red-100 hover:text-red-700 transition-colors"
+                                  className="flex items-center gap-1 bg-ep-green/10 text-ep-green text-xs px-2 py-0.5 rounded-full hover:bg-red-100 hover:text-red-700 transition-colors"
                                 >
                                   {p.name} <X size={10} />
                                 </button>
                               );
                             })}
                             {group.playerIds.length === 0 && (
-                              <span className="text-xs text-stone-400 italic">No players yet</span>
+                              <span className="text-xs text-ep-silver italic">No players yet</span>
                             )}
                           </div>
                         </div>
@@ -932,7 +932,7 @@ export default function AdminTournamentSetup() {
                       </div>
                     )}
 
-                    <div className="flex justify-end pt-1 border-t border-stone-100">
+                    <div className="flex justify-end pt-1 border-t border-ep-silver/20">
                       <button
                         type="button"
                         onClick={() => handleSaveGroups(r.id)}
@@ -958,7 +958,7 @@ export default function AdminTournamentSetup() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <Link to="/tournaments" className="text-xs text-stone-400 hover:text-stone-600">← Tournaments</Link>
+          <Link to="/tournaments" className="text-xs text-ep-silver hover:text-ep-green">← Tournaments</Link>
           <h1 className="page-header mt-1">{creating ? 'New Tournament' : tournament?.name}</h1>
           {tournament && <div className="mt-1"><StatusBadge status={tournament.status} /></div>}
         </div>
@@ -979,16 +979,16 @@ export default function AdminTournamentSetup() {
           <div className="card p-4 sm:p-5">
             <p className="section-title mb-3">Players ({selectedPlayerIds.length})</p>
             {players.length === 0 ? (
-              <p className="text-sm text-stone-400">No players yet. <Link to="/players" className="text-sage-600 hover:underline">Add players first.</Link></p>
+              <p className="text-sm text-ep-silver">No players yet. <Link to="/players" className="text-ep-orange hover:underline">Add players first.</Link></p>
             ) : (
               <div className="grid sm:grid-cols-2 gap-1">
                 {players.map(p => (
-                  <label key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 cursor-pointer">
-                    <input type="checkbox" className="rounded accent-sage-600"
+                  <label key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-ep-sand/30 cursor-pointer">
+                    <input type="checkbox" className="rounded accent-[#004C54]"
                       checked={selectedPlayerIds.includes(p.id)}
                       onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
-                    <span className="flex-1 text-sm text-stone-700">{p.name}</span>
-                    <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
+                    <span className="flex-1 text-sm text-ep-green">{p.name}</span>
+                    <span className="text-xs text-ep-silver">HCP {p.handicapIndex.toFixed(1)}</span>
                   </label>
                 ))}
               </div>
@@ -1009,15 +1009,15 @@ export default function AdminTournamentSetup() {
             <div className={`rounded-xl border p-4 sm:p-5 flex items-start sm:items-center justify-between gap-4 ${
               eventState.urgent
                 ? 'border-amber-300 bg-amber-50'
-                : 'border-stone-200 bg-white'
+                : 'border-ep-silver/30 bg-ep-cream'
             }`}>
               <div className="flex-1 min-w-0">
                 <div className={`text-xs font-semibold uppercase tracking-widest mb-1 ${
-                  eventState.urgent ? 'text-amber-600' : 'text-stone-400'
+                  eventState.urgent ? 'text-amber-600' : 'text-ep-silver'
                 }`}>
                   {eventState.label}
                 </div>
-                <p className="text-sm text-stone-700">{eventState.description}</p>
+                <p className="text-sm text-ep-green/80">{eventState.description}</p>
               </div>
               {eventState.ctaTarget && (
                 <button
@@ -1036,7 +1036,7 @@ export default function AdminTournamentSetup() {
           {/* Score confirmation panel — shown when any groups have submitted */}
           {drafts.some(d => d.status === 'submitted' || d.status === 'confirmed') && (
             <div ref={confirmPanelRef} className="card p-5">
-              <h2 className="font-semibold text-stone-800 mb-3 text-sm uppercase tracking-wide">Scorecard Submissions</h2>
+              <h2 className="font-semibold text-ep-green mb-3 text-sm uppercase tracking-wide">Scorecard Submissions</h2>
               <div className="space-y-2">
                 {drafts.map(draft => {
                   const round = rounds.find(r => r.id === draft.roundId);
@@ -1052,47 +1052,47 @@ export default function AdminTournamentSetup() {
                   const confirming = confirmingGroup === draftKey;
 
                   return (
-                    <div key={draftKey} className={`border rounded-lg ${isSubmitted ? 'border-sage-200 bg-sage-50' : 'border-stone-200'}`}>
+                    <div key={draftKey} className={`border rounded-lg ${isSubmitted ? 'border-ep-green/20 bg-ep-green/5' : 'border-ep-silver/30'}`}>
                       <button
                         type="button"
                         onClick={() => setExpandedDraft(isExpanded ? null : draftKey)}
                         className="w-full flex items-center justify-between px-4 py-3 text-left"
                       >
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-stone-800">Pairing {draft.groupNumber}</span>
+                          <span className="font-medium text-ep-green">Pairing {draft.groupNumber}</span>
                           {rounds.length > 1 && round && (
-                            <span className="text-xs text-stone-400">{round.courseName}</span>
+                            <span className="text-xs text-ep-silver">{round.courseName}</span>
                           )}
-                          {group?.teeTime && <span className="text-xs text-stone-400">{group.teeTime}</span>}
+                          {group?.teeTime && <span className="text-xs text-ep-silver">{group.teeTime}</span>}
                           {isConfirmed ? (
-                            <span className="text-xs bg-sage-100 text-sage-700 px-2 py-0.5 rounded-full">Confirmed</span>
+                            <span className="text-xs bg-ep-green/10 text-ep-green px-2 py-0.5 rounded-full">Confirmed</span>
                           ) : isSubmitted ? (
                             <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Submitted — awaiting review</span>
                           ) : (
-                            <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">In progress</span>
+                            <span className="text-xs bg-ep-sand text-ep-silver px-2 py-0.5 rounded-full">In progress</span>
                           )}
                         </div>
                         {isExpanded
-                          ? <ChevronUp size={15} className="text-stone-400 shrink-0" />
-                          : <ChevronDown size={15} className="text-stone-400 shrink-0" />}
+                          ? <ChevronUp size={15} className="text-ep-silver shrink-0" />
+                          : <ChevronDown size={15} className="text-ep-silver shrink-0" />}
                       </button>
 
                       {isExpanded && (
-                        <div className="px-4 pb-4 border-t border-stone-100">
+                        <div className="px-4 pb-4 border-t border-ep-silver/20">
                           <div className="overflow-x-auto mt-3">
                             <table className="w-full text-xs">
                               <thead>
-                                <tr className="bg-stone-50">
-                                  <th className="text-left px-2 py-1.5 font-medium text-stone-500">Player</th>
+                                <tr className="bg-ep-sand/50">
+                                  <th className="text-left px-2 py-1.5 font-medium text-ep-green/70">Player</th>
                                   {allHoleNums.slice(0, 9).map(n => (
-                                    <th key={n} className="px-1 py-1.5 text-center text-stone-400 font-normal w-6">{n}</th>
+                                    <th key={n} className="px-1 py-1.5 text-center text-ep-silver font-normal w-6">{n}</th>
                                   ))}
-                                  <th className="px-2 py-1.5 text-center font-medium text-stone-500 bg-stone-100">Out</th>
+                                  <th className="px-2 py-1.5 text-center font-medium text-ep-green/70 bg-ep-sand">Out</th>
                                   {allHoleNums.slice(9).map(n => (
-                                    <th key={n} className="px-1 py-1.5 text-center text-stone-400 font-normal w-6">{n}</th>
+                                    <th key={n} className="px-1 py-1.5 text-center text-ep-silver font-normal w-6">{n}</th>
                                   ))}
-                                  <th className="px-2 py-1.5 text-center font-medium text-stone-500 bg-stone-100">In</th>
-                                  <th className="px-2 py-1.5 text-center font-medium text-stone-600 bg-stone-200">Tot</th>
+                                  <th className="px-2 py-1.5 text-center font-medium text-ep-green/70 bg-ep-sand">In</th>
+                                  <th className="px-2 py-1.5 text-center font-medium text-ep-green bg-ep-sand/70">Tot</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1101,8 +1101,8 @@ export default function AdminTournamentSetup() {
                                   const back = allHoleNums.slice(9).reduce((sum, n) => sum + (draft.holes[player.id]?.[String(n)] ?? 0), 0);
                                   const total = front + back;
                                   return (
-                                    <tr key={player.id} className="border-t border-stone-100">
-                                      <td className="px-2 py-2 font-medium text-stone-700 whitespace-nowrap">{player.name}</td>
+                                    <tr key={player.id} className="border-t border-ep-silver/20">
+                                      <td className="px-2 py-2 font-medium text-ep-green whitespace-nowrap">{player.name}</td>
                                       {allHoleNums.slice(0, 9).map(n => {
                                         const s = draft.holes[player.id]?.[String(n)];
                                         const hInfo = round?.holes?.find(h => h.number === n);
@@ -1110,7 +1110,7 @@ export default function AdminTournamentSetup() {
                                         return (
                                           <td key={n} className="px-1 py-2 text-center">
                                             <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
-                                              s == null ? 'text-stone-300' :
+                                              s == null ? 'text-ep-silver/50' :
                                               diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
                                               diff === -1 ? 'bg-red-200' :
                                               diff === 0 ? 'bg-green-100' : ''
@@ -1118,7 +1118,7 @@ export default function AdminTournamentSetup() {
                                           </td>
                                         );
                                       })}
-                                      <td className="px-2 py-2 text-center font-semibold text-stone-700 bg-stone-100">{front || '–'}</td>
+                                      <td className="px-2 py-2 text-center font-semibold text-ep-green bg-ep-sand">{front || '–'}</td>
                                       {allHoleNums.slice(9).map(n => {
                                         const s = draft.holes[player.id]?.[String(n)];
                                         const hInfo = round?.holes?.find(h => h.number === n);
@@ -1126,7 +1126,7 @@ export default function AdminTournamentSetup() {
                                         return (
                                           <td key={n} className="px-1 py-2 text-center">
                                             <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
-                                              s == null ? 'text-stone-300' :
+                                              s == null ? 'text-ep-silver/50' :
                                               diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
                                               diff === -1 ? 'bg-red-200' :
                                               diff === 0 ? 'bg-green-100' : ''
@@ -1134,8 +1134,8 @@ export default function AdminTournamentSetup() {
                                           </td>
                                         );
                                       })}
-                                      <td className="px-2 py-2 text-center font-semibold text-stone-700 bg-stone-100">{back || '–'}</td>
-                                      <td className="px-2 py-2 text-center font-bold text-stone-800 bg-stone-200">{total || '–'}</td>
+                                      <td className="px-2 py-2 text-center font-semibold text-ep-green bg-ep-sand">{back || '–'}</td>
+                                      <td className="px-2 py-2 text-center font-bold text-ep-green bg-ep-sand/70">{total || '–'}</td>
                                     </tr>
                                   );
                                 })}
@@ -1154,7 +1154,7 @@ export default function AdminTournamentSetup() {
                             </button>
                           )}
                           {isConfirmed && (
-                            <p className="text-xs text-sage-600 mt-2">Scores have been confirmed and finalized.</p>
+                            <p className="text-xs text-ep-orange mt-2">Scores have been confirmed and finalized.</p>
                           )}
                         </div>
                       )}
@@ -1178,11 +1178,11 @@ export default function AdminTournamentSetup() {
           <AccordionSection title="Players" badge={selectedPlayerIds.length} open={playersOpen} onToggle={() => setPlayersOpen(o => !o)}>
             <div className="space-y-3">
               {showNewPlayer ? (
-                <div className="card p-4 sm:p-5 border-l-4 border-sage-400">
+                <div className="card p-4 sm:p-5 border-l-4 border-ep-orange">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="font-semibold text-stone-800 text-sm">New Player</p>
+                    <p className="font-semibold text-ep-green text-sm">New Player</p>
                     <button type="button" onClick={() => { setShowNewPlayer(false); setNewPlayerForm({ name: '', handicapIndex: '', email: '' }); }}
-                      className="text-stone-300 hover:text-stone-500"><X size={16} /></button>
+                      className="text-ep-silver hover:text-ep-green"><X size={16} /></button>
                   </div>
                   <form
                     onSubmit={async e => {
@@ -1257,7 +1257,7 @@ export default function AdminTournamentSetup() {
                 </div>
               </div>
               {players.length === 0 ? (
-                <p className="text-sm text-stone-400 text-center py-4">
+                <p className="text-sm text-ep-silver text-center py-4">
                   No players yet. Use "New Player" to add someone.
                 </p>
               ) : (
@@ -1266,12 +1266,12 @@ export default function AdminTournamentSetup() {
                     const isEnrolled = selectedPlayerIds.includes(p.id);
                     const isWD = tournament?.withdrawnPlayerIds?.includes(p.id) ?? false;
                     return (
-                      <div key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-stone-50 border border-stone-100">
-                        <input type="checkbox" className="rounded accent-sage-600"
+                      <div key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-ep-sand/30 border border-ep-silver/20">
+                        <input type="checkbox" className="rounded accent-[#004C54]"
                           checked={isEnrolled}
                           onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
-                        <span className={`flex-1 text-sm font-medium ${isWD ? 'line-through text-stone-400' : 'text-stone-700'}`}>{p.name}</span>
-                        <span className="text-xs text-stone-400">HCP {p.handicapIndex.toFixed(1)}</span>
+                        <span className={`flex-1 text-sm font-medium ${isWD ? 'line-through text-ep-silver' : 'text-ep-green'}`}>{p.name}</span>
+                        <span className="text-xs text-ep-silver">HCP {p.handicapIndex.toFixed(1)}</span>
                         {isEnrolled && (
                           <button
                             type="button"
@@ -1284,7 +1284,7 @@ export default function AdminTournamentSetup() {
                                 setTournament(t);
                               } catch (err: any) { toast.error(err.message); }
                             }}
-                            className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${isWD ? 'bg-stone-200 text-stone-600 hover:bg-stone-300' : 'bg-stone-100 text-stone-400 hover:bg-red-100 hover:text-red-600'}`}
+                            className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${isWD ? 'bg-ep-sand text-ep-green hover:bg-ep-sand/70' : 'bg-ep-silver/20 text-ep-silver hover:bg-red-100 hover:text-red-600'}`}
                             title={isWD ? 'Remove WD' : 'Mark as withdrawn'}
                           >
                             {isWD ? 'WD ✕' : 'WD'}
@@ -1318,25 +1318,25 @@ function UnassignedChip({
 }) {
   const [open, setOpen] = useState(false);
   if (groups.length === 0) {
-    return <span className="text-xs text-stone-400 bg-stone-100 px-2 py-0.5 rounded-full">{name}</span>;
+    return <span className="text-xs text-ep-silver bg-ep-sand px-2 py-0.5 rounded-full">{name}</span>;
   }
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1 bg-stone-100 text-stone-600 text-xs px-2 py-0.5 rounded-full hover:bg-sage-100 hover:text-sage-800 transition-colors"
+        className="flex items-center gap-1 bg-ep-sand text-ep-green text-xs px-2 py-0.5 rounded-full hover:bg-ep-green/10 hover:text-ep-green transition-colors"
       >
         {name} <Plus size={10} />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-stone-200 rounded-lg shadow-md min-w-[130px]">
+        <div className="absolute top-full left-0 mt-1 z-20 bg-ep-cream border border-ep-silver/30 rounded-lg shadow-md min-w-[130px]">
           {groups.map((g, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => { onAssign(idx); setOpen(false); }}
-              className="block w-full text-left px-3 py-2 text-xs hover:bg-sage-50 text-stone-700 first:rounded-t-lg last:rounded-b-lg"
+              className="block w-full text-left px-3 py-2 text-xs hover:bg-ep-sand text-ep-green first:rounded-t-lg last:rounded-b-lg"
             >
               Group {g.groupNumber}{g.teeTime ? ` · ${g.teeTime}` : ''}
             </button>
