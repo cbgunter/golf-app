@@ -25,15 +25,15 @@ export default function Home() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-stone-900">CH Tournaments</h1>
-        <p className="text-stone-500 mt-1">Active and upcoming tournaments</p>
+        <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">Electric Phactory</h1>
+        <p className="text-ep-silver mt-1">Active and upcoming tournaments</p>
       </div>
 
       {tournaments.length === 0 ? (
         <div className="card p-12 text-center">
           <span className="text-5xl mb-4 block">⛳</span>
-          <h2 className="text-lg font-semibold text-stone-700">No active tournaments</h2>
-          <p className="text-stone-500 text-sm mt-1">Check back soon, or view the <Link to="/history" className="text-sage-600 hover:underline">history</Link>.</p>
+          <h2 className="text-lg font-heading font-semibold text-ep-green">No active tournaments</h2>
+          <p className="text-ep-silver text-sm mt-1">Check back soon, or view the <Link to="/history" className="text-ep-orange hover:underline">history</Link>.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -60,13 +60,13 @@ function TournamentCard({ tournament: t }: { tournament: Tournament }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <StatusBadge status={t.status} />
-            <span className="text-xs text-stone-400">{formatLabel[t.format] ?? t.format}</span>
+            <span className="text-xs text-ep-silver">{formatLabel[t.format] ?? t.format}</span>
           </div>
-          <h2 className="text-lg font-semibold text-stone-900 group-hover:text-sage-700 transition-colors">
+          <h2 className="text-lg font-heading font-semibold text-ep-green group-hover:text-ep-orange transition-colors">
             {t.name}
           </h2>
-          {t.description && <p className="text-sm text-stone-500 mt-0.5 truncate">{t.description}</p>}
-          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-stone-500">
+          {t.description && <p className="text-sm text-ep-silver mt-0.5 truncate">{t.description}</p>}
+          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-ep-silver">
             <span className="flex items-center gap-1">
               <Calendar size={14} />
               {new Date(t.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -80,7 +80,7 @@ function TournamentCard({ tournament: t }: { tournament: Tournament }) {
               {t.roundIds.length} round{t.roundIds.length !== 1 ? 's' : ''}
             </span>
             {t.entryFee > 0 && (
-              <span className="flex items-center gap-1 text-sand-600 font-medium">
+              <span className="flex items-center gap-1 text-ep-orange font-medium">
                 <DollarSign size={14} />
                 ${totalPot.toFixed(0)} pot
               </span>
@@ -88,10 +88,10 @@ function TournamentCard({ tournament: t }: { tournament: Tournament }) {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
-          {t.isNet && <span className="text-xs text-stone-400">Net</span>}
-          {t.isGross && <span className="text-xs text-stone-400">Gross</span>}
-          {t.hasClosestToPin && <span className="text-xs text-stone-400">CTP</span>}
-          {t.hasLongestDrive && <span className="text-xs text-stone-400">LD</span>}
+          {t.isNet && <span className="text-xs text-ep-silver">Net</span>}
+          {t.isGross && <span className="text-xs text-ep-silver">Gross</span>}
+          {t.hasClosestToPin && <span className="text-xs text-ep-silver">CTP</span>}
+          {t.hasLongestDrive && <span className="text-xs text-ep-silver">LD</span>}
         </div>
       </div>
     </Link>
@@ -101,13 +101,13 @@ function TournamentCard({ tournament: t }: { tournament: Tournament }) {
 function LoadingState() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="h-8 w-48 bg-stone-200 rounded animate-pulse mb-8" />
+      <div className="h-8 w-48 bg-ep-sand rounded animate-pulse mb-8" />
       <div className="space-y-4">
         {[1, 2].map(i => (
           <div key={i} className="card p-5 animate-pulse">
-            <div className="h-4 w-20 bg-stone-200 rounded mb-2" />
-            <div className="h-6 w-64 bg-stone-200 rounded mb-3" />
-            <div className="h-4 w-48 bg-stone-100 rounded" />
+            <div className="h-4 w-20 bg-ep-sand rounded mb-2" />
+            <div className="h-6 w-64 bg-ep-sand rounded mb-3" />
+            <div className="h-4 w-48 bg-ep-sand/60 rounded" />
           </div>
         ))}
       </div>

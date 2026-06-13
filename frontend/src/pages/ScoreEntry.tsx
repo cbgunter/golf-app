@@ -159,7 +159,7 @@ export default function ScoreEntry() {
 
   if (phase === 'loading') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-3 text-stone-400">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-3 text-ep-silver">
         <Loader2 className="animate-spin" size={32} />
         <p>Looking up PIN…</p>
       </div>
@@ -170,8 +170,8 @@ export default function ScoreEntry() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
         <AlertCircle size={40} className="text-red-400" />
-        <h2 className="text-xl font-semibold text-stone-800">Invalid PIN</h2>
-        <p className="text-stone-500 text-sm">{errorMsg}</p>
+        <h2 className="text-xl font-heading font-semibold text-ep-green">Invalid PIN</h2>
+        <p className="text-ep-silver text-sm">{errorMsg}</p>
         <button onClick={() => navigate('/score')} className="btn-secondary">Back to Score Hub</button>
       </div>
     );
@@ -180,9 +180,9 @@ export default function ScoreEntry() {
   if (phase === 'submitted') {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
-        <CheckCircle size={48} className="text-sage-500" />
-        <h2 className="text-2xl font-bold text-stone-800">Scores Submitted!</h2>
-        <p className="text-stone-500 text-sm">
+        <CheckCircle size={48} className="text-ep-orange" />
+        <h2 className="text-2xl font-heading font-extrabold text-ep-green">Scores Submitted!</h2>
+        <p className="text-ep-silver text-sm">
           Your scorecard for Group {info?.groupNumber} has been submitted.<br />
           The tournament admin will review and confirm your scores.
         </p>
@@ -194,9 +194,9 @@ export default function ScoreEntry() {
   if (phase === 'confirmed') {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
-        <CheckCircle size={48} className="text-sage-500" />
-        <h2 className="text-2xl font-bold text-stone-800">Scores Confirmed</h2>
-        <p className="text-stone-500 text-sm">
+        <CheckCircle size={48} className="text-ep-orange" />
+        <h2 className="text-2xl font-heading font-extrabold text-ep-green">Scores Confirmed</h2>
+        <p className="text-ep-silver text-sm">
           Your scorecard for Group {info?.groupNumber} has been reviewed and confirmed by the tournament admin.
           No further changes can be made.
         </p>
@@ -226,21 +226,21 @@ export default function ScoreEntry() {
   return (
     <div className="max-w-lg mx-auto min-h-screen flex flex-col">
       {/* Header */}
-      <div className="bg-sage-700 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <button onClick={() => navigate('/score')} className="p-1 hover:text-sage-200">
+      <div className="bg-ep-green text-ep-cream px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <button onClick={() => navigate('/score')} className="p-1 hover:text-ep-cream/80">
           <ChevronLeft size={20} />
         </button>
         <div className="text-center">
-          <div className="text-sm font-semibold">{info.courseName}</div>
-          <div className="text-xs text-sage-200">Group {info.groupNumber} · {info.teeTime}</div>
+          <div className="text-sm font-heading font-semibold">{info.courseName}</div>
+          <div className="text-xs text-ep-cream/70">Group {info.groupNumber} · {info.teeTime}</div>
         </div>
-        <div className="text-right text-xs text-sage-200">
+        <div className="text-right text-xs text-ep-cream/70">
           {saving ? <Loader2 size={14} className="animate-spin" /> : <span>{totalEntered}/{totalExpected}</span>}
         </div>
       </div>
 
       {/* Hole navigation dots */}
-      <div className="bg-sage-800 px-3 py-1.5 flex gap-1 flex-wrap justify-center">
+      <div className="bg-ep-deep px-3 py-1.5 flex gap-1 flex-wrap justify-center">
         {allHoleNums.map(n => {
           const allScored = info.players.every(p => holes[p.id]?.[String(n)] != null);
           const someScored = info.players.some(p => holes[p.id]?.[String(n)] != null);
@@ -250,12 +250,12 @@ export default function ScoreEntry() {
               onClick={() => goToHole(n)}
               className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
                 n === currentHole
-                  ? 'bg-white text-sage-700 font-bold'
+                  ? 'bg-ep-cream text-ep-green font-bold'
                   : allScored
-                  ? 'bg-sage-500 text-white'
+                  ? 'bg-ep-green text-ep-cream'
                   : someScored
-                  ? 'bg-sage-600 text-sage-200'
-                  : 'bg-sage-700 text-sage-300'
+                  ? 'bg-ep-green/60 text-ep-cream/70'
+                  : 'bg-ep-green/30 text-ep-cream/50'
               }`}
             >
               {n}
@@ -265,12 +265,12 @@ export default function ScoreEntry() {
       </div>
 
       {/* Hole info */}
-      <div className="bg-white border-b border-stone-100 px-4 py-3 flex items-center justify-between">
+      <div className="bg-ep-cream border-b border-ep-silver/20 px-4 py-3 flex items-center justify-between">
         <div>
-          <div className="text-2xl font-bold text-stone-800">Hole {currentHole}</div>
-          <div className="text-sm text-stone-500">Par {holeInfo.par} · HCP {holeInfo.handicap}</div>
+          <div className="text-2xl font-heading font-extrabold text-ep-green">Hole {currentHole}</div>
+          <div className="text-sm text-ep-silver">Par {holeInfo.par} · HCP {holeInfo.handicap}</div>
         </div>
-        <div className="text-4xl font-light text-stone-300">Par {holeInfo.par}</div>
+        <div className="text-4xl font-light text-ep-silver/40">Par {holeInfo.par}</div>
       </div>
 
       {/* Score inputs */}
@@ -281,16 +281,16 @@ export default function ScoreEntry() {
           return (
             <div key={player.id} className="card p-3 flex items-center gap-3">
               <div className="flex-1">
-                <div className="text-sm font-semibold text-stone-800">{player.name}</div>
-                <div className="text-xs text-stone-400">HCP {player.handicapIndex}</div>
+                <div className="text-sm font-semibold text-ep-green">{player.name}</div>
+                <div className="text-xs text-ep-silver">HCP {player.handicapIndex}</div>
               </div>
               <div className="flex items-center gap-2">
                 {diff != null && (
                   <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                    diff <= -2 ? 'bg-yellow-100 text-yellow-700' :
-                    diff === -1 ? 'bg-red-100 text-red-600' :
-                    diff === 0 ? 'bg-green-100 text-green-700' :
-                    'bg-stone-100 text-stone-500'
+                    diff <= -2 ? 'bg-ep-orange/30 text-ep-orange' :
+                    diff === -1 ? 'bg-ep-orange/15 text-ep-orange/80' :
+                    diff === 0 ? 'bg-ep-green/15 text-ep-green' :
+                    'bg-ep-silver/20 text-ep-silver'
                   }`}>
                     {diff <= -2 ? 'Eagle+' : diff === -1 ? 'Birdie' : diff === 0 ? 'Par' : `+${diff}`}
                   </span>
@@ -304,7 +304,7 @@ export default function ScoreEntry() {
                   onChange={e => setScore(player.id, currentHole, e.target.value)}
                   onFocus={e => e.target.select()}
                   placeholder="–"
-                  className="w-16 text-center text-2xl font-bold border-2 border-stone-200 rounded-lg focus:border-sage-400 focus:outline-none py-2"
+                  className="w-16 text-center text-2xl font-bold border-2 border-ep-silver/50 rounded-lg focus:border-ep-green focus:outline-none py-2 bg-ep-cream text-ep-green"
                 />
               </div>
             </div>
@@ -314,14 +314,14 @@ export default function ScoreEntry() {
 
       {/* Running totals */}
       {info.players.some(p => Object.keys(holes[p.id] ?? {}).length > 0) && (
-        <div className="bg-stone-50 border-t border-stone-100 px-4 py-2">
+        <div className="bg-ep-sand/60 border-t border-ep-silver/20 px-4 py-2">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-stone-400">
+              <tr className="text-ep-silver">
                 <th className="text-left font-normal pb-0.5">Player</th>
                 <th className="text-center font-normal pb-0.5 w-10">Out</th>
                 <th className="text-center font-normal pb-0.5 w-10">In</th>
-                <th className="text-center font-semibold pb-0.5 w-10 text-stone-600">Tot</th>
+                <th className="text-center font-semibold pb-0.5 w-10 text-ep-green/70">Tot</th>
               </tr>
             </thead>
             <tbody>
@@ -332,10 +332,10 @@ export default function ScoreEntry() {
                 const hasBack = allHoleNums.filter(n => n >= 10).some(n => holes[p.id]?.[String(n)] != null);
                 return (
                   <tr key={p.id}>
-                    <td className="py-0.5 text-stone-600 font-medium">{p.name.split(' ')[0]}</td>
-                    <td className="py-0.5 text-center text-stone-500">{hasFront ? front : '—'}</td>
-                    <td className="py-0.5 text-center text-stone-500">{hasBack ? back : '—'}</td>
-                    <td className="py-0.5 text-center font-bold text-stone-700">{hasFront || hasBack ? front + back : '—'}</td>
+                    <td className="py-0.5 text-ep-green/80 font-medium">{p.name.split(' ')[0]}</td>
+                    <td className="py-0.5 text-center text-ep-silver">{hasFront ? front : '—'}</td>
+                    <td className="py-0.5 text-center text-ep-silver">{hasBack ? back : '—'}</td>
+                    <td className="py-0.5 text-center font-bold text-ep-green">{hasFront || hasBack ? front + back : '—'}</td>
                   </tr>
                 );
               })}
@@ -345,7 +345,7 @@ export default function ScoreEntry() {
       )}
 
       {/* Navigation */}
-      <div className="sticky bottom-0 bg-white border-t border-stone-100 px-4 py-3 flex gap-2">
+      <div className="sticky bottom-0 bg-ep-cream border-t border-ep-silver/20 px-4 py-3 flex gap-2">
         <button
           onClick={() => currentIdx > 0 && goToHole(allHoleNums[currentIdx - 1])}
           disabled={currentIdx === 0}
@@ -395,17 +395,17 @@ function ReviewScreen({
 
   return (
     <div className="max-w-lg mx-auto min-h-screen flex flex-col">
-      <div className="bg-sage-700 text-white px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
-        <button onClick={onEdit} className="p-1 hover:text-sage-200"><ChevronLeft size={20} /></button>
+      <div className="bg-ep-green text-ep-cream px-4 py-3 flex items-center gap-3 sticky top-0 z-10">
+        <button onClick={onEdit} className="p-1 hover:text-ep-cream/80"><ChevronLeft size={20} /></button>
         <div>
-          <div className="font-semibold">Review Scorecard</div>
-          <div className="text-xs text-sage-200">{info.courseName} · Group {info.groupNumber}</div>
+          <div className="font-heading font-semibold">Review Scorecard</div>
+          <div className="text-xs text-ep-cream/70">{info.courseName} · Group {info.groupNumber}</div>
         </div>
       </div>
 
       <div className="flex-1 px-4 py-4 overflow-auto">
         {missingScores.length > 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-sm text-yellow-800">
+          <div className="bg-ep-orange/10 border border-ep-orange/40 rounded-lg p-3 mb-4 text-sm text-ep-orange">
             <div className="font-semibold mb-1">Missing scores</div>
             {missingScores.map((m, i) => (
               <div key={i}>{m.player} · Hole {m.hole}</div>
@@ -417,12 +417,12 @@ function ReviewScreen({
         <div className="card overflow-x-auto mb-4">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-stone-50">
-                <th className="text-left px-3 py-2 font-medium text-stone-500">Player</th>
+              <tr className="bg-ep-sand">
+                <th className="text-left px-3 py-2 font-medium text-ep-silver">Player</th>
                 {allHoleNums.map(n => (
-                  <th key={n} className="px-1 py-2 text-center text-stone-400 font-normal">{n}</th>
+                  <th key={n} className="px-1 py-2 text-center text-ep-silver font-normal">{n}</th>
                 ))}
-                <th className="px-2 py-2 text-center font-medium text-stone-600">Tot</th>
+                <th className="px-2 py-2 text-center font-medium text-ep-green/70">Tot</th>
               </tr>
             </thead>
             <tbody>
@@ -431,8 +431,8 @@ function ReviewScreen({
                 const total = scoredNums.reduce((sum, n) => sum + holes[player.id][String(n)], 0);
                 const isComplete = scoredNums.length === allHoleNums.length;
                 return (
-                  <tr key={player.id} className="border-t border-stone-100">
-                    <td className="px-3 py-2 font-medium text-stone-700 whitespace-nowrap">{player.name}</td>
+                  <tr key={player.id} className="border-t border-ep-silver/20">
+                    <td className="px-3 py-2 font-medium text-ep-green whitespace-nowrap">{player.name}</td>
                     {allHoleNums.map(n => {
                       const s = holes[player.id]?.[String(n)];
                       const hInfo = info.holes.find(h => h.number === n);
@@ -440,10 +440,10 @@ function ReviewScreen({
                       return (
                         <td key={n} className="px-1 py-2 text-center">
                           <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
-                            s == null ? 'text-stone-300' :
-                            diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
-                            diff === -1 ? 'bg-red-200' :
-                            diff === 0 ? 'bg-green-100' :
+                            s == null ? 'text-ep-silver/40' :
+                            diff != null && diff <= -2 ? 'bg-ep-orange/30 font-bold' :
+                            diff === -1 ? 'bg-ep-orange/15' :
+                            diff === 0 ? 'bg-ep-green/10' :
                             ''
                           }`}>
                             {s ?? '–'}
@@ -451,34 +451,34 @@ function ReviewScreen({
                         </td>
                       );
                     })}
-                    <td className="px-2 py-2 text-center font-bold text-stone-800">
+                    <td className="px-2 py-2 text-center font-bold text-ep-green">
                       {scoredNums.length === 0 ? '–' : isComplete ? total : `${total}*`}
                     </td>
                   </tr>
                 );
               })}
               {/* Par row */}
-              <tr className="border-t border-stone-200 bg-stone-50">
-                <td className="px-3 py-1 text-stone-400 text-xs">Par</td>
+              <tr className="border-t border-ep-silver/30 bg-ep-sand">
+                <td className="px-3 py-1 text-ep-silver text-xs">Par</td>
                 {allHoleNums.map(n => {
                   const hInfo = info.holes.find(h => h.number === n);
-                  return <td key={n} className="px-1 py-1 text-center text-stone-400">{hInfo?.par ?? 4}</td>;
+                  return <td key={n} className="px-1 py-1 text-center text-ep-silver">{hInfo?.par ?? 4}</td>;
                 })}
-                <td className="px-2 py-1 text-center text-stone-500 font-medium">{info.par}</td>
+                <td className="px-2 py-1 text-center text-ep-green/70 font-medium">{info.par}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <p className="text-xs text-stone-400 text-center mb-1">
+        <p className="text-xs text-ep-silver text-center mb-1">
           Compare with your paper scorecard before submitting. The admin will do a final review.
         </p>
         {info.players.some(p => allHoleNums.some(n => holes[p.id]?.[String(n)] == null)) && (
-          <p className="text-xs text-yellow-600 text-center mb-4">* Partial total — some holes not yet scored.</p>
+          <p className="text-xs text-ep-orange text-center mb-4">* Partial total — some holes not yet scored.</p>
         )}
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-stone-100 px-4 py-3 flex gap-2">
+      <div className="sticky bottom-0 bg-ep-cream border-t border-ep-silver/20 px-4 py-3 flex gap-2">
         <button onClick={onEdit} className="btn-secondary flex-1">Edit Scores</button>
         <button
           onClick={onSubmit}

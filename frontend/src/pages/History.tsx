@@ -24,20 +24,20 @@ export default function History() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-stone-500">Loading...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-ep-silver">Loading...</div>;
   if (error) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">{error}</div>;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-stone-900">History</h1>
-        <p className="text-stone-500 mt-1">Completed and archived tournaments</p>
+        <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">History</h1>
+        <p className="text-ep-silver mt-1">Completed and archived tournaments</p>
       </div>
 
       {tournaments.length === 0 ? (
         <div className="card p-12 text-center">
           <span className="text-4xl mb-3 block">📋</span>
-          <h2 className="text-lg font-semibold text-stone-700">No completed tournaments yet</h2>
+          <h2 className="text-lg font-heading font-semibold text-ep-green">No completed tournaments yet</h2>
         </div>
       ) : (
         <div className="space-y-3">
@@ -49,11 +49,11 @@ export default function History() {
                   <div className="flex items-center gap-2 mb-1">
                     <StatusBadge status={t.status} />
                     {t.status === 'archived' && (
-                      <span className="text-xs text-stone-400 italic">archived</span>
+                      <span className="text-xs text-ep-silver italic">archived</span>
                     )}
                   </div>
-                  <h2 className={`font-semibold truncate ${t.status === 'archived' ? 'text-stone-500' : 'text-stone-900'}`}>{t.name}</h2>
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-stone-500">
+                  <h2 className={`font-heading font-semibold truncate ${t.status === 'archived' ? 'text-ep-silver' : 'text-ep-green'}`}>{t.name}</h2>
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-ep-silver">
                     <span className="flex items-center gap-1">
                       <Calendar size={12} />
                       {parseLocalDate(t.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -64,7 +64,7 @@ export default function History() {
                     </span>
                     <span>{t.roundIds.length} rounds</span>
                     {totalPot > 0 && (
-                      <span className="text-sand-600 font-medium">${totalPot.toFixed(0)} pot</span>
+                      <span className="text-ep-orange font-medium">${totalPot.toFixed(0)} pot</span>
                     )}
                   </div>
                 </div>

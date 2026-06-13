@@ -18,7 +18,7 @@ export default function TournamentResultsPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-stone-500">Loading results...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-ep-silver">Loading results...</div>;
   if (error) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">{error}</div>;
   if (!results) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Results not found.</div>;
 
@@ -32,63 +32,63 @@ export default function TournamentResultsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link to={`/tournament/${id}`} className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-700 mb-4">
+      <Link to={`/tournament/${id}`} className="inline-flex items-center gap-1 text-sm text-ep-silver hover:text-ep-green mb-4">
         <ArrowLeft size={14} /> Back to tournament
       </Link>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-stone-900">{tournament.name}</h1>
-        <p className="text-stone-500 mt-1">Final Results</p>
+        <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">{tournament.name}</h1>
+        <p className="text-ep-silver mt-1">Final Results</p>
       </div>
 
       {/* Payouts */}
       {(payouts.length > 0 && totalPot > 0) || ctpPot > 0 || ldPot > 0 ? (
-        <div className="card p-5 mb-6 border-l-4 border-sand-400">
-          <h2 className="font-bold text-stone-800 mb-4 flex items-center gap-2">
-            <Trophy size={18} className="text-sand-500" /> Payouts
-            {totalPot > 0 && <span className="text-sm font-normal text-stone-400">— ${totalPot.toFixed(0)} pot</span>}
+        <div className="card p-5 mb-6 border-l-4 border-ep-orange">
+          <h2 className="font-heading font-bold text-ep-green mb-4 flex items-center gap-2">
+            <Trophy size={18} className="text-ep-orange" /> Payouts
+            {totalPot > 0 && <span className="text-sm font-normal text-ep-silver">— ${totalPot.toFixed(0)} pot</span>}
           </h2>
           <div className="space-y-3">
             {payouts.map(p => (
               <div key={p.place} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${p.place === 1 ? 'bg-sand-100 text-sand-700' : p.place === 2 ? 'bg-stone-100 text-stone-700' : 'bg-orange-50 text-orange-700'}`}>
+                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${p.place === 1 ? 'bg-ep-orange/20 text-ep-orange' : p.place === 2 ? 'bg-ep-silver/30 text-ep-green' : 'bg-ep-sand text-ep-green/70'}`}>
                     {p.place}
                   </span>
                   <div>
-                    <div className="font-medium text-stone-900">{p.player?.name ?? 'TBD'}</div>
-                    <div className="text-xs text-stone-400">{p.label}</div>
+                    <div className="font-medium text-ep-green">{p.player?.name ?? 'TBD'}</div>
+                    <div className="text-xs text-ep-silver">{p.label}</div>
                   </div>
                 </div>
-                <span className="text-lg font-bold text-sage-700">${p.amount.toFixed(0)}</span>
+                <span className="text-lg font-bold text-ep-orange">${p.amount.toFixed(0)}</span>
               </div>
             ))}
             {ctpPot > 0 && (
-              <div className="flex items-center justify-between pt-1 border-t border-stone-100">
+              <div className="flex items-center justify-between pt-1 border-t border-ep-silver/20">
                 <div className="flex items-center gap-3">
                   <span className="w-7 h-7 flex items-center justify-center text-lg">📍</span>
                   <div>
-                    <div className="font-medium text-stone-900">
+                    <div className="font-medium text-ep-green">
                       {closestToPin?.[0]?.player?.name ?? 'TBD'}
                     </div>
-                    <div className="text-xs text-stone-400">Closest to Pin</div>
+                    <div className="text-xs text-ep-silver">Closest to Pin</div>
                   </div>
                 </div>
-                <span className="text-lg font-bold text-sage-700">${ctpPot.toFixed(0)}</span>
+                <span className="text-lg font-bold text-ep-orange">${ctpPot.toFixed(0)}</span>
               </div>
             )}
             {ldPot > 0 && (
-              <div className="flex items-center justify-between pt-1 border-t border-stone-100">
+              <div className="flex items-center justify-between pt-1 border-t border-ep-silver/20">
                 <div className="flex items-center gap-3">
                   <span className="w-7 h-7 flex items-center justify-center text-lg">🏌️</span>
                   <div>
-                    <div className="font-medium text-stone-900">
+                    <div className="font-medium text-ep-green">
                       {longestDrive?.[0]?.player?.name ?? 'TBD'}
                     </div>
-                    <div className="text-xs text-stone-400">Longest Drive</div>
+                    <div className="text-xs text-ep-silver">Longest Drive</div>
                   </div>
                 </div>
-                <span className="text-lg font-bold text-sage-700">${ldPot.toFixed(0)}</span>
+                <span className="text-lg font-bold text-ep-orange">${ldPot.toFixed(0)}</span>
               </div>
             )}
           </div>
@@ -97,14 +97,14 @@ export default function TournamentResultsPage() {
 
       {/* Leaderboard */}
       <div className="card mb-6">
-        <div className="px-5 py-4 border-b border-stone-100">
-          <h2 className="font-bold text-stone-800">Leaderboard</h2>
-          <p className="text-xs text-stone-400 mt-0.5">Sorted by {isNet ? 'net' : 'gross'} score (lowest wins)</p>
+        <div className="px-5 py-4 border-b border-ep-silver/20">
+          <h2 className="font-heading font-bold text-ep-green">Leaderboard</h2>
+          <p className="text-xs text-ep-silver mt-0.5">Sorted by {isNet ? 'net' : 'gross'} score (lowest wins)</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-stone-50 text-stone-500 text-xs">
+              <tr className="bg-ep-sand text-ep-silver text-xs">
                 <th className="text-left px-5 py-2.5 font-medium">Rank</th>
                 <th className="text-left px-3 py-2.5 font-medium">Player</th>
                 <th className="text-center px-3 py-2.5 font-medium">HCP Idx</th>
@@ -115,7 +115,7 @@ export default function TournamentResultsPage() {
                 <th className="px-3 py-2.5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-ep-silver/10">
               {activeLeaderboard.map((entry, idx) => {
                 const payout = payouts.find(p => p.player?.id === entry.player.id);
                 const isExpanded = expandedPlayer === entry.player.id;
@@ -123,25 +123,25 @@ export default function TournamentResultsPage() {
                   <>
                     <tr
                       key={entry.player.id}
-                      className={`${idx === 0 ? 'bg-sand-50' : idx % 2 === 0 ? 'bg-white' : 'bg-stone-50/50'} cursor-pointer hover:bg-stone-50`}
+                      className={`${idx === 0 ? 'bg-ep-orange/10' : idx % 2 === 0 ? 'bg-ep-cream' : 'bg-ep-sand/40'} cursor-pointer hover:bg-ep-sand/50`}
                       onClick={() => setExpandedPlayer(isExpanded ? null : entry.player.id)}
                     >
-                      <td className="px-5 py-3 font-bold text-stone-700">
+                      <td className="px-5 py-3 font-bold text-ep-green">
                         {idx === 0 ? '🏆' : entry.rank}
                       </td>
-                      <td className="px-3 py-3 font-medium text-stone-900">{entry.player.name}</td>
-                      <td className="px-3 py-3 text-center text-stone-500">{entry.player.handicapIndex.toFixed(1)}</td>
+                      <td className="px-3 py-3 font-medium text-ep-green">{entry.player.name}</td>
+                      <td className="px-3 py-3 text-center text-ep-silver">{entry.player.handicapIndex.toFixed(1)}</td>
                       {tournament.isGross && <td className="px-3 py-3 text-center">{entry.totalGross}</td>}
                       {tournament.isNet && <td className="px-3 py-3 text-center font-semibold">{entry.totalNet}</td>}
-                      <td className="px-3 py-3 text-center text-stone-500">{entry.scores.length}</td>
-                      <td className="px-3 py-3 text-center font-semibold text-sage-700">
+                      <td className="px-3 py-3 text-center text-ep-silver">{entry.scores.length}</td>
+                      <td className="px-3 py-3 text-center font-semibold text-ep-orange">
                         {payout ? `$${payout.amount.toFixed(0)}` : '—'}
                       </td>
-                      <td className="px-3 py-3 text-stone-400 text-xs">{isExpanded ? '▲' : '▼'}</td>
+                      <td className="px-3 py-3 text-ep-silver text-xs">{isExpanded ? '▲' : '▼'}</td>
                     </tr>
                     {isExpanded && (
                       <tr key={`${entry.player.id}-detail`}>
-                        <td colSpan={8} className="px-5 py-4 bg-stone-50 border-t border-stone-100">
+                        <td colSpan={8} className="px-5 py-4 bg-ep-sand/50 border-t border-ep-silver/20">
                           <ScoreBreakdown entry={entry} rounds={results.rounds} isNet={isNet} />
                         </td>
                       </tr>
@@ -151,13 +151,13 @@ export default function TournamentResultsPage() {
               })}
               {wdEntries.map(entry => (
                 <tr key={entry.player.id} className="opacity-50">
-                  <td className="px-5 py-3 text-xs font-semibold text-stone-400">WD</td>
-                  <td className="px-3 py-3 font-medium text-stone-500 line-through">{entry.player.name}</td>
-                  <td className="px-3 py-3 text-center text-stone-400">{entry.player.handicapIndex.toFixed(1)}</td>
-                  {tournament.isGross && <td className="px-3 py-3 text-center text-stone-400">—</td>}
-                  {tournament.isNet && <td className="px-3 py-3 text-center text-stone-400">—</td>}
-                  <td className="px-3 py-3 text-center text-stone-400">—</td>
-                  <td className="px-3 py-3 text-center text-stone-400">—</td>
+                  <td className="px-5 py-3 text-xs font-semibold text-ep-silver">WD</td>
+                  <td className="px-3 py-3 font-medium text-ep-green/60 line-through">{entry.player.name}</td>
+                  <td className="px-3 py-3 text-center text-ep-silver">{entry.player.handicapIndex.toFixed(1)}</td>
+                  {tournament.isGross && <td className="px-3 py-3 text-center text-ep-silver">—</td>}
+                  {tournament.isNet && <td className="px-3 py-3 text-center text-ep-silver">—</td>}
+                  <td className="px-3 py-3 text-center text-ep-silver">—</td>
+                  <td className="px-3 py-3 text-center text-ep-silver">—</td>
                   <td className="px-3 py-3" />
                 </tr>
               ))}
@@ -169,14 +169,14 @@ export default function TournamentResultsPage() {
       {/* Special contests */}
       {((closestToPin?.length ?? 0) > 0 || (longestDrive?.length ?? 0) > 0) && (
         <div className="card p-5 mb-6">
-          <h2 className="font-bold text-stone-800 mb-4">Special Contests</h2>
+          <h2 className="font-heading font-bold text-ep-green mb-4">Special Contests</h2>
           <div className="space-y-3">
             {closestToPin?.map((c, i) => (
               <div key={i} className="flex items-center gap-3">
-                <span className="text-blue-500">📍</span>
+                <span className="text-ep-orange">📍</span>
                 <div>
-                  <div className="text-sm font-medium">Closest to Pin — Hole {c.hole}</div>
-                  <div className="text-xs text-stone-500">{c.player?.name ?? 'TBD'}</div>
+                  <div className="text-sm font-medium text-ep-green">Closest to Pin — Hole {c.hole}</div>
+                  <div className="text-xs text-ep-silver">{c.player?.name ?? 'TBD'}</div>
                 </div>
               </div>
             ))}
@@ -184,8 +184,8 @@ export default function TournamentResultsPage() {
               <div key={i} className="flex items-center gap-3">
                 <span>🏌️</span>
                 <div>
-                  <div className="text-sm font-medium">Longest Drive — Hole {l.hole}</div>
-                  <div className="text-xs text-stone-500">{l.player?.name ?? 'TBD'}</div>
+                  <div className="text-sm font-medium text-ep-green">Longest Drive — Hole {l.hole}</div>
+                  <div className="text-xs text-ep-silver">{l.player?.name ?? 'TBD'}</div>
                 </div>
               </div>
             ))}
@@ -205,27 +205,27 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
 
   return (
     <div>
-      <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Round Breakdown</p>
+      <p className="text-xs font-heading font-semibold text-ep-silver uppercase tracking-wider mb-2">Round Breakdown</p>
       <div className="space-y-2">
         {entry.scores.map(score => {
           const round = rounds.find(r => r.id === score.roundId);
           const showAdj = expandedAdjustments === score.id;
           return (
-            <div key={score.id} className="bg-white rounded-lg border border-stone-200 p-3">
+            <div key={score.id} className="bg-ep-cream rounded-lg border border-ep-silver/30 p-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-sm text-stone-800">{round?.courseName ?? 'Unknown Course'}</div>
-                  <div className="text-xs text-stone-400">
+                  <div className="font-medium text-sm text-ep-green">{round?.courseName ?? 'Unknown Course'}</div>
+                  <div className="text-xs text-ep-silver">
                     {round ? new Date(round.date).toLocaleDateString() : ''} · Par {round?.par} · Course HCP {score.courseHandicap}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-semibold">
+                  <div className="text-sm font-semibold text-ep-green">
                     {isNet ? `Net ${score.netTotal}` : `Gross ${score.grossTotal}`}
-                    {isNet && <span className="text-xs text-stone-400 ml-2">(Gross {score.grossTotal})</span>}
+                    {isNet && <span className="text-xs text-ep-silver ml-2">(Gross {score.grossTotal})</span>}
                   </div>
                   {score.handicapDifferential !== undefined && (
-                    <div className="text-xs text-stone-400">Differential: {score.handicapDifferential}</div>
+                    <div className="text-xs text-ep-silver">Differential: {score.handicapDifferential}</div>
                   )}
                 </div>
               </div>
@@ -233,7 +233,7 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
               {score.adjustments.length > 0 && (
                 <button
                   onClick={() => setExpandedAdjustments(showAdj ? null : score.id)}
-                  className="mt-2 text-xs text-sage-600 hover:underline flex items-center gap-1"
+                  className="mt-2 text-xs text-ep-orange hover:underline flex items-center gap-1"
                 >
                   <Info size={11} />
                   {showAdj ? 'Hide' : 'Show'} score adjustments ({score.adjustments.length})
@@ -243,11 +243,11 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
               {showAdj && (
                 <div className="mt-2 space-y-1.5">
                   {score.adjustments.map((adj, i) => (
-                    <div key={i} className="text-xs bg-stone-50 rounded p-2 text-stone-600">
-                      <span className="font-medium text-stone-700">[{adj.type.toUpperCase()}]</span>
+                    <div key={i} className="text-xs bg-ep-sand rounded p-2 text-ep-green/80">
+                      <span className="font-medium text-ep-green">[{adj.type.toUpperCase()}]</span>
                       {adj.hole ? ` Hole ${adj.hole}:` : ''} {adj.reason}
                       {adj.originalValue !== adj.adjustedValue && (
-                        <span className="ml-1 text-stone-400">({adj.originalValue} → {adj.adjustedValue})</span>
+                        <span className="ml-1 text-ep-silver">({adj.originalValue} → {adj.adjustedValue})</span>
                       )}
                     </div>
                   ))}

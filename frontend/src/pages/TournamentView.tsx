@@ -55,7 +55,7 @@ export default function TournamentView() {
     return () => clearInterval(interval);
   }, [id]);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-stone-500">Loading...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-ep-silver">Loading...</div>;
   if (!tournament) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Tournament not found.</div>;
 
   const playerCount = tournament.playerIds.length;
@@ -121,34 +121,34 @@ export default function TournamentView() {
           <StatusBadge status={tournament.status} />
           <button
             onClick={() => setShowInfo(true)}
-            className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-sage-600 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-ep-silver hover:text-ep-orange transition-colors"
             title="How scoring works"
           >
             <HelpCircle size={16} />
             <span>How it works</span>
           </button>
         </div>
-        <h1 className="text-3xl font-bold text-stone-900">{tournament.name}</h1>
-        {tournament.description && <p className="text-stone-500 mt-1">{tournament.description}</p>}
+        <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">{tournament.name}</h1>
+        {tournament.description && <p className="text-ep-silver mt-1">{tournament.description}</p>}
 
-        <div className="flex flex-wrap gap-6 mt-4 text-sm text-stone-600">
+        <div className="flex flex-wrap gap-6 mt-4 text-sm text-ep-green/80">
           <span className="flex items-center gap-1">
             <Calendar size={15} />
             {parseLocalDate(tournament.startDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </span>
           {totalPot > 0 && (
-            <span className="flex items-center gap-1 text-sand-600 font-semibold">
+            <span className="flex items-center gap-1 text-ep-orange font-semibold">
               <Trophy size={15} />
               ${totalPot.toFixed(0)} pot
             </span>
           )}
           {ctpPot > 0 && (
-            <span className="flex items-center gap-1 text-stone-500 text-xs font-medium">
+            <span className="flex items-center gap-1 text-ep-silver text-xs font-medium">
               📍 CTP ${ctpPot.toFixed(0)}
             </span>
           )}
           {ldPot > 0 && (
-            <span className="flex items-center gap-1 text-stone-500 text-xs font-medium">
+            <span className="flex items-center gap-1 text-ep-silver text-xs font-medium">
               🏌️ LD ${ldPot.toFixed(0)}
             </span>
           )}
@@ -166,31 +166,31 @@ export default function TournamentView() {
       {/* Payout structure — only shown when there's an actual pot */}
       {(tournament.payoutStructure.length > 0 && totalPot > 0) || ctpPot > 0 || ldPot > 0 ? (
         <div className="card p-4 mb-6">
-          <h2 className="font-semibold text-stone-800 mb-3 flex items-center gap-2">
-            <Trophy size={16} className="text-sand-500" /> Prize Breakdown
+          <h2 className="font-heading font-semibold text-ep-green mb-3 flex items-center gap-2">
+            <Trophy size={16} className="text-ep-orange" /> Prize Breakdown
           </h2>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-ep-silver/20">
             {tournament.payoutStructure.map(p => (
               <div key={p.place} className="flex items-center justify-between py-2 text-sm">
-                <span className="text-stone-600">{p.label}</span>
-                <span className="font-semibold text-stone-900">
+                <span className="text-ep-green/80">{p.label}</span>
+                <span className="font-semibold text-ep-green">
                   {p.payoutType === 'flat'
                     ? `$${(p.amount ?? 0).toFixed(0)}`
                     : `$${((p.percentage / 100) * totalPot).toFixed(0)}`}
-                  {p.payoutType !== 'flat' && <span className="text-stone-400 font-normal ml-1">({p.percentage}%)</span>}
+                  {p.payoutType !== 'flat' && <span className="text-ep-silver font-normal ml-1">({p.percentage}%)</span>}
                 </span>
               </div>
             ))}
             {ctpPot > 0 && (
               <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-stone-600">📍 Closest to Pin</span>
-                <span className="font-semibold text-stone-900">${ctpPot.toFixed(0)}</span>
+                <span className="text-ep-green/80">📍 Closest to Pin</span>
+                <span className="font-semibold text-ep-green">${ctpPot.toFixed(0)}</span>
               </div>
             )}
             {ldPot > 0 && (
               <div className="flex items-center justify-between py-2 text-sm">
-                <span className="text-stone-600">🏌️ Longest Drive</span>
-                <span className="font-semibold text-stone-900">${ldPot.toFixed(0)}</span>
+                <span className="text-ep-green/80">🏌️ Longest Drive</span>
+                <span className="font-semibold text-ep-green">${ldPot.toFixed(0)}</span>
               </div>
             )}
           </div>
@@ -210,32 +210,32 @@ export default function TournamentView() {
       {/* Live leaderboard */}
       {showLeaderboard && tournament.status !== 'completed' && (
         <div className="card mb-6">
-          <div className="px-5 py-3.5 border-b border-stone-100 flex items-center justify-between">
+          <div className="px-5 py-3.5 border-b border-ep-silver/20 flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-stone-800 flex items-center gap-2">
-                <Trophy size={15} className="text-sand-500" />
+              <h2 className="font-heading font-semibold text-ep-green flex items-center gap-2">
+                <Trophy size={15} className="text-ep-orange" />
                 {tournament.status === 'active' ? 'Live Leaderboard' : 'Leaderboard'}
               </h2>
               {completedRoundsCount > 0 && standingsRoundsTotal > 0 && (
-                <p className="text-xs text-stone-400 mt-0.5">
+                <p className="text-xs text-ep-silver mt-0.5">
                   After {completedRoundsCount} of {standingsRoundsTotal} round{standingsRoundsTotal !== 1 ? 's' : ''}
                 </p>
               )}
             </div>
             <div className="flex items-center gap-2">
               {tournament.status === 'active' && (
-                <span className="flex items-center gap-1 text-xs text-sage-600">
-                  <span className="w-1.5 h-1.5 bg-sage-500 rounded-full animate-pulse" />
+                <span className="flex items-center gap-1 text-xs text-ep-orange">
+                  <span className="w-1.5 h-1.5 bg-ep-orange rounded-full animate-pulse" />
                   Live
                 </span>
               )}
-              <span className="text-xs text-stone-400">{tournament.isNet ? 'Net' : 'Gross'}</span>
+              <span className="text-xs text-ep-silver">{tournament.isNet ? 'Net' : 'Gross'}</span>
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-stone-50 text-stone-500 text-xs">
+                <tr className="bg-ep-sand text-ep-silver text-xs">
                   <th className="text-left px-5 py-2 font-medium">Rank</th>
                   <th className="text-left px-3 py-2 font-medium">Player</th>
                   {tournament.isGross && <th className="text-center px-3 py-2 font-medium">Gross</th>}
@@ -245,7 +245,7 @@ export default function TournamentView() {
                   {totalPot > 0 && <th className="text-center px-3 py-2 font-medium">Projected $</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-ep-silver/10">
                 {leaderboard.map((entry, idx) => {
                   const payout = tournament.payoutStructure[idx];
                   const projectedPayout = payout
@@ -259,34 +259,34 @@ export default function TournamentView() {
                   const entryTotal = tournament.isNet ? entry.totalNet : entry.totalGross;
                   const back = entryTotal - leaderTotal;
                   return (
-                    <tr key={entry.playerName} className={idx === 0 ? 'bg-sand-50' : ''}>
-                      <td className="px-5 py-2.5 font-bold text-stone-500">
+                    <tr key={entry.playerName} className={idx === 0 ? 'bg-ep-orange/10' : ''}>
+                      <td className="px-5 py-2.5 font-bold text-ep-silver">
                         <span className="flex items-center gap-1">
                           {idx === 0 ? '🏆' : idx + 1}
                           {movement !== null && (
                             movement > 0
-                              ? <span className="text-xs text-green-600 font-normal">▲</span>
+                              ? <span className="text-xs text-ep-green font-normal">▲</span>
                               : movement < 0
                               ? <span className="text-xs text-red-500 font-normal">▼</span>
-                              : <span className="text-xs text-stone-300 font-normal">—</span>
+                              : <span className="text-xs text-ep-silver/40 font-normal">—</span>
                           )}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 font-medium text-stone-900">
+                      <td className="px-3 py-2.5 font-medium text-ep-green">
                         {entry.player
-                          ? <Link to={`/players/${entry.player.id}`} className="hover:text-sage-600 hover:underline">{entry.playerName}</Link>
+                          ? <Link to={`/players/${entry.player.id}`} className="hover:text-ep-orange hover:underline">{entry.playerName}</Link>
                           : entry.playerName}
                       </td>
                       {tournament.isGross && <td className="px-3 py-2.5 text-center">{entry.totalGross}</td>}
                       {tournament.isNet && <td className="px-3 py-2.5 text-center font-semibold">{entry.totalNet}</td>}
                       <td className="px-3 py-2.5 text-center text-xs hidden sm:table-cell">
                         {idx === 0
-                          ? <span className="text-sage-600 font-medium">Leader</span>
-                          : <span className="text-stone-500">+{back}</span>}
+                          ? <span className="text-ep-orange font-medium">Leader</span>
+                          : <span className="text-ep-silver">+{back}</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-center text-stone-400">{entry.rounds}</td>
+                      <td className="px-3 py-2.5 text-center text-ep-silver">{entry.rounds}</td>
                       {totalPot > 0 && (
-                        <td className="px-3 py-2.5 text-center font-semibold text-sage-700">
+                        <td className="px-3 py-2.5 text-center font-semibold text-ep-orange">
                           {projectedPayout ? `$${projectedPayout}` : '—'}
                         </td>
                       )}
@@ -295,15 +295,15 @@ export default function TournamentView() {
                 })}
                 {wdPlayers.map(p => (
                   <tr key={p.id} className="opacity-50">
-                    <td className="px-5 py-2.5 text-xs font-semibold text-stone-400">WD</td>
-                    <td className="px-3 py-2.5 font-medium text-stone-500 line-through">
+                    <td className="px-5 py-2.5 text-xs font-semibold text-ep-silver">WD</td>
+                    <td className="px-3 py-2.5 font-medium text-ep-green/60 line-through">
                       <Link to={`/players/${p.id}`} className="hover:underline">{p.name}</Link>
                     </td>
-                    {tournament.isGross && <td className="px-3 py-2.5 text-center text-stone-400">—</td>}
-                    {tournament.isNet && <td className="px-3 py-2.5 text-center text-stone-400">—</td>}
+                    {tournament.isGross && <td className="px-3 py-2.5 text-center text-ep-silver">—</td>}
+                    {tournament.isNet && <td className="px-3 py-2.5 text-center text-ep-silver">—</td>}
                     <td className="px-3 py-2.5 hidden sm:table-cell" />
                     <td className="px-3 py-2.5" />
-                    {totalPot > 0 && <td className="px-3 py-2.5 text-center text-stone-400">—</td>}
+                    {totalPot > 0 && <td className="px-3 py-2.5 text-center text-ep-silver">—</td>}
                   </tr>
                 ))}
               </tbody>
@@ -313,9 +313,9 @@ export default function TournamentView() {
       )}
 
       {/* Rounds */}
-      <h2 className="text-xl font-bold text-stone-800 mb-3">Rounds</h2>
+      <h2 className="text-xl font-heading font-extrabold text-ep-green mb-3">Rounds</h2>
       {rounds.length === 0 ? (
-        <div className="card p-8 text-center text-stone-400 text-sm">No rounds scheduled yet.</div>
+        <div className="card p-8 text-center text-ep-silver text-sm">No rounds scheduled yet.</div>
       ) : (
         <div className="space-y-3">
           {rounds.map(round => (
@@ -363,19 +363,19 @@ function RoundCard({
     <div className="card overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-stone-50 transition-colors"
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-ep-sand/50 transition-colors"
       >
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <StatusBadge status={round.status} />
-            <span className="text-xs text-stone-400">{round.tee} tees</span>
+            <span className="text-xs text-ep-silver">{round.tee} tees</span>
             {round.isPracticeRound
-              ? <span className="text-xs bg-stone-100 text-stone-400 font-medium px-1.5 py-0.5 rounded">No leaderboard</span>
-              : <span className="text-xs bg-sage-50 text-sage-700 font-medium px-1.5 py-0.5 rounded">Leaderboard</span>
+              ? <span className="text-xs bg-ep-silver/20 text-ep-silver font-medium px-1.5 py-0.5 rounded">No leaderboard</span>
+              : <span className="text-xs bg-ep-green/10 text-ep-green font-medium px-1.5 py-0.5 rounded">Leaderboard</span>
             }
           </div>
-          <div className="font-semibold text-stone-900">{round.courseName}</div>
-          <div className="text-xs text-stone-500 mt-0.5 flex items-center gap-3">
+          <div className="font-heading font-semibold text-ep-green">{round.courseName}</div>
+          <div className="text-xs text-ep-silver mt-0.5 flex items-center gap-3">
             <span className="flex items-center gap-1">
               <Calendar size={12} />
               {parseLocalDate(round.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -384,7 +384,7 @@ function RoundCard({
             <span>Rating {round.courseRating} / Slope {round.slopeRating}</span>
           </div>
           {(round.closestToPinHole || round.longestDriveHole) && (
-            <div className="flex flex-wrap gap-3 mt-1 text-xs text-stone-400">
+            <div className="flex flex-wrap gap-3 mt-1 text-xs text-ep-silver">
               {round.closestToPinHole && (
                 <span>
                   📍 CTP hole {round.closestToPinHole}
@@ -405,24 +405,24 @@ function RoundCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {expanded ? <ChevronUp size={18} className="text-stone-400" /> : <ChevronDown size={18} className="text-stone-400" />}
+          {expanded ? <ChevronUp size={18} className="text-ep-silver" /> : <ChevronDown size={18} className="text-ep-silver" />}
         </div>
       </button>
 
       {expanded && (
-        <div className="border-t border-stone-100">
+        <div className="border-t border-ep-silver/20">
           {/* Tee sheet */}
           {round.teeTimeGroups && round.teeTimeGroups.length > 0 && (
             <div className="px-4 pt-4 pb-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                <h3 className="text-xs font-heading font-semibold text-ep-silver uppercase tracking-wider">
                   Tee Sheet
                   {round.startFormat === 'shotgun' && (
-                    <span className="ml-2 font-normal normal-case text-stone-400">Shotgun</span>
+                    <span className="ml-2 font-normal normal-case text-ep-silver">Shotgun</span>
                   )}
                 </h3>
                 {round.status !== 'completed' && (
-                  <Link to={`/tournament/${round.tournamentId}/score`} className="text-xs font-medium text-sage-600 hover:text-sage-700 hover:underline">
+                  <Link to={`/tournament/${round.tournamentId}/score`} className="text-xs font-medium text-ep-orange hover:text-ep-orange/80 hover:underline">
                     Score your round →
                   </Link>
                 )}
@@ -437,28 +437,28 @@ function RoundCard({
                       .join(', ');
                     return (
                       <div key={group.groupNumber} className="flex items-baseline gap-3 text-sm">
-                        <span className="font-medium text-stone-700 w-20 shrink-0">
+                        <span className="font-medium text-ep-green w-20 shrink-0">
                           {group.teeTime || `Group ${group.groupNumber}`}
                         </span>
                         {round.startFormat === 'shotgun' && group.startingHole && (
-                          <span className="text-xs text-stone-400 w-14 shrink-0">Hole {group.startingHole}</span>
+                          <span className="text-xs text-ep-silver w-14 shrink-0">Hole {group.startingHole}</span>
                         )}
-                        <span className="text-stone-600">{names || '—'}</span>
+                        <span className="text-ep-green/80">{names || '—'}</span>
                       </div>
                     );
                   })}
               </div>
-              <div className="border-t border-stone-100 mt-3" />
+              <div className="border-t border-ep-silver/20 mt-3" />
             </div>
           )}
 
           {scores.length === 0 ? (
-            <p className="text-sm text-stone-400 text-center py-6">No scores entered yet.</p>
+            <p className="text-sm text-ep-silver text-center py-6">No scores entered yet.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-stone-50 text-stone-500 text-xs">
+                  <tr className="bg-ep-sand text-ep-silver text-xs">
                     <th className="text-left px-4 py-2 font-medium">Player</th>
                     <th className="text-center px-3 py-2 font-medium">HCP</th>
                     <th className="text-center px-3 py-2 font-medium">Gross</th>
@@ -466,7 +466,7 @@ function RoundCard({
                     <th className="text-center px-3 py-2 font-medium">+/-</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-ep-silver/10">
                   {sorted.map((score, idx) => {
                     const toPar = (isNet ? score.netTotal : score.grossTotal) - round.par;
                     const playerObj = players.find(p => p.id === score.playerId);
@@ -480,35 +480,35 @@ function RoundCard({
                     return (
                       <Fragment key={score.id}>
                         <tr
-                          className={`cursor-pointer hover:bg-stone-50 transition-colors ${idx === 0 ? 'bg-sand-50' : ''}`}
+                          className={`cursor-pointer hover:bg-ep-sand/40 transition-colors ${idx === 0 ? 'bg-ep-orange/10' : ''}`}
                           onClick={() => setExpandedPlayer(isPlayerExpanded ? null : score.id)}
                         >
-                          <td className="px-4 py-2.5 font-medium text-stone-900">
-                            {idx === 0 && <Trophy size={12} className="text-sand-500 inline mr-1" />}
+                          <td className="px-4 py-2.5 font-medium text-ep-green">
+                            {idx === 0 && <Trophy size={12} className="text-ep-orange inline mr-1" />}
                             {playerObj
-                              ? <Link to={`/players/${playerObj.id}`} onClick={e => e.stopPropagation()} className="hover:text-sage-600 hover:underline">{score.playerName}</Link>
+                              ? <Link to={`/players/${playerObj.id}`} onClick={e => e.stopPropagation()} className="hover:text-ep-orange hover:underline">{score.playerName}</Link>
                               : score.playerName}
                             {histEntry && (
-                              <span className="ml-2 text-xs text-stone-400">
+                              <span className="ml-2 text-xs text-ep-silver">
                                 → {histEntry.handicapIndex.toFixed(1)}
                                 {hcpDelta !== null && (
-                                  <span className={hcpDelta < 0 ? 'text-green-600' : 'text-stone-400'}>
+                                  <span className={hcpDelta < 0 ? 'text-ep-green' : 'text-ep-silver'}>
                                     {' '}({hcpDelta > 0 ? '+' : ''}{hcpDelta.toFixed(1)})
                                   </span>
                                 )}
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-center text-stone-500">{score.courseHandicap}</td>
+                          <td className="px-3 py-2.5 text-center text-ep-silver">{score.courseHandicap}</td>
                           <td className="px-3 py-2.5 text-center">{score.grossTotal}</td>
                           {isNet && <td className="px-3 py-2.5 text-center font-medium">{score.netTotal}</td>}
-                          <td className={`px-3 py-2.5 text-center font-medium ${toPar < 0 ? 'text-red-600' : toPar === 0 ? 'text-green-600' : 'text-stone-700'}`}>
+                          <td className={`px-3 py-2.5 text-center font-medium ${toPar < 0 ? 'text-ep-orange' : toPar === 0 ? 'text-ep-green' : 'text-ep-green/70'}`}>
                             {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}
                           </td>
                         </tr>
                         {isPlayerExpanded && score.holeScores.length > 0 && (
-                          <tr className="bg-stone-50">
-                            <td colSpan={isNet ? 5 : 4} className="px-4 py-3 border-t border-stone-100">
+                          <tr className="bg-ep-sand/50">
+                            <td colSpan={isNet ? 5 : 4} className="px-4 py-3 border-t border-ep-silver/20">
                               <HoleScorecard holeScores={score.holeScores} />
                             </td>
                           </tr>
@@ -523,13 +523,13 @@ function RoundCard({
 
           {/* Special contests */}
           {(round.closestToPinHole || round.longestDriveHole) && (
-            <div className="px-4 pb-4 pt-2 flex flex-wrap gap-3 text-xs text-stone-500 border-t border-stone-100 mt-2">
+            <div className="px-4 pb-4 pt-2 flex flex-wrap gap-3 text-xs text-ep-silver border-t border-ep-silver/20 mt-2">
               {round.closestToPinHole && (
                 <span className="flex items-center gap-1">
-                  <MapPin size={12} className="text-blue-500" />
+                  <MapPin size={12} className="text-ep-orange" />
                   CTP: Hole {round.closestToPinHole}
                   {round.closestToPinWinnerId && (
-                    <span className="font-medium text-stone-700 ml-1">
+                    <span className="font-medium text-ep-green ml-1">
                       — {players.find(p => p.id === round.closestToPinWinnerId)?.name ?? 'Winner TBD'}
                     </span>
                   )}
@@ -540,7 +540,7 @@ function RoundCard({
                   <span>🏌️</span>
                   LD: Hole {round.longestDriveHole}
                   {round.longestDriveWinnerId && (
-                    <span className="font-medium text-stone-700 ml-1">
+                    <span className="font-medium text-ep-green ml-1">
                       — {players.find(p => p.id === round.longestDriveWinnerId)?.name ?? 'Winner TBD'}
                     </span>
                   )}
@@ -561,38 +561,38 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] flex flex-col shadow-2xl">
+      <div className="relative bg-ep-cream w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100 shrink-0">
-          <h2 className="font-bold text-stone-900 text-lg">How Scoring Works</h2>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 p-1 rounded-lg hover:bg-stone-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-ep-silver/20 shrink-0">
+          <h2 className="font-heading font-bold text-ep-green text-lg">How Scoring Works</h2>
+          <button onClick={onClose} className="text-ep-silver hover:text-ep-green p-1 rounded-lg hover:bg-ep-sand">
             <X size={18} />
           </button>
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto px-5 py-4 space-y-5 text-sm text-stone-700">
+        <div className="overflow-y-auto px-5 py-4 space-y-5 text-sm text-ep-green">
 
           <section>
-            <h3 className="font-semibold text-stone-900 mb-1.5">Handicap Index</h3>
-            <p className="text-stone-600 leading-relaxed">
+            <h3 className="font-heading font-semibold text-ep-green mb-1.5">Handicap Index</h3>
+            <p className="text-ep-green/80 leading-relaxed">
               Each player starts with a <span className="font-medium">manually entered Handicap Index</span> set
               by the tournament admin — this should reflect your current real-world handicap (e.g. from GHIN).
             </p>
-            <p className="mt-2 text-stone-600 leading-relaxed">
+            <p className="mt-2 text-ep-green/80 leading-relaxed">
               After each round is scored, your index is <span className="font-medium">automatically recalculated</span> using the{' '}
               <span className="font-medium">USGA World Handicap System</span>. A <span className="font-medium">differential</span> is computed for the round:
             </p>
-            <div className="mt-2 bg-stone-50 rounded-lg px-4 py-3 font-mono text-xs text-stone-700 leading-relaxed">
+            <div className="mt-2 bg-ep-sand rounded-lg px-4 py-3 font-mono text-xs text-ep-green leading-relaxed">
               Differential = (Adjusted Gross − Course Rating) × 113 ÷ Slope Rating
             </div>
-            <p className="mt-2 text-stone-500 text-xs">
+            <p className="mt-2 text-ep-silver text-xs">
               The new index is derived from the <span className="font-medium">best differentials</span> across
               your last 20 rounds in this system. Your manually entered starting index is used for round 1
               scoring, then replaced once that round's differential is recorded.
               How many differentials are used depends on how many rounds you have:
             </p>
-            <div className="mt-2 bg-stone-50 rounded-lg px-4 py-2.5 text-xs space-y-1 text-stone-600">
+            <div className="mt-2 bg-ep-sand rounded-lg px-4 py-2.5 text-xs space-y-1 text-ep-green/80">
               {[
                 ['1–3 rounds', 'Lowest 1 (with −2 or −1 adjustment)'],
                 ['4–5 rounds', 'Lowest 1'],
@@ -605,7 +605,7 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
                 ['20+ rounds', 'Average of best 8 of last 20 × 0.96'],
               ].map(([rounds, rule]) => (
                 <div key={rounds} className="flex gap-3">
-                  <span className="w-28 shrink-0 text-stone-400">{rounds}</span>
+                  <span className="w-28 shrink-0 text-ep-silver">{rounds}</span>
                   <span>{rule}</span>
                 </div>
               ))}
@@ -613,26 +613,26 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
           </section>
 
           <section>
-            <h3 className="font-semibold text-stone-900 mb-1.5">Course Handicap</h3>
-            <p className="text-stone-600 leading-relaxed">
+            <h3 className="font-heading font-semibold text-ep-green mb-1.5">Course Handicap</h3>
+            <p className="text-ep-green/80 leading-relaxed">
               Before each round, your Handicap Index is converted to a Course Handicap specific to that course and tee:
             </p>
-            <div className="mt-2 bg-stone-50 rounded-lg px-4 py-3 font-mono text-xs text-stone-700">
+            <div className="mt-2 bg-ep-sand rounded-lg px-4 py-3 font-mono text-xs text-ep-green">
               Course Handicap = Index × (Slope ÷ 113) + (Course Rating − Par)
             </div>
-            <p className="mt-2 text-stone-500 text-xs">
+            <p className="mt-2 text-ep-silver text-xs">
               This accounts for the difficulty of the specific course and tee you're playing from.
               A harder course (higher slope or rating) gives you more strokes.
             </p>
           </section>
 
           <section>
-            <h3 className="font-semibold text-stone-900 mb-1.5">Equitable Stroke Control (ESC)</h3>
-            <p className="text-stone-600 leading-relaxed">
+            <h3 className="font-heading font-semibold text-ep-green mb-1.5">Equitable Stroke Control (ESC)</h3>
+            <p className="text-ep-green/80 leading-relaxed">
               To prevent one bad hole from unfairly inflating your handicap, the USGA caps the maximum score
               per hole before computing your differential:
             </p>
-            <div className="mt-2 bg-stone-50 rounded-lg px-4 py-2.5 text-xs space-y-1 text-stone-600">
+            <div className="mt-2 bg-ep-sand rounded-lg px-4 py-2.5 text-xs space-y-1 text-ep-green/80">
               {[
                 ['0–9', 'Double bogey (Par + 2)'],
                 ['10–19', '7'],
@@ -641,12 +641,12 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
                 ['40+', '10'],
               ].map(([hcp, max]) => (
                 <div key={hcp} className="flex gap-3">
-                  <span className="w-20 shrink-0 text-stone-400">HCP {hcp}</span>
+                  <span className="w-20 shrink-0 text-ep-silver">HCP {hcp}</span>
                   <span>Max {max} per hole</span>
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-stone-500 text-xs">
+            <p className="mt-2 text-ep-silver text-xs">
               ESC only affects the handicap differential calculation — your gross score for the leaderboard
               uses the actual strokes you took.
             </p>
@@ -654,13 +654,13 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
 
           {isNet && (
             <section>
-              <h3 className="font-semibold text-stone-900 mb-1.5">Net Score</h3>
-              <p className="text-stone-600 leading-relaxed">
+              <h3 className="font-heading font-semibold text-ep-green mb-1.5">Net Score</h3>
+              <p className="text-ep-green/80 leading-relaxed">
                 Net score subtracts your Course Handicap across the 18 holes. You receive{' '}
                 <span className="font-medium">one stroke off</span> on holes whose Stroke Index (SI) is
                 less than or equal to your Course Handicap, starting from the hardest hole (SI 1).
               </p>
-              <p className="mt-2 text-stone-500 text-xs">
+              <p className="mt-2 text-ep-silver text-xs">
                 Example: Course Handicap 12 → you get a stroke on the 12 hardest holes (SI 1–12).
                 Net strokes on those holes = Gross strokes − 1.
               </p>
@@ -668,23 +668,23 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
           )}
 
           <section>
-            <h3 className="font-semibold text-stone-900 mb-1.5">Leaderboard</h3>
-            <p className="text-stone-600 leading-relaxed">
+            <h3 className="font-heading font-semibold text-ep-green mb-1.5">Leaderboard</h3>
+            <p className="text-ep-green/80 leading-relaxed">
               {isNet && isGross
                 ? 'The leaderboard ranks players by total net score (lowest wins). Gross scores are shown for reference.'
                 : isNet
                 ? 'The leaderboard ranks players by total net score across all rounds. Lowest net score wins.'
                 : 'The leaderboard ranks players by total gross score across all rounds. Lowest gross score wins.'}
             </p>
-            <p className="mt-2 text-stone-500 text-xs">
+            <p className="mt-2 text-ep-silver text-xs">
               Multi-round tournaments accumulate scores across all rounds. The leaderboard updates live
               as scores are entered — projected payouts are shown until all rounds are complete.
             </p>
           </section>
 
           <section>
-            <h3 className="font-semibold text-stone-900 mb-1.5">A note on your starting index</h3>
-            <p className="text-stone-600 leading-relaxed">
+            <h3 className="font-heading font-semibold text-ep-green mb-1.5">A note on your starting index</h3>
+            <p className="text-ep-green/80 leading-relaxed">
               Because handicaps here are recalculated from rounds played <span className="font-medium">in this system</span>,
               a player's index may differ from their official GHIN index after only a few rounds. The
               system uses USGA adjustment factors (e.g. −2 for 1 round) to compensate, but the index
@@ -708,9 +708,9 @@ function HoleScorecard({ holeScores }: { holeScores: { hole: number; par: number
 
   function cellColor(strokes: number, par: number) {
     const d = strokes - par;
-    if (d <= -2) return 'bg-yellow-100 font-bold';
-    if (d === -1) return 'bg-red-100';
-    if (d === 0) return 'bg-green-50';
+    if (d <= -2) return 'bg-ep-orange/30 font-bold';
+    if (d === -1) return 'bg-ep-orange/15';
+    if (d === 0) return 'bg-ep-green/10';
     return '';
   }
 
@@ -718,35 +718,35 @@ function HoleScorecard({ holeScores }: { holeScores: { hole: number; par: number
     <div className="overflow-x-auto">
       <table className="text-xs border-collapse min-w-max">
         <thead>
-          <tr className="text-stone-400">
+          <tr className="text-ep-silver">
             <th className="pr-3 py-1 text-left font-medium w-10">Hole</th>
             {front.map(h => <th key={h.hole} className="w-7 text-center">{h.hole}</th>)}
-            <th className="w-8 text-center font-semibold text-stone-500 px-1">OUT</th>
+            <th className="w-8 text-center font-semibold text-ep-green/70 px-1">OUT</th>
             {back.map(h => <th key={h.hole} className="w-7 text-center">{h.hole}</th>)}
-            <th className="w-8 text-center font-semibold text-stone-500 px-1">IN</th>
-            <th className="w-8 text-center font-semibold text-stone-700 px-1">TOT</th>
+            <th className="w-8 text-center font-semibold text-ep-green/70 px-1">IN</th>
+            <th className="w-8 text-center font-semibold text-ep-green px-1">TOT</th>
           </tr>
         </thead>
         <tbody>
-          <tr className="text-stone-400">
+          <tr className="text-ep-silver">
             <td className="pr-3 py-0.5 text-left">Par</td>
             {front.map(h => <td key={h.hole} className="text-center">{h.par}</td>)}
-            <td className="text-center font-semibold text-stone-500">{outPar}</td>
+            <td className="text-center font-semibold text-ep-green/70">{outPar}</td>
             {back.map(h => <td key={h.hole} className="text-center">{h.par}</td>)}
-            <td className="text-center font-semibold text-stone-500">{inPar}</td>
-            <td className="text-center font-semibold text-stone-600">{outPar + inPar}</td>
+            <td className="text-center font-semibold text-ep-green/70">{inPar}</td>
+            <td className="text-center font-semibold text-ep-green/80">{outPar + inPar}</td>
           </tr>
           <tr>
-            <td className="pr-3 py-0.5 text-left font-semibold text-stone-700">Score</td>
+            <td className="pr-3 py-0.5 text-left font-semibold text-ep-green">Score</td>
             {front.map(h => (
               <td key={h.hole} className={`text-center rounded ${cellColor(h.strokes, h.par)}`}>{h.strokes}</td>
             ))}
-            <td className="text-center font-semibold text-stone-700">{outGross}</td>
+            <td className="text-center font-semibold text-ep-green">{outGross}</td>
             {back.map(h => (
               <td key={h.hole} className={`text-center rounded ${cellColor(h.strokes, h.par)}`}>{h.strokes}</td>
             ))}
-            <td className="text-center font-semibold text-stone-700">{inGross}</td>
-            <td className="text-center font-bold text-stone-900">{outGross + inGross}</td>
+            <td className="text-center font-semibold text-ep-green">{inGross}</td>
+            <td className="text-center font-bold text-ep-green">{outGross + inGross}</td>
           </tr>
         </tbody>
       </table>

@@ -3,26 +3,27 @@ import { Outlet, Link, NavLink } from 'react-router-dom';
 export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-sage-700 text-white">
+      <header className="sticky top-0 z-20 bg-ep-cream/95 backdrop-blur-sm border-b border-ep-silver/20">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-xl">⛳</span>
-            <span className="font-semibold tracking-tight">CH Tournaments</span>
+            <span className="font-heading font-extrabold tracking-[0.04em] text-ep-green uppercase text-sm">
+              Electric Phactory
+            </span>
           </Link>
           <nav className="flex items-center gap-5 text-sm">
-            <NavLink to="/" end className={({ isActive }) => isActive ? 'text-sand-300 font-medium' : 'text-white/70 hover:text-white transition-colors'}>
+            <NavLink to="/" end className={({ isActive }) => isActive ? 'text-ep-orange font-medium' : 'text-ep-green/60 hover:text-ep-green transition-colors'}>
               Active
             </NavLink>
-            <NavLink to="/history" className={({ isActive }) => isActive ? 'text-sand-300 font-medium' : 'text-white/70 hover:text-white transition-colors'}>
+            <NavLink to="/history" className={({ isActive }) => isActive ? 'text-ep-orange font-medium' : 'text-ep-green/60 hover:text-ep-green transition-colors'}>
               History
             </NavLink>
-            <NavLink to="/players" className={({ isActive }) => isActive ? 'text-sand-300 font-medium' : 'text-white/70 hover:text-white transition-colors'}>
+            <NavLink to="/players" className={({ isActive }) => isActive ? 'text-ep-orange font-medium' : 'text-ep-green/60 hover:text-ep-green transition-colors'}>
               Players
             </NavLink>
-            <NavLink to="/score" className={({ isActive }) => isActive ? 'bg-sand-500 text-white px-2.5 py-1 rounded-full text-xs font-medium' : 'bg-white/10 hover:bg-white/20 text-white text-xs px-2.5 py-1 rounded-full transition-colors'}>
+            <NavLink to="/score" className={({ isActive }) => isActive ? 'bg-ep-orange text-ep-cream px-2.5 py-1 rounded-full text-xs font-medium' : 'bg-ep-green/10 hover:bg-ep-green/20 text-ep-green text-xs px-2.5 py-1 rounded-full transition-colors'}>
               Score
             </NavLink>
-            <Link to="/admin" className="text-white/50 hover:text-white/80 text-xs border border-white/20 px-2.5 py-1 rounded-full transition-colors">
+            <Link to="/admin" className="text-ep-green/40 hover:text-ep-green/70 text-xs border border-ep-silver/40 px-2.5 py-1 rounded-full transition-colors">
               Admin
             </Link>
           </nav>
@@ -33,8 +34,8 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <footer className="bg-stone-100 border-t border-stone-200 text-stone-400 text-xs text-center py-4 mt-12">
-        CH Tournaments · Casey Hunter Golf
+      <footer className="bg-ep-deep text-ep-cream/60 text-xs text-center py-6 mt-12">
+        Electric Phactory
       </footer>
     </div>
   );

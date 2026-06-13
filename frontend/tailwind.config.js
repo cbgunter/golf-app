@@ -4,7 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Soft sage green — primary brand color
+        // Electric Phactory brand palette
+        'ep-cream': '#F5F0E8',
+        'ep-green': '#004C54',
+        'ep-orange': '#D4691C',
+        'ep-deep': '#002B30',
+        'ep-silver': '#B8B5AF',
+        'ep-sand': '#EDE6DA',
+        // Legacy palette — retained for admin pages
         sage: {
           50:  '#f4f7f4',
           100: '#e6ede6',
@@ -17,7 +24,6 @@ export default {
           800: '#2e442e',
           900: '#263826',
         },
-        // Warm stone — neutrals
         stone: {
           50:  '#fafaf9',
           100: '#f5f5f4',
@@ -30,7 +36,6 @@ export default {
           800: '#292524',
           900: '#1c1917',
         },
-        // Soft gold — accents
         sand: {
           50:  '#fdfbf5',
           100: '#faf4e1',
@@ -45,7 +50,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        heading: ['Outfit', 'system-ui', 'sans-serif'],
       },
     },
   },
