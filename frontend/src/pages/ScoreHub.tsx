@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { scoringApi, roundsApi, ActiveRoundsForScoring, Score } from '../api/client';
+import { scoringApi, roundsApi, ActiveRoundsForScoring, Score } from '@shared/client';
 import { Loader2, HelpCircle, ChevronLeft, CheckCircle } from 'lucide-react';
-import { parseLocalDate } from '../lib/dates';
+import { parseLocalDate } from '@shared/dates';
 import HelpModal, { HelpSection, HelpStep, HelpTip } from '../components/HelpModal';
 
 export default function ScoreHub() {

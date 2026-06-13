@@ -2,12 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
-import { setUnauthorizedHandler } from '@shared/client';
-
-// Public site has no admin JWT gating — suppress redirect on 401
-setUnauthorizedHandler(() => {
-  localStorage.removeItem('golf_admin_token');
-});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { playersApi, tournamentsApi, PlayerProfile, Tournament } from '../api/client';
-import { parseLocalDate } from '../lib/dates';
+import { playersApi, tournamentsApi, PlayerProfile, Tournament } from '@shared/client';
+import { parseLocalDate } from '@shared/dates';
 import { ArrowLeft, TrendingDown, TrendingUp, Minus, Calendar } from 'lucide-react';
 
 export default function PlayerProfilePage() {

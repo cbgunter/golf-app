@@ -23,9 +23,9 @@ export default function Layout() {
             <NavLink to="/score" className={({ isActive }) => isActive ? 'bg-ep-orange text-ep-cream px-2.5 py-1 rounded-full text-xs font-medium' : 'bg-ep-green/10 hover:bg-ep-green/20 text-ep-green text-xs px-2.5 py-1 rounded-full transition-colors'}>
               Score
             </NavLink>
-            <Link to="/admin" className="text-ep-green/40 hover:text-ep-green/70 text-xs border border-ep-silver/40 px-2.5 py-1 rounded-full transition-colors">
+            <a href="https://admin.golf.caseyhunter.net" className="text-ep-green/40 hover:text-ep-green/70 text-xs border border-ep-silver/40 px-2.5 py-1 rounded-full transition-colors">
               Admin
-            </Link>
+            </a>
           </nav>
         </div>
       </header>

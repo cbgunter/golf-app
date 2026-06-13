@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef, FormEvent } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { roundsApi, tournamentsApi, playersApi, scoringApi, Round, Tournament, Player, Score, DraftScorecard } from '../../api/client';
+import { roundsApi, tournamentsApi, playersApi, scoringApi, Round, Tournament, Player, Score, DraftScorecard } from '@shared/client';
 import toast from 'react-hot-toast';
 import { Save, Check, X, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
-import { parseLocalDate } from '../../lib/dates';
+import { parseLocalDate } from '@shared/dates';
 
 const DEFAULT_HOLES = Array.from({ length: 18 }, (_, i) => ({
   hole: i + 1,
@@ -160,7 +160,7 @@ export default function AdminRoundScoring() {
     try {
       await roundsApi.complete(round.id);
       toast.success('Round completed');
-      navigate(`/admin/tournaments/${round.tournamentId}`);
+      navigate(`/tournaments/${round.tournamentId}`);
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -204,7 +204,7 @@ export default function AdminRoundScoring() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <Link to={`/admin/tournaments/${round.tournamentId}`} className="text-xs text-stone-400 hover:text-stone-600">← Tournament</Link>
+        <Link to={`/tournaments/${round.tournamentId}`} className="text-xs text-stone-400 hover:text-stone-600">← Tournament</Link>
         <h1 className="text-2xl font-bold text-stone-900 mt-1">{round.courseName}</h1>
         <div className="text-sm text-stone-500 mt-0.5">
           {round.tee} tees · Par {round.par} · {parseLocalDate(round.date).toLocaleDateString()}

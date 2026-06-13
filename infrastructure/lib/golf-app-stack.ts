@@ -15,6 +15,7 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as path from 'path';
 
 const DOMAIN = 'golf.caseyhunter.net';
+const ADMIN_DOMAIN = 'admin.golf.caseyhunter.net';
 const HOSTED_ZONE_NAME = 'caseyhunter.net';
 
 export class GolfAppStack extends cdk.Stack {
@@ -241,6 +242,56 @@ export class GolfAppStack extends cdk.Stack {
       target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
     });
 
+    // ─── Admin Site ──────────────────────────────────────────────────────────
+    const adminCertificate = new acm.Certificate(this, 'AdminCertificate', {
+      domainName: ADMIN_DOMAIN,
+      validation: acm.CertificateValidation.fromDns(hostedZone),
+    });
+
+    const adminFrontendBucket = new s3.Bucket(this, 'AdminFrontendBucket', {
+      bucketName: `golf-admin-frontend-${this.account}`,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+
+    const adminDistribution = new cloudfront.Distribution(this, 'AdminDistribution', {
+      domainNames: [ADMIN_DOMAIN],
+      certificate: adminCertificate,
+      defaultBehavior: {
+        origin: origins.S3BucketOrigin.withOriginAccessControl(adminFrontendBucket, {
+          originAccessControl: oac,
+        }),
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+      },
+      additionalBehaviors: {
+        '/api/*': {
+          origin: new origins.HttpOrigin(
+            `${httpApi.apiId}.execute-api.${this.region}.amazonaws.com`
+          ),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
+      },
+      defaultRootObject: 'index.html',
+      errorResponses: [
+        {
+          httpStatus: 403,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html',
+        },
+      ],
+    });
+
+    new route53.ARecord(this, 'AdminAliasRecord', {
+      zone: hostedZone,
+      recordName: 'admin.golf',
+      target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(adminDistribution)),
+    });
+
     // ─── Outputs ─────────────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ApiUrl', {
       value: httpApi.apiEndpoint,
@@ -269,6 +320,24 @@ export class GolfAppStack extends cdk.Stack {
       value: distribution.distributionId,
       description: 'CloudFront Distribution ID',
       exportName: 'GolfAppDistributionId',
+    });
+
+    new cdk.CfnOutput(this, 'AdminFrontendBucketName', {
+      value: adminFrontendBucket.bucketName,
+      description: 'S3 bucket for admin frontend deployment',
+      exportName: 'GolfAppAdminFrontendBucket',
+    });
+
+    new cdk.CfnOutput(this, 'AdminCloudFrontDistributionId', {
+      value: adminDistribution.distributionId,
+      description: 'Admin CloudFront Distribution ID',
+      exportName: 'GolfAppAdminDistributionId',
+    });
+
+    new cdk.CfnOutput(this, 'AdminAppUrl', {
+      value: `https://${ADMIN_DOMAIN}`,
+      description: 'Admin site URL',
+      exportName: 'GolfAppAdminUrl',
     });
   }
 }

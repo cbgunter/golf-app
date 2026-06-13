@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { scoringApi, PinLookupResult, DraftScorecard } from '../api/client';
+import { scoringApi, PinLookupResult, DraftScorecard } from '@shared/client';
 import { Loader2, CheckCircle, ChevronLeft, ChevronRight, Send, AlertCircle } from 'lucide-react';
 
 const DRAFT_KEY = (pin: string) => `golf_draft_${pin}`;

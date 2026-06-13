@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authApi } from '../../api/client';
+import { authApi } from '@shared/client';
 import toast from 'react-hot-toast';
 
 export default function AdminLogin() {
@@ -14,7 +14,7 @@ export default function AdminLogin() {
     try {
       const { token } = await authApi.login(password);
       localStorage.setItem('golf_admin_token', token);
-      navigate('/admin');
+      navigate('/');
     } catch {
       toast.error('Invalid password');
     } finally {

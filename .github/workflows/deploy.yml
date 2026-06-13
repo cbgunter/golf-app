@@ -152,3 +152,62 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id $DIST_ID \
             --paths "/*"
+
+  # ─── Build & Deploy Admin ─────────────────────────────────────────────────────
+  admin:
+    name: Build & Deploy Admin
+    runs-on: ubuntu-latest
+    needs: infrastructure
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install admin dependencies
+        working-directory: admin
+        run: npm install --prefer-offline
+
+      - name: Build admin
+        working-directory: admin
+        run: npm run build
+
+      - name: Get admin S3 bucket name
+        id: admin_bucket
+        run: |
+          BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name GolfAppStack \
+            --query "Stacks[0].Outputs[?OutputKey=='AdminFrontendBucketName'].OutputValue" \
+            --output text)
+          echo "name=$BUCKET" >> $GITHUB_OUTPUT
+
+      - name: Deploy admin to S3
+        working-directory: admin
+        run: |
+          aws s3 sync dist/ s3://${{ steps.admin_bucket.outputs.name }}/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html"
+          aws s3 cp dist/index.html s3://${{ steps.admin_bucket.outputs.name }}/index.html \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Invalidate admin CloudFront cache
+        run: |
+          DIST_ID=$(aws cloudformation describe-stacks \
+            --stack-name GolfAppStack \
+            --query "Stacks[0].Outputs[?OutputKey=='AdminCloudFrontDistributionId'].OutputValue" \
+            --output text)
+          aws cloudfront create-invalidation \
+            --distribution-id $DIST_ID \
+            --paths "/*"

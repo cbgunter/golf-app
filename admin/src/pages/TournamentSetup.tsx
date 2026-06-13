@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo, useRef, FormEvent } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { tournamentsApi, playersApi, roundsApi, scoringApi, Tournament, Player, Round, DraftScorecard } from '../../api/client';
-import { coursesApi } from '../../api/client';
+import { tournamentsApi, playersApi, roundsApi, scoringApi, Tournament, Player, Round, DraftScorecard } from '@shared/client';
+import { coursesApi } from '@shared/client';
 import toast from 'react-hot-toast';
-import StatusBadge from '../../components/StatusBadge';
+import StatusBadge from '../components/StatusBadge';
 import { Plus, Save, ChevronRight, ChevronDown, ChevronUp, X, Check, Search, Loader2, Trash2, Users, Pencil } from 'lucide-react';
-import { parseLocalDate } from '../../lib/dates';
-import { computeEventState } from '../../lib/eventState';
+import { parseLocalDate } from '@shared/dates';
+import { computeEventState } from '../lib/eventState';
 
 const isNew = (id: string) => id === 'new';
 
@@ -316,7 +316,7 @@ export default function AdminTournamentSetup() {
       if (creating) {
         const t = await tournamentsApi.create(data);
         toast.success('Tournament created');
-        navigate(`/admin/tournaments/${t.id}`);
+        navigate(`/tournaments/${t.id}`);
       } else {
         await tournamentsApi.update(id!, data);
         toast.success('Saved');
@@ -425,7 +425,7 @@ export default function AdminTournamentSetup() {
     try {
       await tournamentsApi.update(id!, { status: 'archived' });
       toast.success('Archived');
-      navigate('/admin/tournaments');
+      navigate('/tournaments');
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -720,7 +720,7 @@ export default function AdminTournamentSetup() {
             return (
               <div key={r.id}>
                 <div className="flex items-center justify-between px-4 py-3.5 hover:bg-stone-50 transition-colors group">
-                  <Link to={`/admin/rounds/${r.id}/scoring`} className="flex-1 min-w-0">
+                  <Link to={`/rounds/${r.id}/scoring`} className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <StatusBadge status={r.status} />
                       <span className="text-xs text-stone-400">{r.tee}</span>
@@ -958,7 +958,7 @@ export default function AdminTournamentSetup() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <Link to="/admin/tournaments" className="text-xs text-stone-400 hover:text-stone-600">← Tournaments</Link>
+          <Link to="/tournaments" className="text-xs text-stone-400 hover:text-stone-600">← Tournaments</Link>
           <h1 className="page-header mt-1">{creating ? 'New Tournament' : tournament?.name}</h1>
           {tournament && <div className="mt-1"><StatusBadge status={tournament.status} /></div>}
         </div>
@@ -979,7 +979,7 @@ export default function AdminTournamentSetup() {
           <div className="card p-4 sm:p-5">
             <p className="section-title mb-3">Players ({selectedPlayerIds.length})</p>
             {players.length === 0 ? (
-              <p className="text-sm text-stone-400">No players yet. <Link to="/admin/players" className="text-sage-600 hover:underline">Add players first.</Link></p>
+              <p className="text-sm text-stone-400">No players yet. <Link to="/players" className="text-sage-600 hover:underline">Add players first.</Link></p>
             ) : (
               <div className="grid sm:grid-cols-2 gap-1">
                 {players.map(p => (

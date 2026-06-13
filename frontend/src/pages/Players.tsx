@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { playersApi, Player } from '../api/client';
+import { playersApi, Player } from '@shared/client';
 
 export default function Players() {
   const [players, setPlayers] = useState<Player[]>([]);

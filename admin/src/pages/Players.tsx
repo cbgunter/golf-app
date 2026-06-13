@@ -1,5 +1,5 @@
 import { useEffect, useState, FormEvent } from 'react';
-import { playersApi, Player } from '../../api/client';
+import { playersApi, Player } from '@shared/client';
 import toast from 'react-hot-toast';
 import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check } from 'lucide-react';
 

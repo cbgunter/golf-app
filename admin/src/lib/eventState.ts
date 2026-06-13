@@ -1,4 +1,4 @@
-import type { DraftScorecard } from '../api/client';
+import type { DraftScorecard } from '@shared/client';
 
 interface Tournament {
   status: 'upcoming' | 'active' | 'completed' | 'archived';

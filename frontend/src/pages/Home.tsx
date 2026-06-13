@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tournamentsApi, Tournament } from '../api/client';
+import { tournamentsApi, Tournament } from '@shared/client';
 import StatusBadge from '../components/StatusBadge';
 import { Trophy, Calendar, Users, DollarSign } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export default function Home() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">Electric Phactory</h1>
+        <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">CH Tournaments</h1>
         <p className="text-ep-silver mt-1">Active and upcoming tournaments</p>
       </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, FormEvent } from 'react';
-import { coursesApi, Course } from '../../api/client';
+import { coursesApi, Course } from '@shared/client';
 import toast from 'react-hot-toast';
 import { Search, Plus, ChevronDown, ChevronUp, X, Check } from 'lucide-react';
 

@@ -1,6 +1,6 @@
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { authApi } from '../api/client';
+import { authApi } from '@shared/client';
 import { LayoutDashboard, Trophy, LogOut, Menu, X, Users } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -10,14 +10,14 @@ export default function AdminLayout() {
 
   useEffect(() => {
     authApi.verify()
-      .then(r => { if (!r.valid) navigate('/admin/login'); })
-      .catch(() => navigate('/admin/login'))
+      .then(r => { if (!r.valid) navigate('/login'); })
+      .catch(() => navigate('/login'))
       .finally(() => setChecking(false));
   }, [navigate]);
 
   function logout() {
     localStorage.removeItem('golf_admin_token');
-    navigate('/admin/login');
+    navigate('/login');
   }
 
   if (checking) {
@@ -29,8 +29,8 @@ export default function AdminLayout() {
   }
 
   const navItems = [
-    { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/admin/tournaments', label: 'Tournaments', icon: Trophy },
+    { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    { to: '/tournaments', label: 'Tournaments', icon: Trophy },
   ];
 
   const navCls = ({ isActive }: { isActive: boolean }) =>
@@ -44,7 +44,7 @@ export default function AdminLayout() {
       <header className="bg-sage-700 text-white sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 text-sm">
-            <Link to="/" className="text-white/50 hover:text-white/80 transition-colors">⛳ CH Tournaments</Link>
+            <a href="https://golf.caseyhunter.net" className="text-white/50 hover:text-white/80 transition-colors">⛳ CH Tournaments</a>
             <span className="text-white/30">/</span>
             <span className="font-medium">Admin</span>
           </div>
@@ -68,7 +68,7 @@ export default function AdminLayout() {
               <Icon size={16} /> {label}
             </NavLink>
           ))}
-          <NavLink to="/admin/players" className={navCls} onClick={() => setMenuOpen(false)}>
+          <NavLink to="/players" className={navCls} onClick={() => setMenuOpen(false)}>
             <Users size={16} /> All Players
           </NavLink>
           <button onClick={logout} className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-500 font-medium w-full">
@@ -88,7 +88,7 @@ export default function AdminLayout() {
               </NavLink>
             ))}
             <div className="pt-4 mt-2 border-t border-stone-200">
-              <NavLink to="/admin/players" className={navCls}>
+              <NavLink to="/players" className={navCls}>
                 <Users size={15} /> All Players
               </NavLink>
             </div>

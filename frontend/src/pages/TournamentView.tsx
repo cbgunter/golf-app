@@ -1,10 +1,10 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { tournamentsApi, playersApi, Tournament, Round, Score, Player } from '../api/client';
-import { roundsApi } from '../api/client';
+import { tournamentsApi, playersApi, Tournament, Round, Score, Player } from '@shared/client';
+import { roundsApi } from '@shared/client';
 import StatusBadge from '../components/StatusBadge';
 import { Trophy, MapPin, Calendar, ChevronDown, ChevronUp, X, HelpCircle } from 'lucide-react';
-import { parseLocalDate } from '../lib/dates';
+import { parseLocalDate } from '@shared/dates';
 
 export default function TournamentView() {
   const { id } = useParams<{ id: string }>();

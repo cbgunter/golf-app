@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { tournamentsApi, TournamentResults } from '../api/client';
+import { tournamentsApi, TournamentResults } from '@shared/client';
 import { Trophy, Info, ArrowLeft } from 'lucide-react';
 
 export default function TournamentResultsPage() {

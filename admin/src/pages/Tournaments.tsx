@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { tournamentsApi, Tournament } from '../../api/client';
-import StatusBadge from '../../components/StatusBadge';
+import { tournamentsApi, Tournament } from '@shared/client';
+import StatusBadge from '../components/StatusBadge';
 import { Plus, Trophy, ChevronRight, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { parseLocalDate } from '../../lib/dates';
+import { parseLocalDate } from '@shared/dates';
 
 const STATUS_FILTERS = ['all', 'active', 'upcoming', 'completed', 'archived'] as const;
 
@@ -43,7 +43,7 @@ export default function AdminTournaments() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-stone-900">Tournaments</h1>
-        <Link to="/admin/tournaments/new" className="btn-primary">
+        <Link to="/tournaments/new" className="btn-primary">
           <Plus size={16} /> New Tournament
         </Link>
       </div>
@@ -68,7 +68,7 @@ export default function AdminTournaments() {
           <Trophy size={40} className="text-stone-300 mx-auto mb-3" />
           <p className="text-stone-500">{statusFilter === 'all' ? 'No tournaments yet.' : `No ${statusFilter} tournaments.`}</p>
           {statusFilter === 'all' && (
-            <Link to="/admin/tournaments/new" className="btn-primary mt-4 inline-flex">
+            <Link to="/tournaments/new" className="btn-primary mt-4 inline-flex">
               <Plus size={15} /> Create First Tournament
             </Link>
           )}
@@ -78,7 +78,7 @@ export default function AdminTournaments() {
           {visible.map(t => (
             <Link
               key={t.id}
-              to={`/admin/tournaments/${t.id}`}
+              to={`/tournaments/${t.id}`}
               className="flex items-center justify-between px-5 py-4 hover:bg-stone-50 transition-colors group"
             >
               <div className="flex-1 min-w-0">

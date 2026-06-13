@@ -12,13 +12,24 @@ npm run typecheck   # type-check without emitting
 npm run dev         # local dev server (ts-node src/local.ts) on :3001
 ```
 
-### Frontend
+### Frontend (public site)
 ```bash
 cd frontend
 npm run dev         # Vite dev server on :5173 (proxies /api → :3001)
 npm run build       # tsc + vite build
 npm run typecheck   # type-check without emitting
 ```
+
+### Admin (admin site)
+```bash
+cd admin
+npm run dev         # Vite dev server on :5174 (proxies /api → :3001)
+npm run build       # tsc + vite build
+npm run typecheck   # type-check without emitting
+```
+
+### Shared
+`shared/src/` contains code consumed by both apps via path alias `@shared/*`. No build step — Vite transpiles on the fly. Files: `client.ts` (all API types + functions), `dates.ts` (date utilities).
 
 ### Infrastructure
 ```bash
@@ -41,14 +52,17 @@ A Claude Code `PostToolUse` hook fires after every `Bash` or `PowerShell` `git c
 ## Architecture
 
 ### Deployment
-Three-stage CI/CD pipeline (`.github/workflows/deploy.yml`) triggered on push to master:
-1. **Infrastructure** — CDK deploys/updates AWS resources, outputs S3 bucket + CloudFront distribution ID
+Four-stage CI/CD pipeline (`.github/workflows/deploy.yml`) triggered on push to master:
+1. **Infrastructure** — CDK deploys/updates AWS resources, outputs S3 bucket + CloudFront distribution IDs for both sites
 2. **Backend** — builds `dist/index.js`, zips it, calls `aws lambda update-function-code`
-3. **Frontend** — Vite build, sync to S3, CloudFront invalidation
+3. **Frontend** — Vite build of `frontend/`, sync to S3, CloudFront invalidation
+4. **Admin** — Vite build of `admin/`, sync to admin S3 bucket, admin CloudFront invalidation
 
-Custom domain `golf.caseyhunter.net` → CloudFront → routes `/api/*` to API Gateway HTTP API → single Lambda, and `/*` to S3 static assets.
+Two CloudFront distributions backed by the same API Gateway HTTP API:
+- `golf.caseyhunter.net` — public site (S3 `golf-app-frontend-{account}`)
+- `admin.golf.caseyhunter.net` — admin site (S3 `golf-admin-frontend-{account}`)
 
-CloudFront `errorResponses` maps only **403 → 200/index.html** for SPA deep links. S3 with OAC returns 403 (not 404) for missing objects. There is intentionally **no 404 rule** — it would intercept API Gateway JSON error bodies from the `/api/*` behavior and replace them with HTML.
+Both distributions have a `/api/*` behavior pointing at API Gateway, and `errorResponses` mapping 403 → 200/index.html for SPA deep links. S3 with OAC returns 403 (not 404) for missing objects — there is intentionally **no 404 rule** as it would intercept API Gateway JSON error bodies from the `/api/*` behavior.
 
 ### Backend: single Lambda, manual routing
 `backend/src/index.ts` is the entire API. It splits `rawPath` into `segments[]` and pattern-matches on `[method, segments[0], segments[1], segments[2]]`. There is no framework — adding a new endpoint means adding an `if` branch to the router.
@@ -113,7 +127,7 @@ Draft status lifecycle gates the mobile UI: `draft`/`submitted` → entry/review
 After admin manually edits a player's score on the RoundScoring page, the local `drafts` state is patched with the new hole values so the "Scorecard Submissions" table reflects the correction immediately (without a full reload).
 
 ### Frontend: routing and pages
-Public routes (no auth):
+Public site (`frontend/`) routes (no auth):
 - `/` — active/upcoming tournaments
 - `/history` — completed and archived tournaments
 - `/tournament/:id` — live tournament view with leaderboard, tee sheet, and round scores
@@ -121,23 +135,26 @@ Public routes (no auth):
 - `/players` — alphabetical player list
 - `/players/:id` — player profile: handicap trend chart, stats, round history
 
-Admin routes (JWT required, stored in `localStorage` as `golf_admin_token`):
-- `/admin` — dashboard with stat cards linking to filtered tournament lists
-- `/admin/tournaments` — tournament list with status filter tabs
-- `/admin/tournaments/:id` — tournament setup (next-action card + collapsible accordion sections)
-- `/admin/rounds/:id/scoring` — horizontal scorecard entry + live leaderboard
-- `/admin/players` — global player roster (full CRUD + handicap history)
+Admin site (`admin/`) routes (JWT required, all at root — no `/admin` prefix):
+- `/` — dashboard with stat cards linking to filtered tournament lists
+- `/login` — admin login page
+- `/tournaments` — tournament list with status filter tabs
+- `/tournaments/:id` — tournament setup (next-action card + collapsible accordion sections)
+- `/rounds/:id/scoring` — horizontal scorecard entry + live leaderboard
+- `/players` — global player roster (full CRUD + handicap history)
 
-`AdminLayout` wraps all admin pages and verifies the JWT on mount. `Layout` wraps public pages.
+`AdminLayout` wraps all admin pages and verifies the JWT on mount. `Layout` wraps public pages. The public site's "Admin" nav link is a cross-origin `<a href="https://admin.golf.caseyhunter.net">`.
 
-### Frontend: API client
-`frontend/src/api/client.ts` is the single source of truth for all types and API calls. Types here must stay in sync with `backend/src/types/index.ts`. Key exported types: `Player`, `Tournament`, `Round`, `Score`, `Course`, `TournamentResults`, `PlayerProfile`.
+### Shared API client and utilities
+`shared/src/client.ts` is the single source of truth for all types and API calls. Both `frontend/` and `admin/` import it as `@shared/client` via Vite path alias. Types here must stay in sync with `backend/src/types/index.ts`. Key exported types: `Player`, `Tournament`, `Round`, `Score`, `Course`, `TournamentResults`, `PlayerProfile`.
 
-### Frontend: key utilities
-- `frontend/src/lib/dates.ts` — `parseLocalDate(dateStr)` parses `YYYY-MM-DD` as local midnight (not UTC) to prevent off-by-one-day display bugs. Use this everywhere dates are displayed.
-- `frontend/src/lib/eventState.ts` — pure `computeEventState(tournament, rounds, drafts)` function that returns an `EventStateInfo` object (`key`, `label`, `description`, `cta`, `ctaTarget`, `urgent`). Evaluated in priority order: `completed` → `pending-confirmation` → `ready-to-complete` → `validate-leaderboard` → `scoring-open` → `ready` → `needs-players` → `incomplete`. Used by `TournamentSetup.tsx` via `useMemo`.
-- `frontend/src/components/ErrorBoundary.tsx` — class component wrapping the entire app; shows a reload prompt on render errors.
-- `frontend/src/components/StatusBadge.tsx` — colored badge for tournament/round status values.
+The client exports `setUnauthorizedHandler(fn)` for configuring 401 behavior per-app. Admin app uses the default (`window.location.href = '/login'`). Public app registers a no-redirect handler in `frontend/src/main.tsx`.
+
+### Key utilities
+- `shared/src/dates.ts` — `parseLocalDate(dateStr)` parses `YYYY-MM-DD` as local midnight (not UTC) to prevent off-by-one-day display bugs. Import as `@shared/dates`. Use everywhere dates are displayed.
+- `admin/src/lib/eventState.ts` — pure `computeEventState(tournament, rounds, drafts)` function that returns an `EventStateInfo` object (`key`, `label`, `description`, `cta`, `ctaTarget`, `urgent`). Evaluated in priority order: `completed` → `pending-confirmation` → `ready-to-complete` → `validate-leaderboard` → `scoring-open` → `ready` → `needs-players` → `incomplete`. Used by `TournamentSetup.tsx` via `useMemo`.
+- `frontend/src/components/ErrorBoundary.tsx` and `admin/src/components/ErrorBoundary.tsx` — class component wrapping each app; shows a reload prompt on render errors.
+- `frontend/src/components/StatusBadge.tsx` and `admin/src/components/StatusBadge.tsx` — colored badge for tournament/round status values (each app has its own copy using its own color tokens).
 
 ### Player profile endpoint
 `GET /players/:id/profile` (public) returns `{ player, roundScores[] }`. It batch-fetches all scores via `player-index` GSI, then batch-fetches the associated rounds and tournaments via `Promise.all` to enrich each score with `courseName`, `tournamentName`, `date`, and `par`. The frontend renders a handicap trend SVG chart (inline, no chart library), a round history table, and a section showing upcoming/active tournaments the player is enrolled in (fetched client-side from `tournamentsApi.list()`).
@@ -155,7 +172,7 @@ Round cards (expanded view):
 - The `HoleScorecard` component is a local function at the bottom of `TournamentView.tsx` (no separate file)
 
 ### Score entry UI
-`frontend/src/pages/admin/RoundScoring.tsx` renders a horizontal golf scorecard: holes 1–9 across the top, OUT subtotal, holes 10–18, IN subtotal, TOT. Par and HCP (stroke index) rows are read-only when course data was loaded from GHIN, editable otherwise. Score cells are color-coded by +/- par (yellow = eagle+, red = birdie, green = par). The sticky left column keeps row labels visible while scrolling on small screens.
+`admin/src/pages/RoundScoring.tsx` renders a horizontal golf scorecard: holes 1–9 across the top, OUT subtotal, holes 10–18, IN subtotal, TOT. Par and HCP (stroke index) rows are read-only when course data was loaded from GHIN, editable otherwise. Score cells are color-coded by +/- par (yellow = eagle+, red = birdie, green = par). The sticky left column keeps row labels visible while scrolling on small screens.
 
 The score summary bar below the scorecard shows **Out · In · Gross · to-par** in real time as holes are filled in.
 

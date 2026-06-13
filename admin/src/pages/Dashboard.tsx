@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tournamentsApi, playersApi, Tournament, Player } from '../../api/client';
-import StatusBadge from '../../components/StatusBadge';
-import HelpModal, { HelpSection, HelpStep, HelpTip } from '../../components/HelpModal';
+import { tournamentsApi, playersApi, Tournament, Player } from '@shared/client';
+import StatusBadge from '../components/StatusBadge';
+import HelpModal, { HelpSection, HelpStep, HelpTip } from '../components/HelpModal';
 import { Users, Trophy, Plus, HelpCircle } from 'lucide-react';
-import { parseLocalDate } from '../../lib/dates';
+import { parseLocalDate } from '@shared/dates';
 
 export default function AdminDashboard() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -42,10 +42,10 @@ export default function AdminDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Active', count: active.length, color: 'text-green-600', bg: 'bg-green-50', to: '/admin/tournaments?status=active' },
-          { label: 'Upcoming', count: upcoming.length, color: 'text-blue-600', bg: 'bg-blue-50', to: '/admin/tournaments?status=upcoming' },
-          { label: 'Completed', count: completed.length, color: 'text-sand-600', bg: 'bg-sand-50', to: '/admin/tournaments?status=completed' },
-          { label: 'Players', count: players.length, color: 'text-sage-700', bg: 'bg-sage-50', to: '/admin/players' },
+          { label: 'Active', count: active.length, color: 'text-green-600', bg: 'bg-green-50', to: '/tournaments?status=active' },
+          { label: 'Upcoming', count: upcoming.length, color: 'text-blue-600', bg: 'bg-blue-50', to: '/tournaments?status=upcoming' },
+          { label: 'Completed', count: completed.length, color: 'text-sand-600', bg: 'bg-sand-50', to: '/tournaments?status=completed' },
+          { label: 'Players', count: players.length, color: 'text-sage-700', bg: 'bg-sage-50', to: '/players' },
         ].map(s => (
           <Link key={s.label} to={s.to} className={`card p-4 ${s.bg} hover:shadow-md transition-shadow`}>
             <div className={`text-2xl font-bold ${s.color}`}>{s.count}</div>
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
 
       {/* Quick actions */}
       <div className="grid sm:grid-cols-2 gap-4">
-        <Link to="/admin/tournaments" className="card p-5 hover:shadow-md transition-shadow group">
+        <Link to="/tournaments" className="card p-5 hover:shadow-md transition-shadow group">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 bg-sage-100 rounded-lg flex items-center justify-center">
               <Trophy size={18} className="text-sage-700" />
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
             <Plus size={12} /> New Tournament
           </span>
         </Link>
-        <Link to="/admin/players" className="card p-5 hover:shadow-md transition-shadow group">
+        <Link to="/players" className="card p-5 hover:shadow-md transition-shadow group">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
               <Users size={18} className="text-blue-700" />
@@ -87,13 +87,13 @@ export default function AdminDashboard() {
         <div className="card">
           <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
             <h2 className="font-semibold text-stone-800">Recent Tournaments</h2>
-            <Link to="/admin/tournaments" className="text-xs text-sage-600 hover:underline">View all</Link>
+            <Link to="/tournaments" className="text-xs text-sage-600 hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {tournaments.slice(0, 5).map(t => (
               <Link
                 key={t.id}
-                to={`/admin/tournaments/${t.id}`}
+                to={`/tournaments/${t.id}`}
                 className="flex items-center justify-between px-5 py-3 hover:bg-stone-50 transition-colors"
               >
                 <div>
@@ -119,7 +119,7 @@ function AdminHelp({ onClose }: { onClose: () => void }) {
     <HelpModal title="Admin Guide" onClose={onClose}>
 
       <HelpSection title="Managing Players">
-        <HelpStep n={1}>Go to <strong>Admin → Players</strong>.</HelpStep>
+        <HelpStep n={1}>Go to <strong>Players</strong>.</HelpStep>
         <HelpStep n={2}>Click <strong>Add Player</strong> — enter name, optional email, and handicap index (defaults to 0.0 if left blank).</HelpStep>
         <HelpStep n={3}>Click a player's row to edit their details or view handicap history.</HelpStep>
         <HelpTip>Handicap index is recalculated automatically after every scored round — you only need to set the starting value.</HelpTip>
@@ -136,13 +136,13 @@ function AdminHelp({ onClose }: { onClose: () => void }) {
       </HelpSection>
 
       <HelpSection title="Adding Players to a Tournament">
-        <HelpStep n={1}>Open the tournament → <strong>Players tab</strong>.</HelpStep>
-        <HelpStep n={2}>Click a player chip from the <em>All Players</em> list to add them. Click again to remove.</HelpStep>
-        <HelpStep n={3}>Need a new player? Use <strong>Create new player</strong> inline — no need to navigate away.</HelpStep>
+        <HelpStep n={1}>Open the tournament → <strong>Players</strong> section.</HelpStep>
+        <HelpStep n={2}>Click a player chip from the list to add them. Click again to remove.</HelpStep>
+        <HelpStep n={3}>Need a new player? Use <strong>New Player</strong> inline — no need to navigate away.</HelpStep>
       </HelpSection>
 
       <HelpSection title="Creating Rounds">
-        <HelpStep n={1}>Open the tournament → <strong>Rounds tab → Add Round</strong>.</HelpStep>
+        <HelpStep n={1}>Open the tournament → <strong>Rounds &amp; Tee Sheets → Add Round</strong>.</HelpStep>
         <HelpStep n={2}>Search for the course by name (pulls from the GHIN database).</HelpStep>
         <HelpStep n={3}>Select the course, then pick a <strong>Tee</strong> — rating and slope fill automatically.</HelpStep>
         <HelpStep n={4}>Set the round date.</HelpStep>
@@ -151,16 +151,16 @@ function AdminHelp({ onClose }: { onClose: () => void }) {
       </HelpSection>
 
       <HelpSection title="Tee Time Groups & PINs">
-        <HelpStep n={1}>On the Rounds tab, click a round row to expand it.</HelpStep>
+        <HelpStep n={1}>On the Rounds section, click a round row to expand it.</HelpStep>
         <HelpStep n={2}>Choose <strong>Sequential</strong> (tee times from hole 1) or <strong>Shotgun</strong> (each group on a different starting hole).</HelpStep>
-        <HelpStep n={3}>Click <strong>Add Group</strong> and set the tee time. For shotgun, also set the starting hole.</HelpStep>
+        <HelpStep n={3}>Click <strong>Add Pairing</strong> and set the tee time. For shotgun, also set the starting hole.</HelpStep>
         <HelpStep n={4}>Click unassigned player chips at the bottom and choose their group.</HelpStep>
         <HelpStep n={5}>Click <strong>Save Tee Sheet</strong>. PINs are generated automatically and shown on each group card.</HelpStep>
         <HelpTip>Share each group's PIN with their designated scorekeeper before the round starts.</HelpTip>
       </HelpSection>
 
       <HelpSection title="Entering Scores (Admin Scorecard)">
-        <HelpStep n={1}>From the Rounds tab, click the <strong>Scoring</strong> button next to a round.</HelpStep>
+        <HelpStep n={1}>From the Rounds section, click the <strong>Scoring</strong> button next to a round.</HelpStep>
         <HelpStep n={2}>Select which players to display using the player picker. If tee time groups are set, players are organized by group.</HelpStep>
         <HelpStep n={3}>Click any score cell and type the strokes. OUT and IN subtotals calculate automatically.</HelpStep>
         <HelpTip>Score cells are color-coded: yellow = Eagle+, red = Birdie, green = Par.</HelpTip>
@@ -174,7 +174,7 @@ function AdminHelp({ onClose }: { onClose: () => void }) {
       </HelpSection>
 
       <HelpSection title="Confirming PIN-Based Scorecards">
-        <HelpStep n={1}>On the Round Scoring page, scroll to <strong>Group Submissions</strong>.</HelpStep>
+        <HelpStep n={1}>On the Round Scoring page, scroll to <strong>Scorecard Submissions</strong>.</HelpStep>
         <HelpStep n={2}>Click a group card to expand and review the submitted scorecard.</HelpStep>
         <HelpStep n={3}>Status badges: <strong>In Progress</strong> (still entering), <strong>Submitted</strong> (ready to confirm), <strong>Confirmed</strong> (done).</HelpStep>
         <HelpStep n={4}>For <em>Submitted</em> cards, review scores and click <strong>✓ Confirm Scores</strong>. This writes the scores and updates handicap indexes.</HelpStep>

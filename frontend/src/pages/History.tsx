@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tournamentsApi, Tournament } from '../api/client';
+import { tournamentsApi, Tournament } from '@shared/client';
 import StatusBadge from '../components/StatusBadge';
 import { Trophy, Calendar, Users } from 'lucide-react';
-import { parseLocalDate } from '../lib/dates';
+import { parseLocalDate } from '@shared/dates';
 
 export default function History() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);

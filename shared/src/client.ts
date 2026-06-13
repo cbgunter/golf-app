@@ -4,6 +4,15 @@ function getToken() {
   return localStorage.getItem('golf_admin_token');
 }
 
+let onUnauthorized = () => {
+  localStorage.removeItem('golf_admin_token');
+  window.location.href = '/login';
+};
+
+export function setUnauthorizedHandler(fn: () => void) {
+  onUnauthorized = fn;
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -21,8 +30,7 @@ async function request<T>(
 
   const data = await res.json();
   if (res.status === 401) {
-    localStorage.removeItem('golf_admin_token');
-    window.location.href = '/admin/login';
+    onUnauthorized();
     throw new Error('Session expired. Please log in again.');
   }
   if (!res.ok) throw new Error(data.error ?? `Request failed: ${res.status}`);
