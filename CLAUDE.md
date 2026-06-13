@@ -124,7 +124,7 @@ Public routes (no auth):
 Admin routes (JWT required, stored in `localStorage` as `golf_admin_token`):
 - `/admin` — dashboard with stat cards linking to filtered tournament lists
 - `/admin/tournaments` — tournament list with status filter tabs
-- `/admin/tournaments/:id` — tournament setup (Details / Players / Rounds tabs)
+- `/admin/tournaments/:id` — tournament setup (next-action card + collapsible accordion sections)
 - `/admin/rounds/:id/scoring` — horizontal scorecard entry + live leaderboard
 - `/admin/players` — global player roster (full CRUD + handicap history)
 
@@ -135,6 +135,7 @@ Admin routes (JWT required, stored in `localStorage` as `golf_admin_token`):
 
 ### Frontend: key utilities
 - `frontend/src/lib/dates.ts` — `parseLocalDate(dateStr)` parses `YYYY-MM-DD` as local midnight (not UTC) to prevent off-by-one-day display bugs. Use this everywhere dates are displayed.
+- `frontend/src/lib/eventState.ts` — pure `computeEventState(tournament, rounds, drafts)` function that returns an `EventStateInfo` object (`key`, `label`, `description`, `cta`, `ctaTarget`, `urgent`). Evaluated in priority order: `completed` → `pending-confirmation` → `ready-to-complete` → `validate-leaderboard` → `scoring-open` → `ready` → `needs-players` → `incomplete`. Used by `TournamentSetup.tsx` via `useMemo`.
 - `frontend/src/components/ErrorBoundary.tsx` — class component wrapping the entire app; shows a reload prompt on render errors.
 - `frontend/src/components/StatusBadge.tsx` — colored badge for tournament/round status values.
 
@@ -162,10 +163,14 @@ The player picker reorganizes into tee time groups when `round.teeTimeGroups` is
 
 The "Scorecard Submissions" panel (shown when drafts exist) displays submitted group scorecards with Out/In/Tot columns. When admin manually edits a player's score, the panel updates immediately via local state patch rather than waiting for a server refetch.
 
-### Tournament setup: inline player creation + guidance
-The Players tab in `TournamentSetup.tsx` allows creating new players inline without navigating away. Players is demoted to a secondary "All Players" link in the admin sidebar (below a divider), not a primary nav item.
+### Tournament setup: next-action-focused layout
+`TournamentSetup.tsx` leads with a **NextActionCard** — a prominent banner computed via `computeEventState` (`frontend/src/lib/eventState.ts`) from the already-fetched tournament, rounds, and drafts. The card shows the current state label, a one-sentence description, and a primary CTA button. Urgent states (`pending-confirmation`) render with an amber border.
 
-A contextual next-steps banner appears below the tab bar (for non-completed tournaments) guiding the admin through: add players → add rounds → enter scores → mark completed. The banner is computed from `selectedPlayerIds`, `rounds`, and round statuses — no server call needed.
+Below the card, three **AccordionSection** components replace the old tab bar: Event Details, Players (with player count badge), and Rounds & Tee Sheets (with round count badge). On load, the section relevant to the current event state auto-opens; all sections can be open simultaneously.
+
+A **ScoreConfirmationPanel** appears between the NextActionCard and the accordions whenever any drafts have `status === 'submitted'` or `'confirmed'`. Drafts are fetched in parallel for all rounds (`scoringApi.getDrafts(roundId)`) on initial load. Confirming a draft re-fetches all drafts and updates `eventState` via `useMemo`. This panel mirrors the one in `RoundScoring.tsx` — the admin can confirm from either page.
+
+The "Mark event complete" CTA (shown in `ready-to-complete` state) calls `tournamentsApi.update(id, { status: 'completed' })` directly and updates local `tournament` state. Inline player creation (new player form inside the Players accordion) also updates `tournament.playerIds` in local state so `eventState` recomputes correctly without a reload.
 
 ### Styling conventions
 Tailwind CSS with a custom palette: `sage` (greens), `sand` (gold/tan), `stone` (neutrals). Shared utility classes (`btn-primary`, `btn-secondary`, `btn-gold`, `card`, `badge-*`, `label`, `input`, `page-header`, `section-title`) are defined in `frontend/src/index.css`. Use these rather than raw Tailwind for consistency.
