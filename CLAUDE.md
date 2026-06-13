@@ -190,4 +190,19 @@ A **ScoreConfirmationPanel** appears between the NextActionCard and the accordio
 The "Mark event complete" CTA (shown in `ready-to-complete` state) calls `tournamentsApi.update(id, { status: 'completed' })` directly and updates local `tournament` state. Inline player creation (new player form inside the Players accordion) also updates `tournament.playerIds` in local state so `eventState` recomputes correctly without a reload.
 
 ### Styling conventions
-Tailwind CSS with a custom palette: `sage` (greens), `sand` (gold/tan), `stone` (neutrals). Shared utility classes (`btn-primary`, `btn-secondary`, `btn-gold`, `card`, `badge-*`, `label`, `input`, `page-header`, `section-title`) are defined in `frontend/src/index.css`. Use these rather than raw Tailwind for consistency.
+Tailwind CSS with the **CH Tournaments** brand palette. Custom `ep-*` color tokens are defined in both `frontend/tailwind.config.js` and `admin/tailwind.config.js`:
+
+| Token | Hex | Role |
+|---|---|---|
+| `ep-cream` | `#F5F0E8` | Page background — never pure white |
+| `ep-green` | `#004C54` | Primary text, headings, dark surfaces (Midnight Green) |
+| `ep-orange` | `#D4691C` | CTAs, links, highlights, accents (Community Orange) |
+| `ep-deep` | `#002B30` | Footer, dark nav, overlays (Deep Green) |
+| `ep-silver` | `#B8B5AF` | Secondary text, captions, borders (Stadium Silver) |
+| `ep-sand` | `#EDE6DA` | Cards, callout boxes, alternating sections |
+
+**Typography:** Two fonts only — `font-heading` → Outfit (headings, ExtraBold), `font-sans` → DM Sans (body). The brand wordmark is "CH TOURNAMENTS" in Outfit ExtraBold, all caps, `tracking-[0.04em]`.
+
+**Never use** the legacy `sage-*`, `stone-*`, or `sand-[0-9]*` Tailwind classes — those tokens still exist in the config but are off-brand.
+
+Shared utility classes (`btn-primary`, `btn-secondary`, `btn-gold`, `card`, `badge-*`, `label`, `input`, `page-header`, `section-title`) are defined in `frontend/src/index.css` and `admin/src/index.css` — use these rather than raw Tailwind for consistency. Both CSS files use `ep-*` tokens exclusively.
