@@ -90,11 +90,11 @@ export class GolfAppStack extends cdk.Stack {
     });
 
     // ─── SSM Parameters ────────────────────────────────────────────────────
-    const adminPasswordParam = new ssm.StringParameter(this, 'AdminPassword', {
-      parameterName: '/golf-app/admin-password',
-      stringValue: 'ChangeMe123!',  // Change via AWS console after deploy
-      description: 'Admin password for Golf App',
-    });
+    // Admin password is a SecureString managed out-of-band (like the GHIN
+    // credentials below) so `cdk deploy` never re-asserts a literal value
+    // over a rotated secret. Set/rotate it directly:
+    //   aws ssm put-parameter --name /golf-app/admin-password --type SecureString --overwrite --value '<new password>'
+    const adminPasswordParamName = '/golf-app/admin-password';
 
     const jwtSecretParam = new ssm.StringParameter(this, 'JwtSecret', {
       parameterName: '/golf-app/jwt-secret',
@@ -117,7 +117,7 @@ export class GolfAppStack extends cdk.Stack {
         SCORES_TABLE: scoresTable.tableName,
         COURSES_TABLE: coursesTable.tableName,
         DRAFT_SCORECARDS_TABLE: draftScorecardsTable.tableName,
-        ADMIN_PASSWORD_PARAM: adminPasswordParam.parameterName,
+        ADMIN_PASSWORD_PARAM: adminPasswordParamName,
         JWT_SECRET_PARAM: jwtSecretParam.parameterName,
         GHIN_USERNAME_PARAM: '/golf-app/ghin-username',
         GHIN_PASSWORD_PARAM: '/golf-app/ghin-password',
@@ -132,12 +132,12 @@ export class GolfAppStack extends cdk.Stack {
     scoresTable.grantReadWriteData(apiLambda);
     coursesTable.grantReadWriteData(apiLambda);
     draftScorecardsTable.grantReadWriteData(apiLambda);
-    adminPasswordParam.grantRead(apiLambda);
     jwtSecretParam.grantRead(apiLambda);
-    // Grant access to GHIN SecureString params (created outside CDK)
+    // Grant access to SecureString params created outside CDK (admin password, GHIN creds)
     apiLambda.addToRolePolicy(new iam.PolicyStatement({
       actions: ['ssm:GetParameter'],
       resources: [
+        `arn:aws:ssm:${this.region}:${this.account}:parameter${adminPasswordParamName}`,
         `arn:aws:ssm:${this.region}:${this.account}:parameter/golf-app/ghin-username`,
         `arn:aws:ssm:${this.region}:${this.account}:parameter/golf-app/ghin-password`,
       ],
