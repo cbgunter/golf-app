@@ -188,7 +188,8 @@ interface Tournament {
   name: string;
   description?: string;
   status: 'upcoming' | 'active' | 'completed' | 'archived';
-  format: 'stroke_play' | 'stableford' | 'match_play';
+  /** Legacy, no longer set or read — each Round has its own format. */
+  format?: 'stroke_play' | 'stableford' | 'match_play';
   isNet: boolean;
   isGross: boolean;
   standingsMode?: StandingsMode;

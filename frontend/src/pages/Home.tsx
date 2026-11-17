@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { tournamentsApi, Tournament } from '@shared/client';
+import { tournamentsApi, Tournament, Round } from '@shared/client';
+import { tournamentFormatLabel } from '@shared/formats';
 import StatusBadge from '../components/StatusBadge';
 import { Trophy, Calendar, Users, DollarSign } from 'lucide-react';
 
 export default function Home() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [roundsByTournament, setRoundsByTournament] = useState<Record<string, Round[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -14,7 +16,16 @@ export default function Home() {
       tournamentsApi.list('active'),
       tournamentsApi.list('upcoming'),
     ])
-      .then(([active, upcoming]) => setTournaments([...active, ...upcoming]))
+      .then(([active, upcoming]) => {
+        const all = [...active, ...upcoming];
+        setTournaments(all);
+        // Format labels come from each tournament's rounds; load them without blocking the list.
+        all.forEach(t => {
+          tournamentsApi.rounds(t.id)
+            .then(rs => setRoundsByTournament(m => ({ ...m, [t.id]: rs })))
+            .catch(() => { /* label just stays hidden */ });
+        });
+      })
       .catch(() => setError('Failed to load tournaments'))
       .finally(() => setLoading(false));
   }, []);
@@ -38,7 +49,7 @@ export default function Home() {
       ) : (
         <div className="space-y-4">
           {tournaments.map(t => (
-            <TournamentCard key={t.id} tournament={t} />
+            <TournamentCard key={t.id} tournament={t} rounds={roundsByTournament[t.id]} />
           ))}
         </div>
       )}
@@ -46,13 +57,9 @@ export default function Home() {
   );
 }
 
-function TournamentCard({ tournament: t }: { tournament: Tournament }) {
+function TournamentCard({ tournament: t, rounds }: { tournament: Tournament; rounds?: Round[] }) {
   const totalPot = t.entryFee * t.playerIds.length;
-  const formatLabel: Record<string, string> = {
-    stroke_play: 'Stroke Play',
-    stableford: 'Stableford',
-    match_play: 'Match Play',
-  };
+  const formatLabel = rounds ? tournamentFormatLabel(rounds, t.standingsMode) : null;
 
   return (
     <Link to={`/tournament/${t.id}`} className="card p-5 block hover:shadow-md transition-shadow group">
@@ -60,7 +67,7 @@ function TournamentCard({ tournament: t }: { tournament: Tournament }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <StatusBadge status={t.status} />
-            <span className="text-xs text-ep-silver">{formatLabel[t.format] ?? t.format}</span>
+            {formatLabel && <span className="text-xs text-ep-silver">{formatLabel}</span>}
           </div>
           <h2 className="text-lg font-heading font-semibold text-ep-green group-hover:text-ep-orange transition-colors">
             {t.name}

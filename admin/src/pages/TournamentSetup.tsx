@@ -108,7 +108,7 @@ export default function AdminTournamentSetup() {
 
   const [form, setForm] = useState({
     name: '', description: '', startDate: '', endDate: '',
-    format: 'stroke_play', isNet: true, isGross: true,
+    isNet: true, isGross: true,
     standingsMode: 'cumulative' as 'cumulative' | 'points', pointsTable: '',
     hasClosestToPin: false, hasLongestDrive: false,
     closestToPinFee: '0', longestDriveFee: '0',
@@ -148,7 +148,7 @@ export default function AdminTournamentSetup() {
         setRounds(rs);
         setForm({
           name: t.name, description: t.description ?? '', startDate: t.startDate,
-          endDate: t.endDate ?? '', format: t.format, isNet: t.isNet, isGross: t.isGross,
+          endDate: t.endDate ?? '', isNet: t.isNet, isGross: t.isGross,
           standingsMode: t.standingsMode ?? 'cumulative', pointsTable: (t.pointsTable ?? []).join(', '),
           hasClosestToPin: t.hasClosestToPin, hasLongestDrive: t.hasLongestDrive,
           closestToPinFee: String(t.closestToPinFee ?? 0), longestDriveFee: String(t.longestDriveFee ?? 0),
@@ -335,7 +335,7 @@ export default function AdminTournamentSetup() {
     const data = {
       name: form.name, description: form.description || undefined,
       startDate: form.startDate, endDate: form.endDate || undefined,
-      format: form.format as any, isNet: form.isNet, isGross: form.isGross,
+      isNet: form.isNet, isGross: form.isGross,
       standingsMode: form.standingsMode,
       pointsTable: form.standingsMode === 'points' && form.pointsTable.trim()
         ? form.pointsTable.split(/[,\s]+/).filter(Boolean).map(Number).filter(n => !isNaN(n))
@@ -488,14 +488,6 @@ export default function AdminTournamentSetup() {
             <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required placeholder="Annual Golf Trip" />
           </div>
           <div>
-            <label className="label">Format</label>
-            <select className="input" value={form.format} onChange={e => setForm(f => ({ ...f, format: e.target.value }))}>
-              <option value="stroke_play">Stroke Play</option>
-              <option value="stableford">Stableford</option>
-              <option value="match_play">Match Play</option>
-            </select>
-          </div>
-          <div>
             <label className="label">Entry Fee ($)</label>
             <input className="input" type="number" min="0" step="1" value={form.entryFee} onChange={e => setForm(f => ({ ...f, entryFee: e.target.value }))} />
           </div>
@@ -525,6 +517,7 @@ export default function AdminTournamentSetup() {
           </div>
           <div className="sm:col-span-2">
             <label className="label">Overall Standings</label>
+            <p className="text-xs text-ep-silver mb-1">Each round's format (stroke play, Stableford, best ball) is chosen when you add the round.</p>
             <select className="input" value={form.standingsMode}
               onChange={e => setForm(f => ({ ...f, standingsMode: e.target.value as 'cumulative' | 'points' }))}>
               <option value="cumulative">Lowest total score across rounds</option>

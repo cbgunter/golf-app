@@ -90,6 +90,25 @@ export function roundFormat(round: { format?: RoundFormat }): RoundFormat {
   return round.format ?? 'stroke_play';
 }
 
+/**
+ * Display label for a tournament, derived from its rounds (Tournament has no format of its own —
+ * each round has one). Practice rounds are ignored. Returns null when there are no rounds yet.
+ *   one format              → "Stableford"
+ *   mixed, cumulative       → "Mixed formats"
+ *   cup points              → "Cup · Stroke Play" / "Cup · 3 formats"
+ */
+export function tournamentFormatLabel(
+  rounds: { format?: RoundFormat; isPracticeRound?: boolean }[],
+  standingsMode?: 'cumulative' | 'points',
+): string | null {
+  const counted = rounds.filter(r => !r.isPracticeRound);
+  if (counted.length === 0) return null;
+  const formats = [...new Set(counted.map(roundFormat))];
+  const base = formats.length === 1 ? ROUND_FORMAT_LABELS[formats[0]] : `${formats.length} formats`;
+  if (standingsMode === 'points') return `Cup · ${base}`;
+  return formats.length === 1 ? base : 'Mixed formats';
+}
+
 /** Stableford points for one hole: 2 for par, +1 per stroke under, −1 per stroke over, floored at 0. */
 export function stablefordPoints(strokes: number, par: number): number {
   return Math.max(0, 2 + par - strokes);

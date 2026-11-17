@@ -75,7 +75,8 @@ export interface Tournament {
   name: string;
   description?: string;
   status: TournamentStatus;
-  format: TournamentFormat;
+  /** Legacy, no longer set or read — each Round has its own format. */
+  format?: TournamentFormat;
   isNet: boolean;
   isGross: boolean;
   /** 'cumulative' (default): lowest total net/gross. 'points': cup points by per-round finish. */

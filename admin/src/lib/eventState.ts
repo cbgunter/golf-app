@@ -2,7 +2,6 @@ import type { DraftScorecard } from '@shared/client';
 
 interface Tournament {
   status: 'upcoming' | 'active' | 'completed' | 'archived';
-  format: string;
   playerIds: string[];
   hasClosestToPin: boolean;
   hasLongestDrive: boolean;
@@ -117,7 +116,7 @@ export function computeEventState(
     };
   }
 
-  if (rounds.length > 0 && tournament.format && tournament.playerIds.length === 0) {
+  if (rounds.length > 0 && tournament.playerIds.length === 0) {
     return {
       key: 'needs-players',
       label: 'Add Players',

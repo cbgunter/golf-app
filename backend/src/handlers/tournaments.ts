@@ -40,7 +40,6 @@ export async function createTournament(body: Partial<Tournament>) {
     name: body.name.trim(),
     description: body.description,
     status: 'upcoming',
-    format: body.format ?? 'stroke_play',
     isNet: body.isNet ?? true,
     isGross: body.isGross ?? true,
     standingsMode: body.standingsMode,
