@@ -162,14 +162,4 @@ Keep these dead simple and consistent. Build 4–5 Canva/Figma templates and reu
 
 ---
 
-## What to Build First (Priority Order)
-
-1. Lock the midnight green + orange palette and Outfit/DM Sans type pairing.
-2. Finalize the CH Tournaments mark/logo in new colors.
-3. Social media template set (4 templates in Canva).
-4. Simple landing site matching the spec above.
-5. Merch runs — rope hats, ball markers, towels.
-
----
-
 *These guidelines are a living doc. Revisit after the first season to see what's working and what needs to evolve.*
