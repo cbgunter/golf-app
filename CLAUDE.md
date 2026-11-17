@@ -80,7 +80,7 @@ Six tables (all PAY_PER_REQUEST, RemovalPolicy RETAIN):
 - `golf-rounds` — stores `teeTimeGroups[]`, `holes[]`, `closestToPinContests[]`, `longestDriveWinnerId?` inline
 - `golf-scores` — GSIs on both `roundId` and `playerId`; includes `holeScores[]`, `adjustments[]`, `handicapDifferential`
 - `golf-courses` — cached GHIN course data (not cleared with other data resets)
-- `golf-draft-scorecards` — GSIs on `pin` and `roundId`; stores group scorecards during PIN-based entry; status lifecycle: `draft` → `submitted` → `confirmed`. ID is `${roundId}#${groupNumber}`. PIN lookup uses `getItem` by this ID (not the `pin-index` GSI) so stale PINs from previous tournaments don't block new ones.
+- `golf-draft-scorecards` — GSI on `roundId`; stores group scorecards during public group entry; status lifecycle: `draft` → `submitted` → `confirmed`. ID is `${roundId}#${groupNumber}` and every lookup is a `getItem` by that ID. Older rows may still carry a legacy `pin` field.
 
 `updateRound` spreads the request body onto the existing record, so any field sent is automatically persisted — no explicit field handling needed for new round properties.
 
@@ -125,27 +125,27 @@ Player `handicapIndex` defaults to `0.0` at creation if not supplied. For player
 - **Standings mode**: `Tournament.standingsMode` is `'cumulative'` (default: sum net/gross) or `'points'` (cup). In points mode each round ranks players by its own format and awards `Tournament.pointsTable` (default N…1). Tied players split the points of the positions they occupy; team partners share their team's positions (2v2 → winners 3.5 each, losers 1.5 with default 4/3/2/1). `Round.pointsMultiplier` scales a round (e.g. 2× for a championship round). Total ties are broken by the most recent round, then cumulative net.
 - `computeRoundResult(round, scores, { useNet, pointsTable })` → per-round standings + `pointsByPlayer`; `computeCupStandings(rounds, scoresByRound, opts)` → overall cup table. The backend results endpoint passes completed non-practice rounds only; the public live view passes all non-practice rounds.
 - `teamsFromStandings(orderedIds)` pairs 1st with last, 2nd with second-to-last (4 players → 1&4 vs 2&3). The admin **TeamsEditor** (`admin/src/components/TeamsEditor.tsx`, shown in a best-ball round's Pairings panel) has a "Set from standings" button that computes standings from earlier rounds.
-- Score entry is format-agnostic: everyone still enters individual hole scores via PIN or admin entry; formats are applied only when ranking.
+- Score entry is format-agnostic: everyone still enters individual hole scores via group or admin entry; formats are applied only when ranking.
 - Public cup table component: `frontend/src/components/CupStandingsCard.tsx`.
 
 ### Side contests (CTP / LD)
 Tournaments have `hasClosestToPin` / `hasLongestDrive` boolean flags and optional `closestToPinFee` / `longestDriveFee` per-player ante amounts. LD is one hole per round (`longestDriveHole`). CTP can be several holes per round: `Round.closestToPinContests: { hole, winnerId? }[]`, picked in the round form from the course's par 3s (free-text hole list when there's no hole data). Always read CTP via `ctpContests(round)` in `shared/src/formats.ts` — it falls back to the legacy single `closestToPinHole` / `closestToPinWinnerId` fields on older rounds. The CTP pot is split evenly across all CTP holes in non-practice rounds (`CtpResult.amount`). Winners are selected on the RoundScoring admin page via dropdowns that **auto-save immediately on change** (calls `roundsApi.update` directly; no need to complete the round first). `closestToPinWinnerId` / `longestDriveWinnerId` are stored on the round. Prize pots (`fee × playerCount`) are shown on the public tournament view and results page.
 
 ### Tee time groups
-Rounds store `startFormat?: 'sequential' | 'shotgun'` and `teeTimeGroups?: TeeTimeGroup[]` inline. Groups are managed from the TournamentSetup admin page (accordion panel per round). Each group has `groupNumber`, `teeTime` (display string e.g. "8:00 AM"), `playerIds[]`, optional `startingHole` for shotgun starts, and a `pin?: string` (4-digit, auto-generated on save). The public tournament view shows the tee sheet above the scores table when groups exist.
+Rounds store `startFormat?: 'sequential' | 'shotgun'` and `teeTimeGroups?: TeeTimeGroup[]` inline. Groups are managed from the TournamentSetup admin page (accordion panel per round). Each group has `groupNumber`, `teeTime` (display string e.g. "8:00 AM"), `playerIds[]`, and optional `startingHole` for shotgun starts. (`pin` is a legacy field — no longer generated or read.) The public tournament view shows the tee sheet above the scores table when groups exist.
 
-### PIN-based group scoring
-Public mobile scoring flow: `/score` (ScoreHub) → player enters 4-digit PIN → `/score/:pin` (ScoreEntry) for hole-by-hole entry. `/tournament/:id/score` is a tournament-scoped alias for ScoreHub.
+### Public group scoring
+There are no PINs: anyone can score any group, and admin confirmation is the safeguard. Public mobile scoring flow: `/score` (ScoreHub, rounds sorted by date) → tap a group → `/score/:roundId/:groupNumber` (ScoreEntry) for hole-by-hole entry. `/tournament/:id/score` is a tournament-scoped alias for ScoreHub.
 
-Backend flow: `GET /score/rounds` lists active rounds with group PINs → `GET /score/lookup?pin=XXXX` resolves PIN to round+group+players+draft → `PUT /score/draft` saves one hole at a time → `POST /score/submit` validates all holes are present for every group player and marks draft `submitted` → admin confirms via `POST /rounds/:id/drafts/:group/confirm` which calls `submitScore` for each player and marks draft `confirmed`.
+Backend flow: `GET /score/rounds` lists active rounds and groups → `GET /score/group?roundId=&group=` returns round+group+players+draft → `PUT /score/draft` (`{ roundId, groupNumber, holeNumber, scores }`) saves one hole at a time → `POST /score/submit` (`{ roundId, groupNumber }`) validates all holes are present for every group player and marks draft `submitted` → admin confirms via `POST /rounds/:id/drafts/:group/confirm` which calls `submitScore` for each player and marks draft `confirmed`.
 
 `confirmDraft` is idempotent: a `confirmed` draft returns immediately without re-running score or handicap calculations.
 
-`ScoreEntry.tsx` persists hole scores to localStorage (`golf_draft_${pin}`) as an offline fallback; server draft and local draft are merged on load (local takes precedence). Both `ScoreHub` and `ScoreEntry` are rendered outside the `Layout` wrapper — they are full-screen mobile pages with their own sticky header.
+`ScoreEntry.tsx` persists hole scores to localStorage (`golf_draft_${roundId}_${groupNumber}`) as an offline fallback; server draft and local draft are merged on load (local takes precedence). Both `ScoreHub` and `ScoreEntry` are rendered outside the `Layout` wrapper — they are full-screen mobile pages with their own sticky header.
 
 Draft status lifecycle gates the mobile UI: `draft`/`submitted` → entry/review allowed; `confirmed` → shows a locked "Scores Confirmed" screen, no further edits possible.
 
-`ScoreHub` fetches confirmed scores (`GET /rounds/:id/scores`) for each active round in parallel. Groups where all players have confirmed scores replace the PIN button with a compact Out/In/Tot scorecard. `ScoreEntry` shows a running Out/In/Tot summary table (per player, above the nav buttons) once any hole has been entered.
+`ScoreHub` fetches confirmed scores (`GET /rounds/:id/scores`) for each active round in parallel. Groups where all players have confirmed scores replace the group button with a compact Out/In/Tot scorecard. `ScoreEntry` shows a running Out/In/Tot summary table (per player, above the nav buttons) once any hole has been entered.
 
 After admin manually edits a player's score on the RoundScoring page, the local `drafts` state is patched with the new hole values so the "Scorecard Submissions" table reflects the correction immediately (without a full reload).
 

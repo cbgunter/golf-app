@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { scoringApi, roundsApi, ActiveRoundsForScoring, Score } from '@shared/client';
-import { Loader2, HelpCircle, ChevronLeft, CheckCircle } from 'lucide-react';
+import { Loader2, HelpCircle, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import { parseLocalDate } from '@shared/dates';
 import HelpModal, { HelpSection, HelpStep, HelpTip } from '../components/HelpModal';
 
@@ -118,22 +118,17 @@ export default function ScoreHub() {
                         return (
                           <button
                             key={g.groupNumber}
-                            onClick={() => g.pin && navigate(`/score/${g.pin}`)}
-                            disabled={!g.pin}
-                            className="w-full flex items-center justify-between py-2 text-left hover:bg-ep-cream/50 disabled:opacity-40 rounded"
+                            onClick={() => navigate(`/score/${r.roundId}/${g.groupNumber}`)}
+                            className="w-full flex items-center justify-between py-2 text-left hover:bg-ep-cream/50 rounded"
                           >
                             <div>
                               <span className="text-sm font-medium text-ep-green">Group {g.groupNumber}</span>
                               {g.teeTime && <span className="text-xs text-ep-silver ml-2">{g.teeTime}</span>}
                               {g.startingHole && <span className="text-xs text-ep-silver ml-1">· Hole {g.startingHole}</span>}
                             </div>
-                            {g.pin ? (
-                              <span className="text-xs font-mono bg-ep-green/10 text-ep-green border border-ep-green/30 px-2 py-0.5 rounded">
-                                PIN {g.pin}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-ep-silver/50">No PIN</span>
-                            )}
+                            <span className="flex items-center text-xs font-medium text-ep-orange">
+                              Score <ChevronRight size={14} />
+                            </span>
                           </button>
                         );
                       })}
@@ -187,7 +182,7 @@ function ScorekeeperHelp({ onClose }: { onClose: () => void }) {
 
       <HelpSection title="Tips">
         <HelpTip>
-          <strong>Scores save locally as you go.</strong> If the app closes or you lose signal, your progress is preserved — just reopen the app and re-enter your PIN.
+          <strong>Scores save locally as you go.</strong> If the app closes or you lose signal, your progress is preserved — just reopen the app and tap your group again.
         </HelpTip>
         <HelpTip>
           You can jump back to any hole and edit scores before submitting. Once submitted, contact the tournament admin to make corrections.

@@ -1,7 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
 import { getItem, putItem, queryIndex, scanTable } from '../lib/dynamo';
 import { ok, error, notFound } from '../lib/response';
-import { DraftScorecard, Round, Player, Tournament } from '../types';
+import { DraftScorecard, Round, Player, Tournament, TeeTimeGroup } from '../types';
 import { submitScore } from './scores';
 
 const D_TABLE = process.env.DRAFT_SCORECARDS_TABLE!;
@@ -13,7 +12,27 @@ function draftId(roundId: string, groupNumber: number) {
   return `${roundId}#${groupNumber}`;
 }
 
-// GET /score/rounds — active/upcoming rounds with group PINs, optionally scoped to one tournament
+// Resolve a scorable group: the round must exist, belong to an upcoming/active tournament,
+// and contain the requested group.
+type ScorableGroup =
+  | { err: ReturnType<typeof error> }
+  | { err?: undefined; round: Round; group: TeeTimeGroup; tournament: Tournament };
+
+async function findScorableGroup(roundId: string, groupNumber: number): Promise<ScorableGroup> {
+  if (!roundId || !Number.isInteger(groupNumber) || groupNumber < 1) {
+    return { err: error('roundId and groupNumber are required', 400) }
+  }
+  const round = await getItem<Round>(R_TABLE, roundId);
+  const group = round?.teeTimeGroups?.find(g => g.groupNumber === groupNumber);
+  if (!round || !group) return { err: notFound('Group') }
+  const tournament = await getItem<Tournament>(T_TABLE, round.tournamentId);
+  if (!tournament || (tournament.status !== 'upcoming' && tournament.status !== 'active')) {
+    return { err: error('This tournament is not open for scoring', 400) }
+  }
+  return { round, group, tournament }
+}
+
+// GET /score/rounds — active/upcoming rounds with their groups, optionally scoped to one tournament
 export async function getActiveRoundsForScoring(tournamentId?: string) {
   const tournaments = await scanTable<Tournament>(T_TABLE);
   let active = tournaments.filter(t => t.status === 'upcoming' || t.status === 'active');
@@ -23,9 +42,9 @@ export async function getActiveRoundsForScoring(tournamentId?: string) {
   const results = await Promise.all(
     active.map(async t => {
       const rounds = await queryIndex<Round>(R_TABLE, 'tournament-index', 'tournamentId', t.id);
-      const scorable = rounds.filter(r =>
-        r.status !== 'completed' && r.teeTimeGroups && r.teeTimeGroups.length > 0
-      );
+      const scorable = rounds
+        .filter(r => r.status !== 'completed' && r.teeTimeGroups && r.teeTimeGroups.length > 0)
+        .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
       if (scorable.length === 0) return null;
       return {
         tournamentId: t.id,
@@ -39,7 +58,6 @@ export async function getActiveRoundsForScoring(tournamentId?: string) {
             groupNumber: g.groupNumber,
             teeTime: g.teeTime,
             startingHole: g.startingHole,
-            pin: g.pin,
             playerIds: g.playerIds,
           })),
         })),
@@ -50,54 +68,29 @@ export async function getActiveRoundsForScoring(tournamentId?: string) {
   return ok(results.filter(Boolean));
 }
 
-// GET /score/lookup?pin=1234 — resolve PIN → round + group + players
-export async function lookupByPin(pin: string) {
-  if (!pin) return error('pin is required', 400);
+// GET /score/group?roundId=…&group=N — round + group + players + current draft
+export async function getGroupForScoring(roundId: string, groupNumber: number) {
+  const found = await findScorableGroup(roundId, groupNumber);
+  if (found.err) return found.err;
+  const { round, group, tournament } = found;
 
-  // Find the active round that owns this PIN (scoped to active/upcoming tournaments)
-  const tournaments = await scanTable<Tournament>(T_TABLE);
-  const active = tournaments.filter(t => t.status === 'upcoming' || t.status === 'active');
-
-  let foundRound: Round | null = null;
-  let foundGroupNumber = 0;
-
-  for (const t of active) {
-    const rounds = await queryIndex<Round>(R_TABLE, 'tournament-index', 'tournamentId', t.id);
-    for (const r of rounds) {
-      const group = (r.teeTimeGroups ?? []).find(g => g.pin === pin);
-      if (group) {
-        foundRound = r;
-        foundGroupNumber = group.groupNumber;
-        break;
-      }
-    }
-    if (foundRound) break;
-  }
-
-  if (!foundRound) return error('Invalid PIN', 404);
-
-  // Look up draft by specific (roundId, groupNumber) — not by PIN — to avoid stale PIN collisions
-  const draft = await getItem<DraftScorecard>(D_TABLE, draftId(foundRound.id, foundGroupNumber));
-
-  const group = foundRound.teeTimeGroups!.find(g => g.groupNumber === foundGroupNumber)!;
-  const [players, tournament] = await Promise.all([
+  const [players, draft] = await Promise.all([
     Promise.all(group.playerIds.map(pid => getItem<Player>(P_TABLE, pid))),
-    getItem<Tournament>(T_TABLE, foundRound.tournamentId),
+    getItem<DraftScorecard>(D_TABLE, draftId(round.id, groupNumber)),
   ]);
 
   return ok({
-    pin,
-    roundId: foundRound.id,
-    tournamentId: foundRound.tournamentId,
-    tournamentName: tournament?.name ?? '',
-    courseName: foundRound.courseName,
-    date: foundRound.date,
-    par: foundRound.par,
-    tee: foundRound.tee,
-    courseRating: foundRound.courseRating,
-    slopeRating: foundRound.slopeRating,
-    holes: foundRound.holes ?? [],
-    groupNumber: foundGroupNumber,
+    roundId: round.id,
+    tournamentId: round.tournamentId,
+    tournamentName: tournament.name,
+    courseName: round.courseName,
+    date: round.date,
+    par: round.par,
+    tee: round.tee,
+    courseRating: round.courseRating,
+    slopeRating: round.slopeRating,
+    holes: round.holes ?? [],
+    groupNumber,
     teeTime: group.teeTime,
     startingHole: group.startingHole,
     players: players.filter((p): p is Player => p !== null).map(p => ({
@@ -111,32 +104,19 @@ export async function lookupByPin(pin: string) {
 
 // PUT /score/draft — save one hole for all players in the group
 export async function saveDraftHole(body: {
-  pin: string;
+  roundId: string;
+  groupNumber: number;
   holeNumber: number;
   scores: Record<string, number>; // playerId -> strokes
 }) {
-  const { pin, holeNumber, scores } = body;
-  if (!pin || !holeNumber || !scores) return error('pin, holeNumber, and scores are required', 400);
+  const { roundId, groupNumber, holeNumber, scores } = body ?? {};
+  if (!holeNumber || !scores) return error('holeNumber and scores are required', 400);
 
-  // Always find the active round first so we use the correct (roundId, groupNumber) pair.
-  // Querying by PIN alone would match stale drafts from previous tournaments using the same PIN.
-  const tournaments = await scanTable<Tournament>(T_TABLE);
-  const active = tournaments.filter(t => t.status === 'upcoming' || t.status === 'active');
-  let foundRound: Round | null = null;
-  let foundGroupNumber = 0;
+  const found = await findScorableGroup(roundId, Number(groupNumber));
+  if (found.err) return found.err;
+  const { round, group } = found;
 
-  for (const t of active) {
-    const rounds = await queryIndex<Round>(R_TABLE, 'tournament-index', 'tournamentId', t.id);
-    for (const r of rounds) {
-      const group = (r.teeTimeGroups ?? []).find(g => g.pin === pin);
-      if (group) { foundRound = r; foundGroupNumber = group.groupNumber; break; }
-    }
-    if (foundRound) break;
-  }
-
-  if (!foundRound) return error('Invalid PIN', 404);
-
-  const id = draftId(foundRound.id, foundGroupNumber);
+  const id = draftId(round.id, group.groupNumber);
   const existing = await getItem<DraftScorecard>(D_TABLE, id);
   const now = new Date().toISOString();
 
@@ -161,10 +141,9 @@ export async function saveDraftHole(body: {
 
   const draft: DraftScorecard = {
     id,
-    pin,
-    roundId: foundRound.id,
-    tournamentId: foundRound.tournamentId,
-    groupNumber: foundGroupNumber,
+    roundId: round.id,
+    tournamentId: round.tournamentId,
+    groupNumber: group.groupNumber,
     status: 'draft',
     holes: holesData,
     createdAt: now,
@@ -175,25 +154,22 @@ export async function saveDraftHole(body: {
 }
 
 // POST /score/submit — validate completeness and mark draft as submitted
-export async function submitDraft(body: { pin: string }) {
-  const { pin } = body;
-  if (!pin) return error('pin is required', 400);
+export async function submitDraft(body: { roundId: string; groupNumber: number }) {
+  const found = await findScorableGroup(body?.roundId, Number(body?.groupNumber));
+  if (found.err) return found.err;
+  const { round, group } = found;
 
-  const drafts = await queryIndex<DraftScorecard>(D_TABLE, 'pin-index', 'pin', pin);
-  const draft = drafts[0];
-  if (!draft) return error('No draft found for this PIN', 404);
+  const draft = await getItem<DraftScorecard>(D_TABLE, draftId(round.id, group.groupNumber));
+  if (!draft) return error('No scores have been saved for this group yet', 404);
   if (draft.status === 'submitted' || draft.status === 'confirmed') return ok(draft); // idempotent
 
   // Validate all group players have scores for all holes
-  const round = await getItem<Round>(R_TABLE, draft.roundId);
-  const allHoleNums = round?.holes?.length
+  const allHoleNums = round.holes?.length
     ? round.holes.map(h => h.number)
     : Array.from({ length: 18 }, (_, i) => i + 1);
-  const group = round?.teeTimeGroups?.find(g => g.groupNumber === draft.groupNumber);
-  const groupPlayerIds = group?.playerIds ?? Object.keys(draft.holes);
 
   const missing: string[] = [];
-  for (const pid of groupPlayerIds) {
+  for (const pid of group.playerIds) {
     const playerHoles = draft.holes[pid] ?? {};
     const missingHoles = allHoleNums.filter(n => playerHoles[String(n)] == null);
     if (missingHoles.length > 0) {

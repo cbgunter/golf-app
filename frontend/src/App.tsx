@@ -32,7 +32,7 @@ export default function App() {
         {/* Scoring routes — full-screen mobile, no nav wrapper */}
         <Route path="/score" element={<ScoreHub />} />
         <Route path="/tournament/:tournamentId/score" element={<ScoreHub />} />
-        <Route path="/score/:pin" element={<ScoreEntry />} />
+        <Route path="/score/:roundId/:groupNumber" element={<ScoreEntry />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

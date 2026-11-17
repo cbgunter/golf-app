@@ -112,12 +112,12 @@ export interface TeeTimeGroup {
   teeTime: string;
   playerIds: string[];
   startingHole?: number;
-  pin?: string;
+  pin?: string; // legacy: no longer generated or used
 }
 
 export interface DraftScorecard {
   id: string;            // `${roundId}#${groupNumber}`
-  pin: string;
+  pin?: string;          // legacy: present on drafts created before PINs were removed
   roundId: string;
   tournamentId: string;
   groupNumber: number;

@@ -1,33 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { scoringApi, PinLookupResult, DraftScorecard } from '@shared/client';
+import { scoringApi, GroupScoringInfo, DraftScorecard } from '@shared/client';
 import { Loader2, CheckCircle, ChevronLeft, ChevronRight, Send, AlertCircle } from 'lucide-react';
 
-const DRAFT_KEY = (pin: string) => `golf_draft_${pin}`;
+const DRAFT_KEY = (key: string) => `golf_draft_${key}`;
 
 // Persist draft to localStorage
-function saveDraftLocally(pin: string, holes: Record<string, Record<string, number>>) {
-  try { localStorage.setItem(DRAFT_KEY(pin), JSON.stringify(holes)); } catch {}
+function saveDraftLocally(key: string, holes: Record<string, Record<string, number>>) {
+  try { localStorage.setItem(DRAFT_KEY(key), JSON.stringify(holes)); } catch {}
 }
 
-function loadLocalDraft(pin: string): Record<string, Record<string, number>> | null {
+function loadLocalDraft(key: string): Record<string, Record<string, number>> | null {
   try {
-    const raw = localStorage.getItem(DRAFT_KEY(pin));
+    const raw = localStorage.getItem(DRAFT_KEY(key));
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
-function clearLocalDraft(pin: string) {
-  try { localStorage.removeItem(DRAFT_KEY(pin)); } catch {}
+function clearLocalDraft(key: string) {
+  try { localStorage.removeItem(DRAFT_KEY(key)); } catch {}
 }
 
 type Phase = 'loading' | 'entry' | 'review' | 'submitted' | 'confirmed' | 'error';
 
 export default function ScoreEntry() {
-  const { pin } = useParams<{ pin: string }>();
+  const params = useParams<{ roundId: string; groupNumber: string }>();
+  const roundId = params.roundId ?? '';
+  const groupNumber = Number(params.groupNumber);
+  const valid = !!roundId && Number.isInteger(groupNumber) && groupNumber > 0;
+  const localKey = `${roundId}_${groupNumber}`;
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('loading');
-  const [info, setInfo] = useState<PinLookupResult | null>(null);
+  const [info, setInfo] = useState<GroupScoringInfo | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   // holes[playerId][holeNumber] = strokes
@@ -40,14 +44,14 @@ export default function ScoreEntry() {
   const totalHoles = info?.holes?.length ?? 18;
 
   useEffect(() => {
-    if (!pin) { setPhase('error'); setErrorMsg('No PIN provided.'); return; }
+    if (!valid) { setPhase('error'); setErrorMsg('This scorecard link is not valid.'); return; }
 
-    scoringApi.lookupByPin(pin)
+    scoringApi.getGroup(roundId, groupNumber)
       .then(result => {
         setInfo(result);
         // Merge server draft + local draft (local takes precedence for newer edits)
         const serverHoles = result.draft?.holes ?? {};
-        const localHoles = loadLocalDraft(pin) ?? {};
+        const localHoles = loadLocalDraft(localKey) ?? {};
         const merged: Record<string, Record<string, number>> = {};
         for (const pid of result.players.map(p => p.id)) {
           merged[pid] = { ...(serverHoles[pid] ?? {}), ...(localHoles[pid] ?? {}) };
@@ -73,9 +77,9 @@ export default function ScoreEntry() {
       })
       .catch(e => {
         setPhase('error');
-        setErrorMsg(e.message ?? 'Invalid PIN');
+        setErrorMsg(e.message ?? 'Could not load this group.');
       });
-  }, [pin]);
+  }, [roundId, groupNumber]);
 
   function getHoleInfo(holeNum: number) {
     return info?.holes?.find(h => h.number === holeNum) ?? { number: holeNum, par: 4, handicap: holeNum };
@@ -89,13 +93,13 @@ export default function ScoreEntry() {
         [playerId]: { ...(prev[playerId] ?? {}), ...(num != null ? { [String(holeNum)]: num } : {}) },
       };
       if (num == null) delete updated[playerId][String(holeNum)];
-      if (pin) saveDraftLocally(pin, updated);
+      if (valid) saveDraftLocally(localKey, updated);
       return updated;
     });
   }
 
   async function syncCurrentHole() {
-    if (!pin || !info) return;
+    if (!valid || !info) return;
     const holeScores: Record<string, number> = {};
     for (const p of info.players) {
       const s = holes[p.id]?.[String(currentHole)];
@@ -104,7 +108,7 @@ export default function ScoreEntry() {
     if (Object.keys(holeScores).length === 0) return;
     setSaving(true);
     try {
-      await scoringApi.saveDraftHole(pin, currentHole, holeScores);
+      await scoringApi.saveDraftHole(roundId, groupNumber, currentHole, holeScores);
     } catch {
       // local draft is already saved; server sync is best-effort
     } finally {
@@ -128,7 +132,7 @@ export default function ScoreEntry() {
   }
 
   async function handleSubmit() {
-    if (!pin) return;
+    if (!valid) return;
     setSubmitting(true);
     try {
       // Sync all holes first
@@ -143,12 +147,12 @@ export default function ScoreEntry() {
             if (s != null) holeScores[p.id] = s;
           }
           if (Object.keys(holeScores).length > 0) {
-            await scoringApi.saveDraftHole(pin, h, holeScores);
+            await scoringApi.saveDraftHole(roundId, groupNumber, h, holeScores);
           }
         }
       }
-      await scoringApi.submitDraft(pin);
-      clearLocalDraft(pin);
+      await scoringApi.submitDraft(roundId, groupNumber);
+      clearLocalDraft(localKey);
       setPhase('submitted');
     } catch (e: any) {
       alert(e.message ?? 'Failed to submit. Please try again.');
@@ -161,7 +165,7 @@ export default function ScoreEntry() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-3 text-ep-silver">
         <Loader2 className="animate-spin" size={32} />
-        <p>Looking up PIN…</p>
+        <p>Loading scorecard…</p>
       </div>
     );
   }
@@ -170,7 +174,7 @@ export default function ScoreEntry() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
         <AlertCircle size={40} className="text-red-400" />
-        <h2 className="text-xl font-heading font-semibold text-ep-green">Invalid PIN</h2>
+        <h2 className="text-xl font-heading font-semibold text-ep-green">Scorecard unavailable</h2>
         <p className="text-ep-silver text-sm">{errorMsg}</p>
         <button onClick={() => navigate('/score')} className="btn-secondary">Back to Score Hub</button>
       </div>
@@ -379,7 +383,7 @@ function ReviewScreen({
   onSubmit,
   submitting,
 }: {
-  info: PinLookupResult;
+  info: GroupScoringInfo;
   holes: Record<string, Record<string, number>>;
   onEdit: () => void;
   onSubmit: () => void;

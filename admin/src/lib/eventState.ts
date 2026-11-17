@@ -112,7 +112,7 @@ export function computeEventState(
     return {
       key: 'ready',
       label: 'Ready to Go',
-      description: 'Players enrolled and rounds set up. Share group PINs when scoring opens.',
+      description: 'Players enrolled and rounds set up. Groups score from the public Score page.',
       cta: 'View rounds & tee sheet',
       ctaTarget: 'rounds',
       urgent: false,

@@ -142,7 +142,7 @@ export default function AdminTournamentSetup() {
 
   // Tee time groups
   const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null);
-  type GroupEdit = { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number; pin?: string };
+  type GroupEdit = { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number };
   const [editGroups, setEditGroups] = useState<{ startFormat: 'sequential' | 'shotgun'; groups: GroupEdit[] } | null>(null);
   const [savingGroups, setSavingGroups] = useState(false);
 
@@ -463,20 +463,11 @@ export default function AdminTournamentSetup() {
       return;
     }
 
-    const usedPins = new Set(editGroups.groups.map(g => g.pin).filter(Boolean));
-    const groupsWithPins = editGroups.groups.map(g => {
-      if (g.pin) return g;
-      let pin: string;
-      do { pin = String(Math.floor(1000 + Math.random() * 9000)); } while (usedPins.has(pin));
-      usedPins.add(pin);
-      return { ...g, pin };
-    });
-
     setSavingGroups(true);
     try {
       const updated = await roundsApi.update(roundId, {
         startFormat: editGroups.startFormat,
-        teeTimeGroups: groupsWithPins,
+        teeTimeGroups: editGroups.groups,
       } as any);
       setRounds(rs => rs.map(r => r.id === roundId ? updated : r));
       toast.success('Tee sheet saved');
@@ -989,9 +980,6 @@ export default function AdminTournamentSetup() {
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-semibold text-ep-green">Pairing {group.groupNumber}</span>
-                              {group.pin && (
-                                <span className="text-xs font-mono bg-ep-sand text-ep-silver px-1.5 py-0.5 rounded">PIN: {group.pin}</span>
-                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <input

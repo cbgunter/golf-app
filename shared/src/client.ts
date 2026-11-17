@@ -108,13 +108,15 @@ export const coursesApi = {
   save: (data: Partial<Course>) => api.post<Course>('/courses', data),
 };
 
-// Scoring (PIN-based group entry)
+// Scoring (public group entry)
 export const scoringApi = {
   activeRounds: (tournamentId?: string) => api.get<ActiveRoundsForScoring[]>(tournamentId ? `/score/rounds?tournamentId=${tournamentId}` : '/score/rounds'),
-  lookupByPin: (pin: string) => api.get<PinLookupResult>(`/score/lookup?pin=${encodeURIComponent(pin)}`),
-  saveDraftHole: (pin: string, holeNumber: number, scores: Record<string, number>) =>
-    api.put<DraftScorecard>('/score/draft', { pin, holeNumber, scores }),
-  submitDraft: (pin: string) => api.post<DraftScorecard>('/score/submit', { pin }),
+  getGroup: (roundId: string, groupNumber: number) =>
+    api.get<GroupScoringInfo>(`/score/group?roundId=${encodeURIComponent(roundId)}&group=${groupNumber}`),
+  saveDraftHole: (roundId: string, groupNumber: number, holeNumber: number, scores: Record<string, number>) =>
+    api.put<DraftScorecard>('/score/draft', { roundId, groupNumber, holeNumber, scores }),
+  submitDraft: (roundId: string, groupNumber: number) =>
+    api.post<DraftScorecard>('/score/submit', { roundId, groupNumber }),
   getDrafts: (roundId: string) => api.get<DraftScorecard[]>(`/rounds/${roundId}/drafts`),
   confirmDraft: (roundId: string, groupNumber: number, body?: { overrides?: Record<string, Record<string, number>>; manualHandicaps?: Record<string, number> }) =>
     api.post(`/rounds/${roundId}/drafts/${groupNumber}/confirm`, body ?? {}),
@@ -229,7 +231,7 @@ interface Round {
   longestDriveWinnerId?: string;
   holes?: { number: number; par: number; handicap: number; yardage?: number }[];
   startFormat?: 'sequential' | 'shotgun';
-  teeTimeGroups?: { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number; pin?: string }[];
+  teeTimeGroups?: { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number }[];
   isPracticeRound?: boolean;
   format?: RoundFormat;
   teams?: RoundTeam[];
@@ -312,7 +314,7 @@ interface LeaderboardEntry {
 
 export interface DraftScorecard {
   id: string;
-  pin: string;
+  pin?: string; // legacy
   roundId: string;
   tournamentId: string;
   groupNumber: number;
@@ -323,8 +325,7 @@ export interface DraftScorecard {
   updatedAt: string;
 }
 
-export interface PinLookupResult {
-  pin: string;
+export interface GroupScoringInfo {
   roundId: string;
   tournamentId: string;
   tournamentName: string;
@@ -354,7 +355,6 @@ export interface ActiveRoundsForScoring {
       groupNumber: number;
       teeTime: string;
       startingHole?: number;
-      pin?: string;
       playerIds: string[];
     }[];
   }[];

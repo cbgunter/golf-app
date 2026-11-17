@@ -151,13 +151,13 @@ function AdminHelp({ onClose }: { onClose: () => void }) {
         <HelpStep n={6}>Click <strong>Add Round</strong>.</HelpStep>
       </HelpSection>
 
-      <HelpSection title="Tee Time Groups & PINs">
+      <HelpSection title="Tee Time Groups">
         <HelpStep n={1}>On the Rounds section, click a round row to expand it.</HelpStep>
         <HelpStep n={2}>Choose <strong>Sequential</strong> (tee times from hole 1) or <strong>Shotgun</strong> (each group on a different starting hole).</HelpStep>
         <HelpStep n={3}>Click <strong>Add Pairing</strong> and set the tee time. For shotgun, also set the starting hole.</HelpStep>
         <HelpStep n={4}>Click unassigned player chips at the bottom and choose their group.</HelpStep>
-        <HelpStep n={5}>Click <strong>Save Tee Sheet</strong>. PINs are generated automatically and shown on each group card.</HelpStep>
-        <HelpTip>Share each group's PIN with their designated scorekeeper before the round starts.</HelpTip>
+        <HelpStep n={5}>Click <strong>Save Tee Sheet</strong>.</HelpStep>
+        <HelpTip>Scorekeepers open the public <strong>Score</strong> page and tap their group to start entering scores.</HelpTip>
       </HelpSection>
 
       <HelpSection title="Entering Scores (Admin Scorecard)">
@@ -174,7 +174,7 @@ function AdminHelp({ onClose }: { onClose: () => void }) {
         <HelpTip>Winners and prize amounts appear on the public tournament view once selected.</HelpTip>
       </HelpSection>
 
-      <HelpSection title="Confirming PIN-Based Scorecards">
+      <HelpSection title="Confirming Group Scorecards">
         <HelpStep n={1}>On the Round Scoring page, scroll to <strong>Scorecard Submissions</strong>.</HelpStep>
         <HelpStep n={2}>Click a group card to expand and review the submitted scorecard.</HelpStep>
         <HelpStep n={3}>Status badges: <strong>In Progress</strong> (still entering), <strong>Submitted</strong> (ready to confirm), <strong>Confirmed</strong> (done).</HelpStep>

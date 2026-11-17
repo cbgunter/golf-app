@@ -81,10 +81,6 @@ export class GolfAppStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
     draftScorecardsTable.addGlobalSecondaryIndex({
-      indexName: 'pin-index',
-      partitionKey: { name: 'pin', type: dynamodb.AttributeType.STRING },
-    });
-    draftScorecardsTable.addGlobalSecondaryIndex({
       indexName: 'round-index',
       partitionKey: { name: 'roundId', type: dynamodb.AttributeType.STRING },
     });

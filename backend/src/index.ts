@@ -8,7 +8,7 @@ import { listRoundsForTournament, getRound, createRound, updateRound, completeRo
 import { listScoresForRound, getScore, submitScore, updateScore } from './handlers/scores';
 import { searchGolfers, refreshPlayerFromGhin } from './handlers/ghin';
 import { listCourses, getCourse, searchCourses, getCourseFromApi, saveCourse } from './handlers/courses';
-import { getActiveRoundsForScoring, lookupByPin, saveDraftHole, submitDraft, getDraftsForRound, confirmDraft } from './handlers/scoring';
+import { getActiveRoundsForScoring, getGroupForScoring, saveDraftHole, submitDraft, getDraftsForRound, confirmDraft } from './handlers/scoring';
 
 export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
   const method = event.requestContext.http.method;
@@ -81,10 +81,10 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       if (method === 'PUT' && segments[1]) return adminOnly(() => updateScore(segments[1], body));
     }
 
-    // ── Scoring (public PIN-based entry) ───────────────────────────────────
+    // ── Scoring (public group entry) ───────────────────────────────────
     if (segments[0] === 'score') {
       if (method === 'GET' && segments[1] === 'rounds') return getActiveRoundsForScoring(query.tournamentId);
-      if (method === 'GET' && segments[1] === 'lookup') return lookupByPin(query.pin ?? '');
+      if (method === 'GET' && segments[1] === 'group') return getGroupForScoring(query.roundId ?? '', Number(query.group));
       if (method === 'PUT' && segments[1] === 'draft') return saveDraftHole(body);
       if (method === 'POST' && segments[1] === 'submit') return submitDraft(body);
     }
