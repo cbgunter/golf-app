@@ -1,7 +1,9 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { playersApi, Player } from '@shared/client';
 import toast from 'react-hot-toast';
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, X, Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Pencil, Trash2, ChevronDown, ChevronUp, X, Check, RefreshCw } from 'lucide-react';
+import { formatHandicap } from '../components/PlayerPicker';
 
 export default function AdminPlayers() {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -9,7 +11,8 @@ export default function AdminPlayers() {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', handicapIndex: '' });
+  const [form, setForm] = useState({ name: '', email: '', handicapIndex: '', ghinNumber: '' });
+  const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
   async function load() {
     setPlayers(await playersApi.list());
@@ -17,34 +20,40 @@ export default function AdminPlayers() {
   }
   useEffect(() => { load(); }, []);
 
-  function openCreate() {
-    setForm({ name: '', email: '', handicapIndex: '' });
-    setEditId(null);
-    setShowForm(true);
-    setExpanded(null);
-  }
-
   function openEdit(p: Player) {
-    setForm({ name: p.name, email: p.email ?? '', handicapIndex: String(p.handicapIndex) });
+    setForm({ name: p.name, email: p.email ?? '', handicapIndex: String(p.handicapIndex), ghinNumber: p.ghinNumber ?? '' });
     setEditId(p.id);
     setShowForm(true);
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const data = { name: form.name, email: form.email || undefined, handicapIndex: Number(form.handicapIndex) };
+    if (!editId) return;
+    const data = { name: form.name, email: form.email || undefined, handicapIndex: Number(form.handicapIndex), ghinNumber: form.ghinNumber.trim() };
     try {
-      if (editId) {
-        await playersApi.update(editId, data);
-        toast.success('Player updated');
-      } else {
-        await playersApi.create(data);
-        toast.success('Player added');
+      const updated = await playersApi.update(editId, data);
+      // Newly linked GHIN number: pull the official index right away.
+      if (updated.ghinNumber && updated.ghinNumber !== players.find(p => p.id === editId)?.ghinNumber) {
+        try { await playersApi.refreshFromGhin(editId); } catch (err: any) { toast.error(`GHIN: ${err.message}`); }
       }
+      toast.success('Player updated');
       setShowForm(false);
       await load();
     } catch (e: any) {
       toast.error(e.message);
+    }
+  }
+
+  async function handleRefresh(p: Player) {
+    setRefreshingId(p.id);
+    try {
+      const updated = await playersApi.refreshFromGhin(p.id);
+      setPlayers(ps => ps.map(x => (x.id === p.id ? updated : x)));
+      toast.success(`${p.name}: HI ${formatHandicap(updated.handicapIndex)}`);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setRefreshingId(null);
     }
   }
 
@@ -65,16 +74,17 @@ export default function AdminPlayers() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="page-header">Players</h1>
-        <button onClick={openCreate} className="btn-primary">
-          <Plus size={15} /> Add Player
-        </button>
       </div>
+      <p className="text-sm text-ep-silver -mt-3">
+        Add players from a tournament's Players section — they're looked up in GHIN first.{' '}
+        <Link to="/tournaments" className="text-ep-orange hover:underline">Go to tournaments</Link>
+      </p>
 
       {/* Form */}
       {showForm && (
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-ep-green">{editId ? 'Edit Player' : 'New Player'}</h2>
+            <h2 className="font-semibold text-ep-green">Edit Player</h2>
             <button onClick={() => setShowForm(false)} className="text-ep-silver hover:text-ep-green p-1"><X size={18} /></button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -87,13 +97,18 @@ export default function AdminPlayers() {
               <input className="input" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="john@example.com" />
             </div>
             <div>
+              <label className="label">GHIN Number</label>
+              <input className="input" inputMode="numeric" value={form.ghinNumber} onChange={e => setForm(f => ({ ...f, ghinNumber: e.target.value.replace(/\D/g, '') }))} placeholder="Not linked" />
+              <p className="text-xs text-ep-silver mt-1">When linked, the official GHIN Handicap Index is used and kept in sync instead of the app's own calculation.</p>
+            </div>
+            <div>
               <label className="label">Handicap Index *</label>
-              <input className="input" type="number" step="0.1" min="0" max="54" value={form.handicapIndex} onChange={e => setForm(f => ({ ...f, handicapIndex: e.target.value }))} required placeholder="12.4" />
-              <p className="text-xs text-ep-silver mt-1">Enter current handicap index. It will auto-adjust after each round.</p>
+              <input className="input" type="number" step="0.1" min="-10" max="54" value={form.handicapIndex} onChange={e => setForm(f => ({ ...f, handicapIndex: e.target.value }))} required placeholder="12.4" />
+              <p className="text-xs text-ep-silver mt-1">{form.ghinNumber ? 'Overwritten on the next GHIN update.' : 'Enter current handicap index. It will auto-adjust after each round.'}</p>
             </div>
             <div className="flex gap-2 pt-1">
               <button type="submit" className="btn-primary flex-1 justify-center">
-                <Check size={15} /> {editId ? 'Save Changes' : 'Add Player'}
+                <Check size={15} /> Save Changes
               </button>
               <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
             </div>
@@ -103,7 +118,7 @@ export default function AdminPlayers() {
 
       {/* List */}
       {players.length === 0 ? (
-        <div className="card p-10 text-center text-ep-silver text-sm">No players yet.</div>
+        <div className="card p-10 text-center text-ep-silver text-sm">No players yet. Add them while setting up a tournament.</div>
       ) : (
         <div className="card divide-y divide-ep-silver/20">
           {players.map(p => (
@@ -117,15 +132,23 @@ export default function AdminPlayers() {
                 {/* Name + email */}
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-ep-green truncate">{p.name}</div>
-                  {p.email && <div className="text-xs text-ep-silver truncate">{p.email}</div>}
+                  <div className="text-xs text-ep-silver truncate">
+                    {[p.ghinNumber && `GHIN #${p.ghinNumber}`, p.email].filter(Boolean).join(' · ')}
+                  </div>
                 </div>
 
                 {/* HCP + actions */}
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="text-right">
-                    <div className="text-base font-semibold text-ep-orange">{p.handicapIndex.toFixed(1)}</div>
-                    <div className="text-xs text-ep-silver leading-none">HCP</div>
+                    <div className="text-base font-semibold text-ep-orange">{formatHandicap(p.handicapIndex)}</div>
+                    <div className="text-xs text-ep-silver leading-none">{p.ghinNumber ? 'GHIN HI' : 'HCP'}</div>
                   </div>
+                  {p.ghinNumber && (
+                    <button onClick={() => handleRefresh(p)} disabled={refreshingId === p.id} title="Update from GHIN"
+                      className="p-1.5 text-ep-silver hover:text-ep-orange rounded-lg hover:bg-ep-sand">
+                      <RefreshCw size={15} className={refreshingId === p.id ? 'animate-spin' : ''} />
+                    </button>
+                  )}
                   <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 text-ep-silver hover:text-ep-green rounded-lg hover:bg-ep-sand">
                     {expanded === p.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                   </button>
@@ -167,7 +190,7 @@ export default function AdminPlayers() {
         </div>
       )}
 
-      <p className="text-xs text-ep-silver">{players.length} / 20 players</p>
+      <p className="text-xs text-ep-silver">{players.length} players</p>
     </div>
   );
 }

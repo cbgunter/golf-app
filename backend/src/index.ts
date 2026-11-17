@@ -6,6 +6,7 @@ import { listPlayers, getPlayer, createPlayer, updatePlayer, deletePlayer, getPl
 import { listTournaments, getTournament, createTournament, updateTournament, deleteTournament, getTournamentResults } from './handlers/tournaments';
 import { listRoundsForTournament, getRound, createRound, updateRound, completeRound, reopenRound, deleteRound } from './handlers/rounds';
 import { listScoresForRound, getScore, submitScore, updateScore } from './handlers/scores';
+import { searchGolfers, refreshPlayerFromGhin } from './handlers/ghin';
 import { listCourses, getCourse, searchCourses, getCourseFromApi, saveCourse } from './handlers/courses';
 import { getActiveRoundsForScoring, lookupByPin, saveDraftHole, submitDraft, getDraftsForRound, confirmDraft } from './handlers/scoring';
 
@@ -41,6 +42,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
     if (segments[0] === 'players') {
       if (method === 'GET' && !segments[1]) return listPlayers();
       if (method === 'GET' && segments[1] && segments[2] === 'profile') return getPlayerProfile(segments[1]);
+      if (method === 'POST' && segments[1] && segments[2] === 'ghin-refresh') return adminOnly(() => refreshPlayerFromGhin(segments[1]));
       if (method === 'GET' && segments[1]) return getPlayer(segments[1]);
       if (method === 'POST') return adminOnly(() => createPlayer(body));
       if (method === 'PUT' && segments[1]) return adminOnly(() => updatePlayer(segments[1], body));
@@ -85,6 +87,11 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
       if (method === 'GET' && segments[1] === 'lookup') return lookupByPin(query.pin ?? '');
       if (method === 'PUT' && segments[1] === 'draft') return saveDraftHole(body);
       if (method === 'POST' && segments[1] === 'submit') return submitDraft(body);
+    }
+
+    // ── GHIN golfer lookup ─────────────────────────────────────────────────
+    if (segments[0] === 'ghin' && segments[1] === 'golfers' && method === 'GET') {
+      return adminOnly(() => searchGolfers(query.q ?? '', query.state));
     }
 
     // ── Courses ────────────────────────────────────────────────────────────

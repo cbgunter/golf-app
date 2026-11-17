@@ -60,6 +60,13 @@ export const playersApi = {
   create: (data: Partial<Player>) => api.post<Player>('/players', data),
   update: (id: string, data: Partial<Player>) => api.put<Player>(`/players/${id}`, data),
   delete: (id: string) => api.delete(`/players/${id}`),
+  refreshFromGhin: (id: string) => api.post<Player>(`/players/${id}/ghin-refresh`, {}),
+};
+
+// GHIN golfer lookup (admin)
+export const ghinApi = {
+  searchGolfers: (q: string, state?: string) =>
+    api.get<{ golfers: GhinGolfer[]; truncated: boolean }>(`/ghin/golfers?q=${encodeURIComponent(q)}${state ? `&state=${encodeURIComponent(state)}` : ''}`),
 };
 
 // Tournaments
@@ -114,7 +121,7 @@ export const scoringApi = {
 };
 
 // Re-export types for convenience
-export type { Player, Tournament, Round, Score, Course, TournamentResults, PlayerProfile, LeaderboardEntry };
+export type { Player, Tournament, Round, Score, Course, TournamentResults, PlayerProfile, LeaderboardEntry, GhinGolfer };
 export type { RoundFormat, RoundTeam, StandingsMode };
 
 interface PlayerRoundScore {
@@ -143,8 +150,26 @@ interface Player {
   email?: string;
   handicapIndex: number;
   handicapHistory: HandicapEntry[];
+  /** GHIN number when linked to an official USGA handicap record. */
+  ghinNumber?: string;
+  /** Last official Handicap Index pulled from GHIN. */
+  ghinHandicapIndex?: number;
+  ghinSyncedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Normalized GHIN golfer search result. */
+interface GhinGolfer {
+  ghinNumber: string;
+  firstName: string;
+  lastName: string;
+  /** Null when the golfer has no established index ("NH"). Plus handicaps are negative. */
+  handicapIndex: number | null;
+  handicapDisplay: string;
+  clubName: string | null;
+  state: string | null;
+  status: string;
 }
 
 interface HandicapEntry {

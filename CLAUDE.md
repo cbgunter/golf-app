@@ -97,6 +97,15 @@ Deleting a tournament cascades: queries all rounds by `tournamentId`, then all s
 
 GHIN response shape for holes: `TeeSets[].Holes[{ Number, Par, Allocation (stroke index), Length }]`.
 
+The GHIN client singleton lives in `backend/src/lib/ghinClient.ts` (`getGhinClient` / `resetGhinClient`), shared by courses and golfer lookup.
+
+**Golfer lookup** (`backend/src/handlers/ghin.ts`, admin-only):
+- `GET /ghin/golfers?q=&state=` — `q` all digits → `golfers.getOne(ghin)`; otherwise a name ("First Last", "Last, First", or "Last"). Uses `golfers.globalSearch` with `country: 'USA'` because `golfers.search` returns 400 for name searches without a state. `state` is an optional 2-letter code ("NC", not "US-NC"). Results come back one row per club affiliation and are deduped by GHIN number; response is `{ golfers: GhinGolfer[], truncated }`.
+- `POST /players/:id/ghin-refresh` — pulls the official Handicap Index for a linked player and stores `handicapIndex`, `ghinHandicapIndex`, `ghinSyncedAt`.
+- Players carry optional `ghinNumber`. `createPlayer` with a `ghinNumber` already on the roster returns the existing player instead of creating a duplicate.
+
+Testing locally from Git Bash: set `MSYS_NO_PATHCONV=1` or the SSM param names (`/golf-app/...`) get rewritten into Windows paths and SSM returns `ParameterNotFound`.
+
 ### Handicap system
 `backend/src/lib/handicap.ts` implements USGA World Handicap System:
 - `calcDifferential` — `(adjustedGross − courseRating) × 113 / slope`, rounded to 1 decimal
@@ -105,7 +114,7 @@ GHIN response shape for holes: `TeeSets[].Holes[{ Number, Par, Allocation (strok
 - `applyESC` — per-hole stroke cap by course handicap bracket (≤9 → double bogey, 10–19 → 7, 20–29 → 8, 30–39 → 9, 40+ → 10). ESC only affects the handicap differential (stored as `HoleScore.adjustedScore`); `strokes`, `grossTotal`, and `netTotal` are the actual strokes played.
 - `strokesOnHole` / `computeHoleScores` — allocates handicap strokes by stroke index, including 2+ strokes per hole for course handicaps over 18 and negative strokes for plus handicaps (`HoleScore.strokesReceived`)
 
-Player `handicapIndex` defaults to `0.0` at creation if not supplied. It is automatically recalculated and overwritten after every scored round. The starting value is not separately stored; the `handicapHistory[]` array shows the progression from round 1 onward.
+Player `handicapIndex` defaults to `0.0` at creation if not supplied. For players **without** a `ghinNumber` it is automatically recalculated and overwritten after every scored round. GHIN-linked players keep their official index (refreshed via GHIN); the local calculation is still recorded in `handicapHistory`. The starting value is not separately stored; the `handicapHistory[]` array shows the progression from round 1 onward.
 
 ### Scoring formats and cup standings
 `shared/src/formats.ts` is the single scoring engine, used by the backend results endpoint, public `TournamentView`/`TournamentResults`, and admin `RoundScoring`/`TeamsEditor`. Don't re-implement ranking logic in pages.
@@ -153,7 +162,7 @@ Admin site (`admin/`) routes (JWT required, all at root — no `/admin` prefix):
 - `/tournaments` — tournament list with status filter tabs
 - `/tournaments/:id` — tournament setup (next-action card + collapsible accordion sections)
 - `/rounds/:id/scoring` — horizontal scorecard entry + live leaderboard
-- `/players` — global player roster (full CRUD + handicap history)
+- `/players` — global player roster (edit, delete, link GHIN #, refresh from GHIN, handicap history). There is intentionally **no "Add player" here** — players are only added from a tournament's player picker.
 
 `AdminLayout` wraps all admin pages and verifies the JWT on mount. `Layout` wraps public pages. The public site's "Admin" nav link is a cross-origin `<a href="https://admin.golf.caseyhunter.net">`.
 
@@ -192,6 +201,9 @@ The player picker reorganizes into tee time groups when `round.teeTimeGroups` is
 
 The "Scorecard Submissions" panel (shown when drafts exist) displays submitted group scorecards with Out/In/Tot columns. When admin manually edits a player's score, the panel updates immediately via local state patch rather than waiting for a server refetch.
 
+### Adding players: PlayerPicker
+`admin/src/components/PlayerPicker.tsx` is the only way to add players, used both on the create-tournament screen and in the existing tournament's Players accordion. It shows the selected players (with GHIN badge, per-player and bulk "Update from GHIN", optional `renderActions` for the WD toggle), roster chips for one-tap re-adds, a GHIN search (name or GHIN #, optional state), and a manual-entry fallback that auto-opens when GHIN has no match or errors. It never uses its own `<form>` because it can sit inside the create-tournament form; Enter is handled via `data-role` on inputs. On an existing tournament, adds/removes persist `playerIds` immediately; on create they're held until "Create Tournament". Adding an existing GHIN-linked roster player triggers a background handicap refresh.
+
 ### Tournament setup: next-action-focused layout
 `TournamentSetup.tsx` leads with a **NextActionCard** — a prominent banner computed via `computeEventState` (`frontend/src/lib/eventState.ts`) from the already-fetched tournament, rounds, and drafts. The card shows the current state label, a one-sentence description, and a primary CTA button. Urgent states (`pending-confirmation`) render with an amber border.
 
@@ -199,7 +211,7 @@ Below the card, three **AccordionSection** components replace the old tab bar: E
 
 A **ScoreConfirmationPanel** appears between the NextActionCard and the accordions whenever any drafts have `status === 'submitted'` or `'confirmed'`. Drafts are fetched in parallel for all rounds (`scoringApi.getDrafts(roundId)`) on initial load. Confirming a draft re-fetches all drafts and updates `eventState` via `useMemo`. This panel mirrors the one in `RoundScoring.tsx` — the admin can confirm from either page.
 
-The "Mark event complete" CTA (shown in `ready-to-complete` state) calls `tournamentsApi.update(id, { status: 'completed' })` directly and updates local `tournament` state. Inline player creation (new player form inside the Players accordion) also updates `tournament.playerIds` in local state so `eventState` recomputes correctly without a reload.
+The "Mark event complete" CTA (shown in `ready-to-complete` state) calls `tournamentsApi.update(id, { status: 'completed' })` directly and updates local `tournament` state. Adding a player through the PlayerPicker also updates `tournament.playerIds` in local state so `eventState` recomputes correctly without a reload.
 
 ### Styling conventions
 Tailwind CSS with the **CH Tournaments** brand palette. Custom `ep-*` color tokens are defined in both `frontend/tailwind.config.js` and `admin/tailwind.config.js`:

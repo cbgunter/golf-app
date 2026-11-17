@@ -8,6 +8,7 @@ import { Plus, Save, ChevronRight, ChevronDown, ChevronUp, X, Check, Search, Loa
 import { parseLocalDate } from '@shared/dates';
 import { computeEventState } from '../lib/eventState';
 import TeamsEditor from '../components/TeamsEditor';
+import PlayerPicker from '../components/PlayerPicker';
 import { ROUND_FORMAT_LABELS, ROUND_FORMAT_DESCRIPTIONS, RoundFormat, defaultPointsTable } from '@shared/formats';
 
 const isNew = (id: string) => id === 'new';
@@ -130,10 +131,6 @@ export default function AdminTournamentSetup() {
   const [courseTees, setCourseTees] = useState<{ label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[]>([]);
   const [courseSearching, setCourseSearching] = useState(false);
 
-  // Inline new player form
-  const [showNewPlayer, setShowNewPlayer] = useState(false);
-  const [newPlayerForm, setNewPlayerForm] = useState({ name: '', handicapIndex: '', email: '' });
-  const [savingNewPlayer, setSavingNewPlayer] = useState(false);
 
   // Tee time groups
   const [expandedRoundId, setExpandedRoundId] = useState<string | null>(null);
@@ -190,6 +187,38 @@ export default function AdminTournamentSetup() {
       const allDrafts = (await Promise.all(rounds.map(r => scoringApi.getDrafts(r.id)))).flat();
       setDrafts(allDrafts);
     } catch { /* silently ignore */ }
+  }
+
+  function upsertPlayer(p: Player) {
+    setPlayers(ps => {
+      const next = ps.some(x => x.id === p.id) ? ps.map(x => (x.id === p.id ? p : x)) : [...ps, p];
+      return next.sort((a, b) => a.name.localeCompare(b.name));
+    });
+  }
+
+  // On an existing tournament, roster changes save immediately; on create they're held until "Create Tournament".
+  async function persistPlayerIds(ids: string[]) {
+    const prev = selectedPlayerIds;
+    setSelectedPlayerIds(ids);
+    if (creating) return;
+    try {
+      await tournamentsApi.update(id!, { playerIds: ids });
+      setTournament(t => t ? { ...t, playerIds: ids } : null);
+    } catch (e: any) {
+      setSelectedPlayerIds(prev);
+      toast.error(e.message);
+    }
+  }
+
+  async function addPlayerToTournament(p: Player) {
+    if (selectedPlayerIds.includes(p.id)) return;
+    await persistPlayerIds([...selectedPlayerIds, p.id]);
+  }
+
+  async function removePlayerFromTournament(playerId: string) {
+    const p = players.find(x => x.id === playerId);
+    if (!creating && !confirm(`Remove ${p?.name ?? 'this player'} from the tournament?`)) return;
+    await persistPlayerIds(selectedPlayerIds.filter(x => x !== playerId));
   }
 
   async function handleConfirmDraft(roundId: string, groupNumber: number) {
@@ -1054,22 +1083,13 @@ export default function AdminTournamentSetup() {
 
           {/* Players picker on create */}
           <div className="card p-4 sm:p-5">
-            <p className="section-title mb-3">Players ({selectedPlayerIds.length})</p>
-            {players.length === 0 ? (
-              <p className="text-sm text-ep-silver">No players yet. <Link to="/players" className="text-ep-orange hover:underline">Add players first.</Link></p>
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-1">
-                {players.map(p => (
-                  <label key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-ep-sand/30 cursor-pointer">
-                    <input type="checkbox" className="rounded accent-[#004C54]"
-                      checked={selectedPlayerIds.includes(p.id)}
-                      onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
-                    <span className="flex-1 text-sm text-ep-green">{p.name}</span>
-                    <span className="text-xs text-ep-silver">HCP {p.handicapIndex.toFixed(1)}</span>
-                  </label>
-                ))}
-              </div>
-            )}
+            <PlayerPicker
+              players={players}
+              selectedIds={selectedPlayerIds}
+              onAdd={addPlayerToTournament}
+              onRemove={removePlayerFromTournament}
+              onPlayerUpserted={upsertPlayer}
+            />
           </div>
 
           <button type="submit" className="btn-primary">
@@ -1253,126 +1273,35 @@ export default function AdminTournamentSetup() {
           </AccordionSection>
 
           <AccordionSection title="Players" badge={selectedPlayerIds.length} open={playersOpen} onToggle={() => setPlayersOpen(o => !o)}>
-            <div className="space-y-3">
-              {showNewPlayer ? (
-                <div className="card p-4 sm:p-5 border-l-4 border-ep-orange">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="font-semibold text-ep-green text-sm">New Player</p>
-                    <button type="button" onClick={() => { setShowNewPlayer(false); setNewPlayerForm({ name: '', handicapIndex: '', email: '' }); }}
-                      className="text-ep-silver hover:text-ep-green"><X size={16} /></button>
-                  </div>
-                  <form
-                    onSubmit={async e => {
-                      e.preventDefault();
-                      if (!newPlayerForm.name.trim()) return;
-                      setSavingNewPlayer(true);
+            <PlayerPicker
+              players={players}
+              selectedIds={selectedPlayerIds}
+              onAdd={addPlayerToTournament}
+              onRemove={removePlayerFromTournament}
+              onPlayerUpserted={upsertPlayer}
+              withdrawnIds={tournament?.withdrawnPlayerIds ?? []}
+              renderActions={p => {
+                const isWD = tournament?.withdrawnPlayerIds?.includes(p.id) ?? false;
+                return (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!tournament) return;
+                      const current = tournament.withdrawnPlayerIds ?? [];
+                      const updated = isWD ? current.filter(x => x !== p.id) : [...current, p.id];
                       try {
-                        const created = await playersApi.create({
-                          name: newPlayerForm.name.trim(),
-                          handicapIndex: Number(newPlayerForm.handicapIndex) || 0,
-                          email: newPlayerForm.email.trim() || undefined,
-                          handicapHistory: [],
-                        });
-                        setPlayers(ps => [...ps, created]);
-                        const updatedIds = [...selectedPlayerIds, created.id];
-                        setSelectedPlayerIds(updatedIds);
-                        await tournamentsApi.update(id!, { playerIds: updatedIds });
-                        setTournament(prev => prev ? { ...prev, playerIds: updatedIds } : null);
-                        setShowNewPlayer(false);
-                        setNewPlayerForm({ name: '', handicapIndex: '', email: '' });
-                        toast.success(`${created.name} added to tournament`);
-                      } catch (err: any) {
-                        toast.error(err.message);
-                      } finally {
-                        setSavingNewPlayer(false);
-                      }
+                        const t = await tournamentsApi.update(id!, { withdrawnPlayerIds: updated });
+                        setTournament(t);
+                      } catch (err: any) { toast.error(err.message); }
                     }}
-                    className="grid sm:grid-cols-3 gap-3"
+                    className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${isWD ? 'bg-ep-sand text-ep-green hover:bg-ep-sand/70' : 'bg-ep-silver/20 text-ep-silver hover:bg-red-100 hover:text-red-600'}`}
+                    title={isWD ? 'Remove WD' : 'Mark as withdrawn'}
                   >
-                    <div className="sm:col-span-1">
-                      <label className="label">Name *</label>
-                      <input className="input" value={newPlayerForm.name} required
-                        onChange={e => setNewPlayerForm(f => ({ ...f, name: e.target.value }))} placeholder="Casey Hunter" />
-                    </div>
-                    <div>
-                      <label className="label">Handicap Index</label>
-                      <input className="input" type="number" min="0" max="54" step="0.1"
-                        value={newPlayerForm.handicapIndex}
-                        onChange={e => setNewPlayerForm(f => ({ ...f, handicapIndex: e.target.value }))} placeholder="0.0" />
-                    </div>
-                    <div>
-                      <label className="label">Email (optional)</label>
-                      <input className="input" type="email" value={newPlayerForm.email}
-                        onChange={e => setNewPlayerForm(f => ({ ...f, email: e.target.value }))} placeholder="email@example.com" />
-                    </div>
-                    <div className="sm:col-span-3 flex gap-2">
-                      <button type="submit" disabled={savingNewPlayer} className="btn-primary">
-                        {savingNewPlayer ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                        Add to Tournament
-                      </button>
-                      <button type="button" onClick={() => { setShowNewPlayer(false); setNewPlayerForm({ name: '', handicapIndex: '', email: '' }); }}
-                        className="btn-secondary">Cancel</button>
-                    </div>
-                  </form>
-                </div>
-              ) : null}
-
-              <div className="flex items-center justify-between mb-3">
-                <p className="section-title">Tournament Players ({selectedPlayerIds.length})</p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setShowNewPlayer(true)} className="btn-secondary text-xs">
-                    <Plus size={13} /> New Player
+                    {isWD ? 'WD ✕' : 'WD'}
                   </button>
-                  <button type="button" onClick={async () => {
-                    try {
-                      await tournamentsApi.update(id!, { playerIds: selectedPlayerIds });
-                      setTournament(prev => prev ? { ...prev, playerIds: selectedPlayerIds } : null);
-                      toast.success('Saved');
-                    }
-                    catch (e: any) { toast.error(e.message); }
-                  }} className="btn-primary text-xs"><Save size={13} /> Save</button>
-                </div>
-              </div>
-              {players.length === 0 ? (
-                <p className="text-sm text-ep-silver text-center py-4">
-                  No players yet. Use "New Player" to add someone.
-                </p>
-              ) : (
-                <div className="grid sm:grid-cols-2 gap-1">
-                  {players.map(p => {
-                    const isEnrolled = selectedPlayerIds.includes(p.id);
-                    const isWD = tournament?.withdrawnPlayerIds?.includes(p.id) ?? false;
-                    return (
-                      <div key={p.id} className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-ep-sand/30 border border-ep-silver/20">
-                        <input type="checkbox" className="rounded accent-[#004C54]"
-                          checked={isEnrolled}
-                          onChange={e => setSelectedPlayerIds(ids => e.target.checked ? [...ids, p.id] : ids.filter(x => x !== p.id))} />
-                        <span className={`flex-1 text-sm font-medium ${isWD ? 'line-through text-ep-silver' : 'text-ep-green'}`}>{p.name}</span>
-                        <span className="text-xs text-ep-silver">HCP {p.handicapIndex.toFixed(1)}</span>
-                        {isEnrolled && (
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              if (!tournament) return;
-                              const current = tournament.withdrawnPlayerIds ?? [];
-                              const updated = isWD ? current.filter(x => x !== p.id) : [...current, p.id];
-                              try {
-                                const t = await tournamentsApi.update(id!, { withdrawnPlayerIds: updated });
-                                setTournament(t);
-                              } catch (err: any) { toast.error(err.message); }
-                            }}
-                            className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${isWD ? 'bg-ep-sand text-ep-green hover:bg-ep-sand/70' : 'bg-ep-silver/20 text-ep-silver hover:bg-red-100 hover:text-red-600'}`}
-                            title={isWD ? 'Remove WD' : 'Mark as withdrawn'}
-                          >
-                            {isWD ? 'WD ✕' : 'WD'}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                );
+              }}
+            />
           </AccordionSection>
 
           <AccordionSection title="Rounds & Tee Sheets" badge={rounds.length} open={roundsOpen} onToggle={() => setRoundsOpen(o => !o)}>

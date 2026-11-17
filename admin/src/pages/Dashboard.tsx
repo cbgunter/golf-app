@@ -137,8 +137,9 @@ function AdminHelp({ onClose }: { onClose: () => void }) {
 
       <HelpSection title="Adding Players to a Tournament">
         <HelpStep n={1}>Open the tournament → <strong>Players</strong> section.</HelpStep>
-        <HelpStep n={2}>Click a player chip from the list to add them. Click again to remove.</HelpStep>
-        <HelpStep n={3}>Need a new player? Use <strong>New Player</strong> inline — no need to navigate away.</HelpStep>
+        <HelpStep n={2}>Type a name (First Last) or GHIN number and press <strong>Search GHIN</strong>. Add a state to narrow common names.</HelpStep>
+        <HelpStep n={3}>Pick the golfer — they're added with their official Handicap Index. Players already on your roster appear as chips you can tap to add.</HelpStep>
+        <HelpStep n={4}>Not in GHIN? Use <strong>Enter a player manually</strong> right there. Use <strong>Update from GHIN</strong> before the event to refresh handicaps.</HelpStep>
       </HelpSection>
 
       <HelpSection title="Creating Rounds">

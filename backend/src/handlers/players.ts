@@ -22,13 +22,27 @@ export async function getPlayer(id: string) {
 
 export async function createPlayer(body: Partial<Player>) {
   if (!body.name) return error('Player name is required');
+  const ghinNumber = body.ghinNumber ? String(body.ghinNumber).trim() : undefined;
+
+  // A GHIN golfer maps to exactly one roster player: return the existing record instead of duplicating.
+  if (ghinNumber) {
+    const existing = (await scanTable<Player>(TABLE)).find(p => p.ghinNumber === ghinNumber);
+    if (existing) return ok(existing);
+  }
+
   const now = new Date().toISOString();
+  const handicapIndex = body.handicapIndex !== undefined && body.handicapIndex !== null ? Number(body.handicapIndex) : 0.0;
   const player: Player = {
     id: uuidv4(),
     name: body.name.trim(),
     email: body.email,
-    handicapIndex: body.handicapIndex !== undefined && body.handicapIndex !== null ? Number(body.handicapIndex) : 0.0,
+    handicapIndex,
     handicapHistory: [],
+    ...(ghinNumber && {
+      ghinNumber,
+      ghinHandicapIndex: body.ghinHandicapIndex ?? handicapIndex,
+      ghinSyncedAt: now,
+    }),
     createdAt: now,
     updatedAt: now,
   };
@@ -46,6 +60,8 @@ export async function updatePlayer(id: string, body: Partial<Player>) {
     name: body.name?.trim() ?? existing.name,
     email: body.email ?? existing.email,
     handicapIndex: body.handicapIndex !== undefined ? Number(body.handicapIndex) : existing.handicapIndex,
+    // Empty string unlinks the GHIN record
+    ghinNumber: body.ghinNumber !== undefined ? (String(body.ghinNumber).trim() || undefined) : existing.ghinNumber,
     updatedAt: new Date().toISOString(),
   };
 

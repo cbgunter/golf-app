@@ -7,8 +7,26 @@ export interface Player {
   email?: string;
   handicapIndex: number;
   handicapHistory: HandicapEntry[];
+  /** GHIN number when linked to an official USGA handicap record. */
+  ghinNumber?: string;
+  /** Last official Handicap Index pulled from GHIN. */
+  ghinHandicapIndex?: number;
+  ghinSyncedAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Normalized GHIN golfer search result. */
+export interface GhinGolfer {
+  ghinNumber: string;
+  firstName: string;
+  lastName: string;
+  /** Null when the golfer has no established index ("NH"). Plus handicaps are negative. */
+  handicapIndex: number | null;
+  handicapDisplay: string;
+  clubName: string | null;
+  state: string | null;
+  status: string;
 }
 
 export interface HandicapEntry {

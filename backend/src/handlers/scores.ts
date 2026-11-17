@@ -163,9 +163,12 @@ export async function submitScore(
     historyEntry,
   ];
 
+  // GHIN-linked players keep their official Handicap Index (refreshed from GHIN);
+  // the locally calculated index is still recorded in handicapHistory.
+  const newIndex = player.ghinNumber ? player.handicapIndex : handicapIndex;
   const updatedPlayer: Player = {
     ...player,
-    handicapIndex,
+    handicapIndex: newIndex,
     handicapHistory: updatedHistory,
     updatedAt: now,
   };
@@ -175,7 +178,7 @@ export async function submitScore(
     score,
     handicapUpdate: {
       previousIndex: player.handicapIndex,
-      newIndex: handicapIndex,
+      newIndex,
       differential,
       explanation,
     },
