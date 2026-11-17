@@ -1,5 +1,5 @@
-import type { RoundFormat, RoundTeam, StandingsMode } from '../../../shared/src/formats';
-export type { RoundFormat, RoundTeam, StandingsMode };
+import type { CtpContest, RoundFormat, RoundTeam, StandingsMode } from '../../../shared/src/formats';
+export type { CtpContest, RoundFormat, RoundTeam, StandingsMode };
 
 export interface Player {
   id: string;
@@ -140,7 +140,11 @@ export interface Round {
   par: number;
   date: string;
   status: 'scheduled' | 'in_progress' | 'completed';
+  /** CTP contests (hole + winner). Supersedes the legacy single-hole fields below. */
+  closestToPinContests?: CtpContest[];
+  /** @deprecated legacy single CTP hole — read via ctpContests(). */
   closestToPinHole?: number;
+  /** @deprecated legacy single CTP winner — read via ctpContests(). */
   closestToPinWinnerId?: string;
   longestDriveHole?: number;
   longestDriveWinnerId?: string;
@@ -225,6 +229,8 @@ export interface CtpResult {
   hole: number;
   roundId: string;
   player?: Player;
+  /** This contest's share of the CTP pot (pot split evenly across all CTP holes). */
+  amount?: number;
 }
 
 export interface LdResult {

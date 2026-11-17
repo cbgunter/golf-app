@@ -9,7 +9,7 @@ import { parseLocalDate } from '@shared/dates';
 import { computeEventState } from '../lib/eventState';
 import TeamsEditor from '../components/TeamsEditor';
 import PlayerPicker from '../components/PlayerPicker';
-import { ROUND_FORMAT_LABELS, ROUND_FORMAT_DESCRIPTIONS, RoundFormat, defaultPointsTable } from '@shared/formats';
+import { ROUND_FORMAT_LABELS, ROUND_FORMAT_DESCRIPTIONS, RoundFormat, defaultPointsTable, ctpContests } from '@shared/formats';
 
 const isNew = (id: string) => id === 'new';
 
@@ -35,16 +35,21 @@ function convertTo12h(time24: string): string {
   return `${h}:${mStr} ${period}`;
 }
 
-function flattenTees(teeSets: any[]): { label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[] {
+type TeeOption = { label: string; courseRating: number; slopeRating: number; par: number; yardage?: number; holes: any[] };
+
+function flattenTees(teeSets: any[]): TeeOption[] {
   if (!Array.isArray(teeSets)) return [];
-  const out: { label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[] = [];
+  const out: TeeOption[] = [];
   for (const ts of teeSets) {
     const totalRating = (ts.Ratings ?? []).find((r: any) => r.RatingType === 'Total' || r.RatingType === 'Eighteen');
     if (!totalRating) continue;
     const holes = (ts.Holes ?? [])
       .sort((a: any, b: any) => a.Number - b.Number)
       .map((h: any) => ({ number: h.Number, par: h.Par, handicap: h.Allocation, yardage: h.Length }));
+    const holeYards = holes.reduce((sum: number, h: any) => sum + (Number(h.yardage) || 0), 0);
+    const yardage = Number(ts.TotalYardage) || holeYards || undefined;
     out.push({
+      yardage,
       label: ts.TeeSetRatingName ?? ts.TeeColorName ?? 'Unknown',
       courseRating: Number(totalRating.CourseRating ?? 0),
       slopeRating: Number(totalRating.SlopeRating ?? 113),
@@ -105,6 +110,9 @@ export default function AdminTournamentSetup() {
   const [confirmingGroup, setConfirmingGroup] = useState<string | null>(null);
   const [expandedDraft, setExpandedDraft] = useState<string | null>(null);
   const confirmPanelRef = useRef<HTMLDivElement>(null);
+  const detailsSectionRef = useRef<HTMLDivElement>(null);
+  const playersSectionRef = useRef<HTMLDivElement>(null);
+  const roundsSectionRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     name: '', description: '', startDate: '', endDate: '',
@@ -122,13 +130,13 @@ export default function AdminTournamentSetup() {
   const [editingRound, setEditingRound] = useState<Round | null>(null);
   const [roundForm, setRoundForm] = useState({
     courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72',
-    date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false,
+    date: '', ctpHoles: [] as number[], ctpText: '', longestDriveHole: '', notes: '', isPracticeRound: false,
     format: 'stroke_play' as RoundFormat, pointsMultiplier: '1',
     holes: [] as { number: number; par: number; handicap: number; yardage?: number }[],
   });
   const [courseQuery, setCourseQuery] = useState('');
   const [courseResults, setCourseResults] = useState<any[]>([]);
-  const [courseTees, setCourseTees] = useState<{ label: string; courseRating: number; slopeRating: number; par: number; holes: any[] }[]>([]);
+  const [courseTees, setCourseTees] = useState<TeeOption[]>([]);
   const [courseSearching, setCourseSearching] = useState(false);
 
 
@@ -249,17 +257,31 @@ export default function AdminTournamentSetup() {
     }
   }
 
+  // Sections are often already open (auto-opened on load), so opening alone is a
+  // no-op — scroll to the section after it renders so the CTA visibly does something.
+  function scrollToSection(ref: React.RefObject<HTMLDivElement | null>) {
+    requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+
   function handleCtaAction() {
     if (!eventState) return;
     switch (eventState.ctaTarget) {
       case 'details':
         setDetailsOpen(true);
+        scrollToSection(detailsSectionRef);
         break;
       case 'players':
         setPlayersOpen(true);
+        scrollToSection(playersSectionRef);
         break;
       case 'rounds':
         setRoundsOpen(true);
+        if (rounds.length === 0) {
+          setEditingRound(null);
+          resetRoundForm();
+          setShowRoundForm(true);
+        }
+        scrollToSection(roundsSectionRef);
         break;
       case 'confirm':
         confirmPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -368,7 +390,7 @@ export default function AdminTournamentSetup() {
   function resetRoundForm() {
     setShowRoundForm(false);
     setEditingRound(null);
-    setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false, format: 'stroke_play', pointsMultiplier: '1', holes: [] });
+    setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', ctpHoles: [], ctpText: '', longestDriveHole: '', notes: '', isPracticeRound: false, format: 'stroke_play', pointsMultiplier: '1', holes: [] });
     setCourseTees([]);
     setCourseQuery('');
   }
@@ -383,7 +405,11 @@ export default function AdminTournamentSetup() {
       slopeRating: Number(roundForm.slopeRating),
       par: Number(roundForm.par),
       date: roundForm.date,
-      closestToPinHole: roundForm.closestToPinHole ? Number(roundForm.closestToPinHole) : undefined,
+      // Keep any winner already picked for a hole that's still selected.
+      closestToPinContests: [...roundForm.ctpHoles].sort((a, b) => a - b).map(hole => ({
+        hole,
+        winnerId: editingRound ? ctpContests(editingRound).find(c => c.hole === hole)?.winnerId : undefined,
+      })),
       longestDriveHole: roundForm.longestDriveHole ? Number(roundForm.longestDriveHole) : undefined,
       holes: roundForm.holes.length > 0 ? roundForm.holes : undefined,
       isPracticeRound: roundForm.isPracticeRound || undefined,
@@ -697,7 +723,7 @@ export default function AdminTournamentSetup() {
                 <label className="label">Select Tee</label>
                 <select className="input" value={roundForm.tee} onChange={e => selectTee(e.target.value)}>
                   {courseTees.map(t => (
-                    <option key={t.label} value={t.label}>{t.label} — Par {t.par} · Rating {t.courseRating} · Slope {t.slopeRating}</option>
+                    <option key={t.label} value={t.label}>{t.label} — {t.yardage ? `${t.yardage.toLocaleString()} yds · ` : ''}Par {t.par} · Rating {t.courseRating} · Slope {t.slopeRating}</option>
                   ))}
                 </select>
               </div>
@@ -731,9 +757,50 @@ export default function AdminTournamentSetup() {
                 <input className="input" type="date" value={roundForm.date} onChange={e => setRoundForm(f => ({ ...f, date: e.target.value }))} required />
               </div>
               {tournament?.hasClosestToPin && (
-                <div>
-                  <label className="label">CTP Hole</label>
-                  <input className="input" type="number" min="1" max="18" value={roundForm.closestToPinHole} onChange={e => setRoundForm(f => ({ ...f, closestToPinHole: e.target.value }))} placeholder="e.g. 7" />
+                <div className="col-span-2">
+                  <label className="label">CTP Holes</label>
+                  {roundForm.holes.length > 0 ? (() => {
+                    // Offer the course's par 3s, plus any already-selected hole that isn't one.
+                    const options = roundForm.holes
+                      .filter(h => h.par === 3 || roundForm.ctpHoles.includes(h.number))
+                      .sort((a, b) => a.number - b.number);
+                    if (options.length === 0) return <p className="text-xs text-ep-silver">This course has no par 3s.</p>;
+                    return (
+                      <div className="flex flex-wrap gap-2">
+                        {options.map(h => {
+                          const on = roundForm.ctpHoles.includes(h.number);
+                          return (
+                            <button
+                              key={h.number}
+                              type="button"
+                              onClick={() => setRoundForm(f => ({
+                                ...f,
+                                ctpHoles: on ? f.ctpHoles.filter(x => x !== h.number) : [...f.ctpHoles, h.number],
+                              }))}
+                              className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${on
+                                ? 'bg-ep-green border-ep-green text-ep-cream'
+                                : 'bg-ep-cream border-ep-silver/40 text-ep-green hover:border-ep-orange'}`}
+                            >
+                              <span className="font-semibold">Hole {h.number}</span>
+                              {h.yardage ? <span className={`ml-1.5 text-xs ${on ? 'text-ep-cream/80' : 'text-ep-silver'}`}>{h.yardage} yds</span> : null}
+                              {h.par !== 3 && <span className={`ml-1.5 text-xs ${on ? 'text-ep-cream/80' : 'text-ep-silver'}`}>par {h.par}</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })() : (
+                    <input
+                      className="input"
+                      value={roundForm.ctpText}
+                      onChange={e => {
+                        const text = e.target.value;
+                        const ctpHoles = [...new Set(text.split(/[,\s]+/).map(Number).filter(n => Number.isInteger(n) && n >= 1 && n <= 18))];
+                        setRoundForm(f => ({ ...f, ctpText: text, ctpHoles }));
+                      }}
+                      placeholder="e.g. 3, 7, 12, 16"
+                    />
+                  )}
                 </div>
               )}
               {tournament?.hasLongestDrive && (
@@ -846,7 +913,8 @@ export default function AdminTournamentSetup() {
                           slopeRating: String(r.slopeRating),
                           par: String(r.par),
                           date: r.date,
-                          closestToPinHole: r.closestToPinHole ? String(r.closestToPinHole) : '',
+                          ctpHoles: ctpContests(r).map(c => c.hole),
+                          ctpText: ctpContests(r).map(c => c.hole).join(', '),
                           longestDriveHole: r.longestDriveHole ? String(r.longestDriveHole) : '',
                           notes: r.notes ?? '',
                           isPracticeRound: r.isPracticeRound ?? false,
@@ -1256,6 +1324,7 @@ export default function AdminTournamentSetup() {
           )}
 
           {/* Accordion sections */}
+          <div ref={detailsSectionRef} className="scroll-mt-4">
           <AccordionSection title="Event Details" open={detailsOpen} onToggle={() => setDetailsOpen(o => !o)}>
             <form onSubmit={handleSaveDetails} className="space-y-4">
               {detailsFormContent}
@@ -1264,7 +1333,9 @@ export default function AdminTournamentSetup() {
               </button>
             </form>
           </AccordionSection>
+          </div>
 
+          <div ref={playersSectionRef} className="scroll-mt-4">
           <AccordionSection title="Players" badge={selectedPlayerIds.length} open={playersOpen} onToggle={() => setPlayersOpen(o => !o)}>
             <PlayerPicker
               players={players}
@@ -1296,10 +1367,13 @@ export default function AdminTournamentSetup() {
               }}
             />
           </AccordionSection>
+          </div>
 
+          <div ref={roundsSectionRef} className="scroll-mt-4">
           <AccordionSection title="Rounds & Tee Sheets" badge={rounds.length} open={roundsOpen} onToggle={() => setRoundsOpen(o => !o)}>
             {roundsSectionContent}
           </AccordionSection>
+          </div>
         </>
       )}
     </div>

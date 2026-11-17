@@ -4,7 +4,7 @@ import { roundsApi, tournamentsApi, playersApi, scoringApi, Round, Tournament, P
 import toast from 'react-hot-toast';
 import { Save, Check, X, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import { parseLocalDate } from '@shared/dates';
-import { computeRoundResult, stablefordTotal, ROUND_FORMAT_LABELS, formatPoints } from '@shared/formats';
+import { computeRoundResult, stablefordTotal, ROUND_FORMAT_LABELS, formatPoints, ctpContests, CtpContest } from '@shared/formats';
 
 const DEFAULT_HOLES = Array.from({ length: 18 }, (_, i) => ({
   hole: i + 1,
@@ -37,7 +37,7 @@ export default function AdminRoundScoring() {
   const [submitting, setSubmitting] = useState(false);
   const [expandedScore, setExpandedScore] = useState<string | null>(null);
 
-  const [ctpWinner, setCtpWinner] = useState('');
+  const [ctpWinners, setCtpWinners] = useState<CtpContest[]>([]);
   const [ldWinner, setLdWinner] = useState('');
   const [savingWinners, setSavingWinners] = useState(false);
   const [winnersSaved, setWinnersSaved] = useState(false);
@@ -54,7 +54,7 @@ export default function AdminRoundScoring() {
     const load = async () => {
       const r = await roundsApi.get(id);
       setRound(r);
-      setCtpWinner(r.closestToPinWinnerId ?? '');
+      setCtpWinners(ctpContests(r));
       setLdWinner(r.longestDriveWinnerId ?? '');
       const [t, existingScores] = await Promise.all([
         tournamentsApi.get(r.tournamentId),
@@ -128,13 +128,13 @@ export default function AdminRoundScoring() {
     }
   }
 
-  async function saveWinners(newCtp: string, newLd: string) {
+  async function saveWinners(newCtp: CtpContest[], newLd: string) {
     if (!round) return;
     setSavingWinners(true);
     setWinnersSaved(false);
     try {
       await roundsApi.update(round.id, {
-        closestToPinWinnerId: newCtp || undefined,
+        closestToPinContests: newCtp,
         longestDriveWinnerId: newLd || undefined,
       });
       setWinnersSaved(true);
@@ -195,7 +195,7 @@ export default function AdminRoundScoring() {
   const withdrawnIds = new Set(tournament.withdrawnPlayerIds ?? []);
   const scoredPlayerIds = new Set(scores.map(s => s.playerId));
   const needsScoring = players.filter(p => !scoredPlayerIds.has(p.id) && !withdrawnIds.has(p.id));
-  const hasCTP = tournament.hasClosestToPin && round.closestToPinHole;
+  const hasCTP = tournament.hasClosestToPin && ctpWinners.length > 0;
   const hasLD = tournament.hasLongestDrive && round.longestDriveHole;
   const roundResult = computeRoundResult(
     round,
@@ -744,26 +744,27 @@ export default function AdminRoundScoring() {
             {winnersSaved && <span className="text-xs text-green-600 font-medium">Saved ✓</span>}
           </div>
           <div className="space-y-4">
-            {hasCTP && (
-              <div>
-                <label className="label">Closest to Pin Winner (Hole {round.closestToPinHole})</label>
-                <select className="input" value={ctpWinner} onChange={e => {
+            {hasCTP && ctpWinners.map(c => (
+              <div key={c.hole}>
+                <label className="label">Closest to Pin Winner (Hole {c.hole})</label>
+                <select className="input" value={c.winnerId ?? ''} onChange={e => {
                   const v = e.target.value;
-                  setCtpWinner(v);
-                  saveWinners(v, ldWinner);
+                  const next = ctpWinners.map(x => x.hole === c.hole ? { ...x, winnerId: v || undefined } : x);
+                  setCtpWinners(next);
+                  saveWinners(next, ldWinner);
                 }}>
                   <option value="">— Select winner —</option>
                   {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
-            )}
+            ))}
             {hasLD && (
               <div>
                 <label className="label">Longest Drive Winner (Hole {round.longestDriveHole})</label>
                 <select className="input" value={ldWinner} onChange={e => {
                   const v = e.target.value;
                   setLdWinner(v);
-                  saveWinners(ctpWinner, v);
+                  saveWinners(ctpWinners, v);
                 }}>
                   <option value="">— Select winner —</option>
                   {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}

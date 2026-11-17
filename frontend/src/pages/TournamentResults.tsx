@@ -66,20 +66,24 @@ export default function TournamentResultsPage() {
                 <span className="text-lg font-bold text-ep-orange">${p.amount.toFixed(0)}</span>
               </div>
             ))}
-            {ctpPot > 0 && (
-              <div className="flex items-center justify-between pt-1 border-t border-ep-silver/20">
-                <div className="flex items-center gap-3">
-                  <span className="w-7 h-7 flex items-center justify-center text-lg">📍</span>
-                  <div>
-                    <div className="font-medium text-ep-green">
-                      {closestToPin?.[0]?.player?.name ?? 'TBD'}
+            {ctpPot > 0 && (closestToPin?.length ? closestToPin : [undefined]).map((c, i) => {
+              // One row per decided CTP hole, each paid its share of the pot.
+              const roundNo = c ? results.rounds.findIndex(r => r.id === c.roundId) + 1 : 0;
+              return (
+                <div key={c ? `${c.roundId}-${c.hole}` : 'tbd'} className={`flex items-center justify-between pt-1 ${i === 0 ? 'border-t border-ep-silver/20' : ''}`}>
+                  <div className="flex items-center gap-3">
+                    <span className="w-7 h-7 flex items-center justify-center text-lg">📍</span>
+                    <div>
+                      <div className="font-medium text-ep-green">{c?.player?.name ?? 'TBD'}</div>
+                      <div className="text-xs text-ep-silver">
+                        Closest to Pin{c ? ` · ${results.rounds.length > 1 && roundNo > 0 ? `R${roundNo} ` : ''}Hole ${c.hole}` : ''}
+                      </div>
                     </div>
-                    <div className="text-xs text-ep-silver">Closest to Pin</div>
                   </div>
+                  <span className="text-lg font-bold text-ep-orange">${(() => { const amt = c?.amount ?? ctpPot; return amt % 1 ? amt.toFixed(2) : amt.toFixed(0); })()}</span>
                 </div>
-                <span className="text-lg font-bold text-ep-orange">${ctpPot.toFixed(0)}</span>
-              </div>
-            )}
+              );
+            })}
             {ldPot > 0 && (
               <div className="flex items-center justify-between pt-1 border-t border-ep-silver/20">
                 <div className="flex items-center gap-3">

@@ -77,7 +77,7 @@ Admin-only routes are wrapped in `adminOnly(() => handler())` which short-circui
 Six tables (all PAY_PER_REQUEST, RemovalPolicy RETAIN):
 - `golf-players` — `handicapIndex` + `handicapHistory[]` stored inline; updated on every score submission
 - `golf-tournaments` — stores `playerIds[]`, `roundIds[]`, `payoutStructure[]`, `closestToPinFee?`, `longestDriveFee?`
-- `golf-rounds` — stores `teeTimeGroups[]`, `holes[]`, `closestToPinWinnerId?`, `longestDriveWinnerId?` inline
+- `golf-rounds` — stores `teeTimeGroups[]`, `holes[]`, `closestToPinContests[]`, `longestDriveWinnerId?` inline
 - `golf-scores` — GSIs on both `roundId` and `playerId`; includes `holeScores[]`, `adjustments[]`, `handicapDifferential`
 - `golf-courses` — cached GHIN course data (not cleared with other data resets)
 - `golf-draft-scorecards` — GSIs on `pin` and `roundId`; stores group scorecards during PIN-based entry; status lifecycle: `draft` → `submitted` → `confirmed`. ID is `${roundId}#${groupNumber}`. PIN lookup uses `getItem` by this ID (not the `pin-index` GSI) so stale PINs from previous tournaments don't block new ones.
@@ -129,7 +129,7 @@ Player `handicapIndex` defaults to `0.0` at creation if not supplied. For player
 - Public cup table component: `frontend/src/components/CupStandingsCard.tsx`.
 
 ### Side contests (CTP / LD)
-Tournaments have `hasClosestToPin` / `hasLongestDrive` boolean flags and optional `closestToPinFee` / `longestDriveFee` per-player ante amounts. The hole for each contest is set per-round (`closestToPinHole`, `longestDriveHole`). Winners are selected on the RoundScoring admin page via dropdowns that **auto-save immediately on change** (calls `roundsApi.update` directly; no need to complete the round first). `closestToPinWinnerId` / `longestDriveWinnerId` are stored on the round. Prize pots (`fee × playerCount`) are shown on the public tournament view and results page.
+Tournaments have `hasClosestToPin` / `hasLongestDrive` boolean flags and optional `closestToPinFee` / `longestDriveFee` per-player ante amounts. LD is one hole per round (`longestDriveHole`). CTP can be several holes per round: `Round.closestToPinContests: { hole, winnerId? }[]`, picked in the round form from the course's par 3s (free-text hole list when there's no hole data). Always read CTP via `ctpContests(round)` in `shared/src/formats.ts` — it falls back to the legacy single `closestToPinHole` / `closestToPinWinnerId` fields on older rounds. The CTP pot is split evenly across all CTP holes in non-practice rounds (`CtpResult.amount`). Winners are selected on the RoundScoring admin page via dropdowns that **auto-save immediately on change** (calls `roundsApi.update` directly; no need to complete the round first). `closestToPinWinnerId` / `longestDriveWinnerId` are stored on the round. Prize pots (`fee × playerCount`) are shown on the public tournament view and results page.
 
 ### Tee time groups
 Rounds store `startFormat?: 'sequential' | 'shotgun'` and `teeTimeGroups?: TeeTimeGroup[]` inline. Groups are managed from the TournamentSetup admin page (accordion panel per round). Each group has `groupNumber`, `teeTime` (display string e.g. "8:00 AM"), `playerIds[]`, optional `startingHole` for shotgun starts, and a `pin?: string` (4-digit, auto-generated on save). The public tournament view shows the tee sheet above the scores table when groups exist.

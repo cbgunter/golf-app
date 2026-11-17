@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getItem, putItem, deleteItem, scanTable, queryIndex } from '../lib/dynamo';
 import { ok, error, notFound } from '../lib/response';
 import { Tournament, Round, Score, Player, TournamentResults, LeaderboardEntry, PayoutResult } from '../types';
-import { computeCupStandings } from '../../../shared/src/formats';
+import { computeCupStandings, ctpContests } from '../../../shared/src/formats';
 
 const T_TABLE = process.env.TOURNAMENTS_TABLE!;
 const R_TABLE = process.env.ROUNDS_TABLE!;
@@ -186,13 +186,21 @@ export async function getTournamentResults(id: string) {
   }));
 
   // Closest to pin and longest drive
-  const closestToPin = completedRounds
-    .filter(r => r.closestToPinWinnerId && r.closestToPinHole)
-    .map(r => ({
-      hole: r.closestToPinHole!,
-      roundId: r.id,
-      player: playerMap.get(r.closestToPinWinnerId!),
-    }));
+  // The CTP pot is split evenly across every CTP hole in the event (all rounds,
+  // non-practice round, decided or not) so an undecided hole doesn't inflate the others' share.
+  const ctpContestCount = allRounds
+    .filter(r => !r.isPracticeRound)
+    .reduce((n, r) => n + ctpContests(r).length, 0);
+  const ctpShare = ctpContestCount > 0 ? Math.round((ctpPot / ctpContestCount) * 100) / 100 : 0;
+  const closestToPin = completedRounds.flatMap(r =>
+    ctpContests(r)
+      .filter(c => c.winnerId)
+      .map(c => ({
+        hole: c.hole,
+        roundId: r.id,
+        player: playerMap.get(c.winnerId!),
+        amount: ctpShare || undefined,
+      })));
 
   const longestDrive = completedRounds
     .filter(r => r.longestDriveWinnerId && r.longestDriveHole)

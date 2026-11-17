@@ -1,3 +1,4 @@
+import { ctpContests, CtpContest } from '@shared/formats';
 import type { DraftScorecard } from '@shared/client';
 
 interface Tournament {
@@ -9,6 +10,8 @@ interface Tournament {
 
 interface Round {
   status: 'scheduled' | 'in_progress' | 'completed';
+  closestToPinContests?: CtpContest[];
+  closestToPinHole?: number;
   closestToPinWinnerId?: string;
   longestDriveWinnerId?: string;
   teeTimeGroups?: { groupNumber: number; playerIds: string[] }[];
@@ -64,7 +67,7 @@ export function computeEventState(
   const allRoundsComplete = rounds.length > 0 && rounds.every(r => r.status === 'completed');
 
   if (allRoundsComplete) {
-    const ctpResolved = !tournament.hasClosestToPin || rounds.every(r => r.closestToPinWinnerId);
+    const ctpResolved = !tournament.hasClosestToPin || rounds.every(r => ctpContests(r).every(c => c.winnerId));
     const ldResolved = !tournament.hasLongestDrive || rounds.every(r => r.longestDriveWinnerId);
 
     if (ctpResolved && ldResolved) {

@@ -1,4 +1,4 @@
-import type { RoundFormat, RoundTeam, StandingsMode } from './formats';
+import type { CtpContest, RoundFormat, RoundTeam, StandingsMode } from './formats';
 
 const BASE = '/api';
 
@@ -221,6 +221,8 @@ interface Round {
   par: number;
   date: string;
   status: 'scheduled' | 'in_progress' | 'completed';
+  /** CTP contests (hole + winner). Supersedes the legacy single-hole fields; read via ctpContests(). */
+  closestToPinContests?: CtpContest[];
   closestToPinHole?: number;
   closestToPinWinnerId?: string;
   longestDriveHole?: number;
@@ -288,7 +290,7 @@ interface TournamentResults {
   tournament: Tournament;
   rounds: Round[];
   leaderboard: LeaderboardEntry[];
-  closestToPin?: { hole: number; roundId: string; player?: Player }[];
+  closestToPin?: { hole: number; roundId: string; player?: Player; amount?: number }[];
   longestDrive?: { hole: number; roundId: string; player?: Player }[];
   payouts: { place: number; label: string; amount: number; percentage: number; payoutType?: 'percentage' | 'flat'; player?: Player }[];
   totalPot: number;

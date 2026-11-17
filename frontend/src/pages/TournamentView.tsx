@@ -6,7 +6,7 @@ import StatusBadge from '../components/StatusBadge';
 import { Trophy, MapPin, Calendar, ChevronDown, ChevronUp, X, HelpCircle } from 'lucide-react';
 import { parseLocalDate } from '@shared/dates';
 import CupStandingsCard from '../components/CupStandingsCard';
-import { computeCupStandings, computeRoundResult, stablefordTotal, ROUND_FORMAT_LABELS, ROUND_FORMAT_DESCRIPTIONS, formatPoints } from '@shared/formats';
+import { computeCupStandings, computeRoundResult, stablefordTotal, ROUND_FORMAT_LABELS, ROUND_FORMAT_DESCRIPTIONS, formatPoints, ctpContests } from '@shared/formats';
 
 export default function TournamentView() {
   const { id } = useParams<{ id: string }>();
@@ -431,16 +431,16 @@ function RoundCard({
             <span>Par {round.par}</span>
             <span>Rating {round.courseRating} / Slope {round.slopeRating}</span>
           </div>
-          {(round.closestToPinHole || round.longestDriveHole) && (
+          {(ctpContests(round).length > 0 || round.longestDriveHole) && (
             <div className="flex flex-wrap gap-3 mt-1 text-xs text-ep-silver">
-              {round.closestToPinHole && (
-                <span>
-                  📍 CTP hole {round.closestToPinHole}
-                  {round.closestToPinWinnerId
-                    ? ` — ${players.find(p => p.id === round.closestToPinWinnerId)?.name ?? 'TBD'}`
+              {ctpContests(round).map(c => (
+                <span key={c.hole}>
+                  📍 CTP hole {c.hole}
+                  {c.winnerId
+                    ? ` — ${players.find(p => p.id === c.winnerId)?.name ?? 'TBD'}`
                     : ''}
                 </span>
-              )}
+              ))}
               {round.longestDriveHole && (
                 <span>
                   🏌️ LD hole {round.longestDriveHole}
@@ -613,19 +613,19 @@ function RoundCard({
           )}
 
           {/* Special contests */}
-          {(round.closestToPinHole || round.longestDriveHole) && (
+          {(ctpContests(round).length > 0 || round.longestDriveHole) && (
             <div className="px-4 pb-4 pt-2 flex flex-wrap gap-3 text-xs text-ep-silver border-t border-ep-silver/20 mt-2">
-              {round.closestToPinHole && (
-                <span className="flex items-center gap-1">
+              {ctpContests(round).map(c => (
+                <span key={c.hole} className="flex items-center gap-1">
                   <MapPin size={12} className="text-ep-orange" />
-                  CTP: Hole {round.closestToPinHole}
-                  {round.closestToPinWinnerId && (
+                  CTP: Hole {c.hole}
+                  {c.winnerId && (
                     <span className="font-medium text-ep-green ml-1">
-                      — {players.find(p => p.id === round.closestToPinWinnerId)?.name ?? 'Winner TBD'}
+                      — {players.find(p => p.id === c.winnerId)?.name ?? 'Winner TBD'}
                     </span>
                   )}
                 </span>
-              )}
+              ))}
               {round.longestDriveHole && (
                 <span className="flex items-center gap-1">
                   <span>🏌️</span>

@@ -9,6 +9,30 @@ export interface RoundTeam {
   playerIds: string[];
 }
 
+/** One closest-to-pin contest on a round (a round can have several, typically its par 3s). */
+export interface CtpContest {
+  hole: number;
+  winnerId?: string;
+}
+
+/**
+ * The CTP contests for a round. Prefers `closestToPinContests`; falls back to the legacy
+ * single `closestToPinHole` / `closestToPinWinnerId` fields on older rounds. An explicitly
+ * empty `closestToPinContests` array means "no CTP holes" and wins over the legacy fields.
+ */
+export function ctpContests(round: {
+  closestToPinContests?: CtpContest[];
+  closestToPinHole?: number;
+  closestToPinWinnerId?: string;
+}): CtpContest[] {
+  if (Array.isArray(round.closestToPinContests)) {
+    return [...round.closestToPinContests].sort((a, b) => a.hole - b.hole);
+  }
+  return round.closestToPinHole
+    ? [{ hole: round.closestToPinHole, winnerId: round.closestToPinWinnerId }]
+    : [];
+}
+
 export const ROUND_FORMAT_LABELS: Record<RoundFormat, string> = {
   stroke_play: 'Stroke Play',
   stableford: 'Stableford',
