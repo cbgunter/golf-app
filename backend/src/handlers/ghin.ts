@@ -1,6 +1,6 @@
 import { getItem, putItem } from '../lib/dynamo';
 import { ok, error, notFound } from '../lib/response';
-import { getGhinClient, resetGhinClient } from '../lib/ghinClient';
+import { getGhinClient, resetGhinClient, unwrap } from '../lib/ghinClient';
 import { GhinGolfer, Player } from '../types';
 
 const P_TABLE = process.env.PLAYERS_TABLE!;
@@ -38,7 +38,7 @@ export async function searchGolfers(q: string, state?: string) {
     const client = await getGhinClient();
 
     if (/^\d+$/.test(query)) {
-      const golfer = await client.golfers.getOne(Number(query));
+      const golfer = await unwrap<any>(client.golfers.getOne(Number(query)));
       return ok({ golfers: golfer ? [normalize(golfer)] : [], truncated: false });
     }
 
@@ -57,7 +57,7 @@ export async function searchGolfers(q: string, state?: string) {
     // globalSearch works nationwide (golfers.search 400s on name searches without a state).
     // State is optional and narrows results; it must be the 2-letter code ("NC").
     const PER_PAGE = 50;
-    const raw = await client.golfers.globalSearch({
+    const raw = await unwrap<any[]>(client.golfers.globalSearch({
       last_name: last,
       first_name: first,
       country: 'USA',
@@ -65,7 +65,7 @@ export async function searchGolfers(q: string, state?: string) {
       status: 'Active',
       per_page: PER_PAGE,
       page: 1,
-    });
+    }));
 
     // One row per club affiliation comes back — collapse to one per GHIN number.
     const byGhin = new Map<string, GhinGolfer>();
@@ -93,7 +93,7 @@ export async function refreshPlayerFromGhin(playerId: string) {
 
   try {
     const client = await getGhinClient();
-    const golfer = await client.golfers.getOne(Number(player.ghinNumber));
+    const golfer = await unwrap<any>(client.golfers.getOne(Number(player.ghinNumber)));
     if (!golfer) return error('Golfer not found on GHIN', 404);
     const g = normalize(golfer);
     const now = new Date().toISOString();

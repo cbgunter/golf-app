@@ -99,6 +99,8 @@ GHIN response shape for holes: `TeeSets[].Holes[{ Number, Par, Allocation (strok
 
 The GHIN client singleton lives in `backend/src/lib/ghinClient.ts` (`getGhinClient` / `resetGhinClient`), shared by courses and golfer lookup.
 
+`@spicygolf/ghin` ≥ 0.12 returns neverthrow `Result`s instead of throwing — wrap every call in `unwrap(...)` from `ghinClient.ts`, which returns the value or throws the `GhinError`. A call that isn't unwrapped "succeeds" with an object whose fields are all undefined. `courses.search` returns `{ courses, invalid }`; `invalid` holds courses that failed the library's validation. Version 0.11 failed every course search after GHIN dropped `Address1`/`Address2` from its responses.
+
 **Golfer lookup** (`backend/src/handlers/ghin.ts`, admin-only):
 - `GET /ghin/golfers?q=&state=` — `q` all digits → `golfers.getOne(ghin)`; otherwise a name ("First Last", "Last, First", or "Last"). Uses `golfers.globalSearch` with `country: 'USA'` because `golfers.search` returns 400 for name searches without a state. `state` is an optional 2-letter code ("NC", not "US-NC"). Results come back one row per club affiliation and are deduped by GHIN number; response is `{ golfers: GhinGolfer[], truncated }`.
 - `POST /players/:id/ghin-refresh` — pulls the official Handicap Index for a linked player and stores `handicapIndex`, `ghinHandicapIndex`, `ghinSyncedAt`.

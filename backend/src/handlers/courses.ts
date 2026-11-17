@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getItem, putItem, scanTable } from '../lib/dynamo';
 import { ok, error, notFound } from '../lib/response';
 import { Course } from '../types';
-import { getGhinClient, resetGhinClient } from '../lib/ghinClient';
+import { getGhinClient, resetGhinClient, unwrap } from '../lib/ghinClient';
 
 const TABLE = process.env.COURSES_TABLE!;
 
@@ -22,7 +22,8 @@ export async function searchCourses(query: string) {
   if (!query || query.length < 2) return error('Query must be at least 2 characters');
   try {
     const client = await getGhinClient();
-    const courses = await client.courses.search({ name: query });
+    // `invalid` holds courses whose GHIN data failed the library's validation — skip them.
+    const { courses } = await unwrap<{ courses: unknown[] }>(client.courses.search({ name: query }));
     return ok({ courses: courses ?? [] });
   } catch (e: any) {
     resetGhinClient(); // re-authenticate on next call
@@ -33,7 +34,7 @@ export async function searchCourses(query: string) {
 export async function getCourseFromApi(courseId: string) {
   try {
     const client = await getGhinClient();
-    const details = await client.courses.getDetails({ course_id: Number(courseId) });
+    const details = await unwrap(client.courses.getDetails({ course_id: Number(courseId) }));
     return ok({ course: details });
   } catch (e: any) {
     resetGhinClient();

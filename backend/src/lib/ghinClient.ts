@@ -22,6 +22,16 @@ export async function getGhinClient(): Promise<GhinClient> {
   return client;
 }
 
+/**
+ * @spicygolf/ghin >= 0.12 returns neverthrow `Result`s instead of throwing.
+ * Unwrap to the value, or throw the GhinError so callers can keep using try/catch.
+ */
+export async function unwrap<T>(p: Promise<{ isErr(): boolean; value?: T; error?: Error } | any>): Promise<T> {
+  const r = await p;
+  if (r.isErr()) throw r.error;
+  return r.value as T;
+}
+
 export function resetGhinClient(): void {
   client = null;
 }
