@@ -1,3 +1,5 @@
+import type { RoundFormat, RoundTeam, StandingsMode } from './formats';
+
 const BASE = '/api';
 
 function getToken() {
@@ -112,7 +114,8 @@ export const scoringApi = {
 };
 
 // Re-export types for convenience
-export type { Player, Tournament, Round, Score, Course, TournamentResults, PlayerProfile };
+export type { Player, Tournament, Round, Score, Course, TournamentResults, PlayerProfile, LeaderboardEntry };
+export type { RoundFormat, RoundTeam, StandingsMode };
 
 interface PlayerRoundScore {
   scoreId: string;
@@ -163,6 +166,8 @@ interface Tournament {
   format: 'stroke_play' | 'stableford' | 'match_play';
   isNet: boolean;
   isGross: boolean;
+  standingsMode?: StandingsMode;
+  pointsTable?: number[];
   hasClosestToPin: boolean;
   hasLongestDrive: boolean;
   closestToPinFee?: number;
@@ -198,6 +203,9 @@ interface Round {
   startFormat?: 'sequential' | 'shotgun';
   teeTimeGroups?: { groupNumber: number; teeTime: string; playerIds: string[]; startingHole?: number; pin?: string }[];
   isPracticeRound?: boolean;
+  format?: RoundFormat;
+  teams?: RoundTeam[];
+  pointsMultiplier?: number;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -210,6 +218,8 @@ interface HoleScore {
   strokes: number;
   netStrokes: number;
   receivesStroke: boolean;
+  strokesReceived?: number;
+  adjustedScore?: number;
 }
 
 interface ScoreAdjustment {
@@ -267,6 +277,8 @@ interface LeaderboardEntry {
   totalGross: number;
   totalNet: number;
   roundDifferentials: number[];
+  cupPoints?: number;
+  pointsByRound?: Record<string, number | undefined>;
   payout?: number;
 }
 

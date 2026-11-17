@@ -7,6 +7,8 @@ import StatusBadge from '../components/StatusBadge';
 import { Plus, Save, ChevronRight, ChevronDown, ChevronUp, X, Check, Search, Loader2, Trash2, Users, Pencil } from 'lucide-react';
 import { parseLocalDate } from '@shared/dates';
 import { computeEventState } from '../lib/eventState';
+import TeamsEditor from '../components/TeamsEditor';
+import { ROUND_FORMAT_LABELS, ROUND_FORMAT_DESCRIPTIONS, RoundFormat, defaultPointsTable } from '@shared/formats';
 
 const isNew = (id: string) => id === 'new';
 
@@ -106,6 +108,7 @@ export default function AdminTournamentSetup() {
   const [form, setForm] = useState({
     name: '', description: '', startDate: '', endDate: '',
     format: 'stroke_play', isNet: true, isGross: true,
+    standingsMode: 'cumulative' as 'cumulative' | 'points', pointsTable: '',
     hasClosestToPin: false, hasLongestDrive: false,
     closestToPinFee: '0', longestDriveFee: '0',
     entryFee: '0', notes: '',
@@ -119,6 +122,7 @@ export default function AdminTournamentSetup() {
   const [roundForm, setRoundForm] = useState({
     courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72',
     date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false,
+    format: 'stroke_play' as RoundFormat, pointsMultiplier: '1',
     holes: [] as { number: number; par: number; handicap: number; yardage?: number }[],
   });
   const [courseQuery, setCourseQuery] = useState('');
@@ -148,6 +152,7 @@ export default function AdminTournamentSetup() {
         setForm({
           name: t.name, description: t.description ?? '', startDate: t.startDate,
           endDate: t.endDate ?? '', format: t.format, isNet: t.isNet, isGross: t.isGross,
+          standingsMode: t.standingsMode ?? 'cumulative', pointsTable: (t.pointsTable ?? []).join(', '),
           hasClosestToPin: t.hasClosestToPin, hasLongestDrive: t.hasLongestDrive,
           closestToPinFee: String(t.closestToPinFee ?? 0), longestDriveFee: String(t.longestDriveFee ?? 0),
           entryFee: String(t.entryFee), notes: t.notes ?? '',
@@ -302,6 +307,10 @@ export default function AdminTournamentSetup() {
       name: form.name, description: form.description || undefined,
       startDate: form.startDate, endDate: form.endDate || undefined,
       format: form.format as any, isNet: form.isNet, isGross: form.isGross,
+      standingsMode: form.standingsMode,
+      pointsTable: form.standingsMode === 'points' && form.pointsTable.trim()
+        ? form.pointsTable.split(/[,\s]+/).filter(Boolean).map(Number).filter(n => !isNaN(n))
+        : undefined,
       hasClosestToPin: form.hasClosestToPin, hasLongestDrive: form.hasLongestDrive,
       closestToPinFee: form.hasClosestToPin ? Number(form.closestToPinFee) : undefined,
       longestDriveFee: form.hasLongestDrive ? Number(form.longestDriveFee) : undefined,
@@ -330,7 +339,7 @@ export default function AdminTournamentSetup() {
   function resetRoundForm() {
     setShowRoundForm(false);
     setEditingRound(null);
-    setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false, holes: [] });
+    setRoundForm({ courseId: '', courseName: '', tee: '', courseRating: '', slopeRating: '', par: '72', date: '', closestToPinHole: '', longestDriveHole: '', notes: '', isPracticeRound: false, format: 'stroke_play', pointsMultiplier: '1', holes: [] });
     setCourseTees([]);
     setCourseQuery('');
   }
@@ -349,6 +358,9 @@ export default function AdminTournamentSetup() {
       longestDriveHole: roundForm.longestDriveHole ? Number(roundForm.longestDriveHole) : undefined,
       holes: roundForm.holes.length > 0 ? roundForm.holes : undefined,
       isPracticeRound: roundForm.isPracticeRound || undefined,
+      format: roundForm.format,
+      pointsMultiplier: Number(roundForm.pointsMultiplier) && Number(roundForm.pointsMultiplier) !== 1
+        ? Number(roundForm.pointsMultiplier) : undefined,
       notes: roundForm.notes || undefined,
     } as any;
     try {
@@ -481,6 +493,27 @@ export default function AdminTournamentSetup() {
                 </label>
               ))}
             </div>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">Overall Standings</label>
+            <select className="input" value={form.standingsMode}
+              onChange={e => setForm(f => ({ ...f, standingsMode: e.target.value as 'cumulative' | 'points' }))}>
+              <option value="cumulative">Lowest total score across rounds</option>
+              <option value="points">Cup points — earn points for your finish in each round</option>
+            </select>
+            <p className="text-xs text-ep-silver mt-1">
+              {form.standingsMode === 'points'
+                ? 'Use this when rounds have different formats (stroke play, Stableford, best ball). Each round ranks players by its own format; ties split the points. Team rounds: both partners share their team\'s finish.'
+                : 'Adds up each player\'s net (or gross) score from every round.'}
+            </p>
+            {form.standingsMode === 'points' && (
+              <div className="mt-2">
+                <label className="label">Points for 1st, 2nd, 3rd…</label>
+                <input className="input" value={form.pointsTable}
+                  onChange={e => setForm(f => ({ ...f, pointsTable: e.target.value }))}
+                  placeholder={`Default: ${defaultPointsTable(Math.max(selectedPlayerIds.length, 2)).join(', ')}`} />
+              </div>
+            )}
           </div>
           <div className="sm:col-span-2">
             <label className="label">Side Contests</label>
@@ -689,6 +722,29 @@ export default function AdminTournamentSetup() {
               )}
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div className={tournament?.standingsMode === 'points' ? '' : 'col-span-2'}>
+                <label className="label">Round Format</label>
+                <select className="input" value={roundForm.format}
+                  onChange={e => setRoundForm(f => ({ ...f, format: e.target.value as RoundFormat }))}>
+                  {(Object.keys(ROUND_FORMAT_LABELS) as RoundFormat[]).map(fmt => (
+                    <option key={fmt} value={fmt}>{ROUND_FORMAT_LABELS[fmt]}</option>
+                  ))}
+                </select>
+              </div>
+              {tournament?.standingsMode === 'points' && (
+                <div>
+                  <label className="label">Cup Points Multiplier</label>
+                  <input className="input" type="number" min="0" step="0.5" value={roundForm.pointsMultiplier}
+                    onChange={e => setRoundForm(f => ({ ...f, pointsMultiplier: e.target.value }))} />
+                </div>
+              )}
+              <p className="col-span-2 text-xs text-ep-silver -mt-1">
+                {ROUND_FORMAT_DESCRIPTIONS[roundForm.format]}
+                {roundForm.format === 'best_ball' && ' Set teams from the round\'s Pairings panel.'}
+              </p>
+            </div>
+
             <div className="col-span-2">
               <label className="flex items-center gap-2 text-sm text-ep-green/80 cursor-pointer">
                 <input type="checkbox" className="rounded accent-[#004C54]"
@@ -726,6 +782,13 @@ export default function AdminTournamentSetup() {
                       <span className="text-xs text-ep-silver">{r.tee}</span>
                       {r.isPracticeRound && (
                         <span className="text-xs bg-ep-sand text-ep-green font-medium px-1.5 py-0.5 rounded">Practice</span>
+                      )}
+                      <span className="text-xs bg-ep-green/10 text-ep-green font-medium px-1.5 py-0.5 rounded">
+                        {ROUND_FORMAT_LABELS[r.format ?? 'stroke_play']}
+                        {r.pointsMultiplier && r.pointsMultiplier !== 1 ? ` · ${r.pointsMultiplier}× pts` : ''}
+                      </span>
+                      {r.format === 'best_ball' && !r.teams?.length && (
+                        <span className="text-xs text-red-500 font-medium">Teams not set</span>
                       )}
                       {r.teeTimeGroups && r.teeTimeGroups.length > 0 && (
                         <span className="flex items-center gap-0.5 text-xs text-ep-orange font-medium">
@@ -765,6 +828,8 @@ export default function AdminTournamentSetup() {
                           longestDriveHole: r.longestDriveHole ? String(r.longestDriveHole) : '',
                           notes: r.notes ?? '',
                           isPracticeRound: r.isPracticeRound ?? false,
+                          format: r.format ?? 'stroke_play',
+                          pointsMultiplier: String(r.pointsMultiplier ?? 1),
                           holes: r.holes ?? [],
                         });
                         setShowRoundForm(true);
@@ -796,6 +861,18 @@ export default function AdminTournamentSetup() {
                 {/* Tee time groups accordion */}
                 {isExpanded && editGroups && (
                   <div className="border-t border-ep-silver/20 bg-ep-sand/20 px-4 py-4 space-y-4">
+                    {r.format === 'best_ball' && tournament && (
+                      <div className="pb-4 border-b border-ep-silver/20">
+                        <TeamsEditor
+                          key={r.id}
+                          round={r}
+                          rounds={rounds}
+                          tournament={tournament}
+                          players={players}
+                          onSaved={updated => setRounds(rs => rs.map(x => x.id === updated.id ? updated : x))}
+                        />
+                      </div>
+                    )}
                     <div>
                       <p className="label mb-1.5">Start Format</p>
                       <div className="flex rounded-lg border border-ep-silver/30 overflow-hidden w-fit text-sm">

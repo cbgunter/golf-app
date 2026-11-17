@@ -4,6 +4,7 @@ import { roundsApi, tournamentsApi, playersApi, scoringApi, Round, Tournament, P
 import toast from 'react-hot-toast';
 import { Save, Check, X, ChevronDown, ChevronUp, Trophy } from 'lucide-react';
 import { parseLocalDate } from '@shared/dates';
+import { computeRoundResult, stablefordTotal, ROUND_FORMAT_LABELS, formatPoints } from '@shared/formats';
 
 const DEFAULT_HOLES = Array.from({ length: 18 }, (_, i) => ({
   hole: i + 1,
@@ -196,8 +197,17 @@ export default function AdminRoundScoring() {
   const needsScoring = players.filter(p => !scoredPlayerIds.has(p.id) && !withdrawnIds.has(p.id));
   const hasCTP = tournament.hasClosestToPin && round.closestToPinHole;
   const hasLD = tournament.hasLongestDrive && round.longestDriveHole;
+  const roundResult = computeRoundResult(
+    round,
+    scores.filter(s => !withdrawnIds.has(s.playerId)),
+    { useNet: tournament.isNet, pointsTable: tournament.pointsTable }
+  );
+  const isStableford = roundResult.format === 'stableford';
+  const stbl = (s: Score) => stablefordTotal(s, tournament.isNet);
   const sortedScores = [...scores].sort((a, b) =>
-    tournament.isNet ? a.netTotal - b.netTotal : a.grossTotal - b.grossTotal
+    isStableford
+      ? stbl(b) - stbl(a)
+      : tournament.isNet ? a.netTotal - b.netTotal : a.grossTotal - b.grossTotal
   );
 
   return (
@@ -207,7 +217,7 @@ export default function AdminRoundScoring() {
         <Link to={`/tournaments/${round.tournamentId}`} className="text-xs text-ep-silver hover:text-ep-green">← Tournament</Link>
         <h1 className="page-header mt-1">{round.courseName}</h1>
         <div className="text-sm text-ep-silver mt-0.5">
-          {round.tee} tees · Par {round.par} · {parseLocalDate(round.date).toLocaleDateString()}
+          {round.tee} tees · Par {round.par} · {parseLocalDate(round.date).toLocaleDateString()} · {ROUND_FORMAT_LABELS[round.format ?? 'stroke_play']}
           <span className="text-ep-silver/60"> · Rating {round.courseRating} / Slope {round.slopeRating}</span>
         </div>
       </div>
@@ -603,7 +613,34 @@ export default function AdminRoundScoring() {
       )}
 
       {/* Live leaderboard — always visible, updates after each score */}
-      <div ref={leaderboardRef}>
+      <div ref={leaderboardRef} className="space-y-5">
+        {roundResult.warning && (
+          <div className="card p-3 text-xs text-red-600 border-red-200">{roundResult.warning}</div>
+        )}
+        {roundResult.isTeam && roundResult.standings.length > 0 && (
+          <div className="card">
+            <div className="px-5 py-3.5 border-b border-ep-silver/20 flex items-center justify-between">
+              <h2 className="font-semibold text-ep-green flex items-center gap-2">
+                <Trophy size={15} className="text-ep-orange" /> Team Best Ball
+              </h2>
+              <span className="text-xs text-ep-silver">{tournament.isNet ? 'Net' : 'Gross'} · better ball per hole</span>
+            </div>
+            <div className="divide-y divide-ep-silver/10">
+              {roundResult.standings.map(t => (
+                <div key={t.key} className={`flex items-center px-5 py-3 ${t.rank === 1 ? 'bg-ep-orange/5' : ''}`}>
+                  <span className="w-8 text-sm font-bold text-ep-silver shrink-0">{t.tied ? `T${t.rank}` : t.rank}</span>
+                  <div className="flex-1 min-w-0 text-sm font-medium text-ep-green">{t.label}</div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-ep-green">{t.value}</div>
+                    <div className="text-xs text-ep-silver">
+                      {t.toPar === 0 ? 'E' : t.toPar! > 0 ? `+${t.toPar}` : t.toPar} · {t.holesPlayed} holes
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {sortedScores.length > 0 && (
           <div className="card">
             <div className="px-5 py-3.5 border-b border-ep-silver/20 flex items-center justify-between">
@@ -614,7 +651,7 @@ export default function AdminRoundScoring() {
                   {scores.length}/{players.length} scores entered
                 </span>
               </h2>
-              <span className="text-xs text-ep-silver">{tournament.isNet ? 'Net' : 'Gross'}</span>
+              <span className="text-xs text-ep-silver">{isStableford ? 'Stableford · ' : ''}{tournament.isNet ? 'Net' : 'Gross'}</span>
             </div>
             <div className="divide-y divide-ep-silver/10">
               {sortedScores.map((s, i) => {
@@ -635,6 +672,12 @@ export default function AdminRoundScoring() {
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right">
+                          {isStableford && (
+                            <div className="text-sm font-bold text-ep-orange">{stbl(s)} pts</div>
+                          )}
+                          {roundResult.pointsByPlayer[s.playerId] !== undefined && tournament.standingsMode === 'points' && (
+                            <div className="text-xs text-ep-silver">Cup +{formatPoints(roundResult.pointsByPlayer[s.playerId])}</div>
+                          )}
                           {tournament.isNet && (
                             <div className="text-sm font-bold text-ep-green">Net {s.netTotal}</div>
                           )}

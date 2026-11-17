@@ -135,26 +135,40 @@ export function applyESC(strokes: number, par: number, courseHandicap: number): 
  * Allocates strokes by hole handicap (stroke index), lowest first.
  */
 export function receivesStroke(holeHandicap: number, courseHandicap: number): boolean {
-  return holeHandicap <= courseHandicap;
+  return strokesOnHole(holeHandicap, courseHandicap) > 0;
+}
+
+/**
+ * Number of handicap strokes received on a hole. Handles course handicaps
+ * above 18 (two or more strokes on the hardest holes) and plus handicaps
+ * (strokes given back on the easiest holes, returned as a negative number).
+ */
+export function strokesOnHole(holeHandicap: number, courseHandicap: number): number {
+  if (courseHandicap >= 0) {
+    return Math.floor(courseHandicap / 18) + (holeHandicap <= courseHandicap % 18 ? 1 : 0);
+  }
+  const plus = -courseHandicap;
+  return -(Math.floor(plus / 18) + (holeHandicap > 18 - (plus % 18) ? 1 : 0));
 }
 
 /**
  * Computes full hole-by-hole net scores and returns annotated HoleScore array.
  */
 export function computeHoleScores(
-  rawHoleScores: { hole: number; par: number; handicap: number; strokes: number }[],
+  rawHoleScores: { hole: number; par: number; handicap: number; strokes: number; adjustedScore?: number }[],
   courseHandicap: number
 ): HoleScore[] {
   return rawHoleScores.map(h => {
-    const getsStroke = receivesStroke(h.handicap, courseHandicap);
-    const netStrokes = getsStroke ? h.strokes - 1 : h.strokes;
+    const strokesReceived = strokesOnHole(h.handicap, courseHandicap);
     return {
       hole: h.hole,
       par: h.par,
       handicap: h.handicap,
       strokes: h.strokes,
-      netStrokes,
-      receivesStroke: getsStroke,
+      netStrokes: h.strokes - strokesReceived,
+      receivesStroke: strokesReceived > 0,
+      strokesReceived,
+      ...(h.adjustedScore !== undefined && h.adjustedScore !== h.strokes ? { adjustedScore: h.adjustedScore } : {}),
     };
   });
 }

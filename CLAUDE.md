@@ -29,7 +29,9 @@ npm run typecheck   # type-check without emitting
 ```
 
 ### Shared
-`shared/src/` contains code consumed by both apps via path alias `@shared/*`. No build step — Vite transpiles on the fly. Files: `client.ts` (all API types + functions), `dates.ts` (date utilities).
+`shared/src/` contains code consumed by both apps via path alias `@shared/*`. No build step — Vite transpiles on the fly. Files: `client.ts` (all API types + functions), `dates.ts` (date utilities), `formats.ts` (scoring-format engine).
+
+The backend also imports `shared/src/formats.ts` via a relative path (`../../../shared/src/formats`); `backend/tsconfig.json` includes that file and has no `rootDir`, and `npm run build` is `tsc --noEmit` + esbuild bundle. Keep `formats.ts` import-free so it bundles cleanly for both Node and Vite.
 
 ### Infrastructure
 ```bash
@@ -100,10 +102,20 @@ GHIN response shape for holes: `TeeSets[].Holes[{ Number, Par, Allocation (strok
 - `calcDifferential` — `(adjustedGross − courseRating) × 113 / slope`, rounded to 1 decimal
 - `calcHandicapIndex` — uses best N differentials from last 20 rounds (count-based table: 1 round → lowest 1 with −2 adj, up to 20+ → best 8 of last 20 × 0.96)
 - `calcCourseHandicap` — `handicapIndex × (slope / 113) + (courseRating − par)`, rounded
-- `applyESC` — per-hole stroke cap by course handicap bracket (≤9 → double bogey, 10–19 → 7, 20–29 → 8, 30–39 → 9, 40+ → 10)
-- `computeHoleScores` — applies handicap strokes hole-by-hole by stroke index
+- `applyESC` — per-hole stroke cap by course handicap bracket (≤9 → double bogey, 10–19 → 7, 20–29 → 8, 30–39 → 9, 40+ → 10). ESC only affects the handicap differential (stored as `HoleScore.adjustedScore`); `strokes`, `grossTotal`, and `netTotal` are the actual strokes played.
+- `strokesOnHole` / `computeHoleScores` — allocates handicap strokes by stroke index, including 2+ strokes per hole for course handicaps over 18 and negative strokes for plus handicaps (`HoleScore.strokesReceived`)
 
 Player `handicapIndex` defaults to `0.0` at creation if not supplied. It is automatically recalculated and overwritten after every scored round. The starting value is not separately stored; the `handicapHistory[]` array shows the progression from round 1 onward.
+
+### Scoring formats and cup standings
+`shared/src/formats.ts` is the single scoring engine, used by the backend results endpoint, public `TournamentView`/`TournamentResults`, and admin `RoundScoring`/`TeamsEditor`. Don't re-implement ranking logic in pages.
+
+- **Per-round format**: `Round.format` is `'stroke_play'` (default) | `'stableford'` | `'best_ball'`. Stableford = net (or gross per `tournament.isNet`) points per hole, `max(0, 2 + par − strokes)`, highest wins. Best ball = `Round.teams[]` (`{ name?, playerIds[] }`), team hole score is the lower member score, lowest team total wins. A best-ball round with no teams falls back to individual stroke play with a warning. `Tournament.format` is a display label only.
+- **Standings mode**: `Tournament.standingsMode` is `'cumulative'` (default: sum net/gross) or `'points'` (cup). In points mode each round ranks players by its own format and awards `Tournament.pointsTable` (default N…1). Tied players split the points of the positions they occupy; team partners share their team's positions (2v2 → winners 3.5 each, losers 1.5 with default 4/3/2/1). `Round.pointsMultiplier` scales a round (e.g. 2× for a championship round). Total ties are broken by the most recent round, then cumulative net.
+- `computeRoundResult(round, scores, { useNet, pointsTable })` → per-round standings + `pointsByPlayer`; `computeCupStandings(rounds, scoresByRound, opts)` → overall cup table. The backend results endpoint passes completed non-practice rounds only; the public live view passes all non-practice rounds.
+- `teamsFromStandings(orderedIds)` pairs 1st with last, 2nd with second-to-last (4 players → 1&4 vs 2&3). The admin **TeamsEditor** (`admin/src/components/TeamsEditor.tsx`, shown in a best-ball round's Pairings panel) has a "Set from standings" button that computes standings from earlier rounds.
+- Score entry is format-agnostic: everyone still enters individual hole scores via PIN or admin entry; formats are applied only when ranking.
+- Public cup table component: `frontend/src/components/CupStandingsCard.tsx`.
 
 ### Side contests (CTP / LD)
 Tournaments have `hasClosestToPin` / `hasLongestDrive` boolean flags and optional `closestToPinFee` / `longestDriveFee` per-player ante amounts. The hole for each contest is set per-round (`closestToPinHole`, `longestDriveHole`). Winners are selected on the RoundScoring admin page via dropdowns that **auto-save immediately on change** (calls `roundsApi.update` directly; no need to complete the round first). `closestToPinWinnerId` / `longestDriveWinnerId` are stored on the round. Prize pots (`fee × playerCount`) are shown on the public tournament view and results page.

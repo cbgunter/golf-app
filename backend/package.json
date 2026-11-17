@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "tsc && npm run bundle",
+    "build": "tsc --noEmit && npm run bundle",
     "bundle": "node scripts/bundle.js",
     "dev": "ts-node src/local.ts",
     "typecheck": "tsc --noEmit"

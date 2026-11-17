@@ -5,6 +5,8 @@ import { roundsApi } from '@shared/client';
 import StatusBadge from '../components/StatusBadge';
 import { Trophy, MapPin, Calendar, ChevronDown, ChevronUp, X, HelpCircle } from 'lucide-react';
 import { parseLocalDate } from '@shared/dates';
+import CupStandingsCard from '../components/CupStandingsCard';
+import { computeCupStandings, computeRoundResult, stablefordTotal, ROUND_FORMAT_LABELS, ROUND_FORMAT_DESCRIPTIONS, formatPoints } from '@shared/formats';
 
 export default function TournamentView() {
   const { id } = useParams<{ id: string }>();
@@ -110,6 +112,17 @@ export default function TournamentView() {
       .forEach(([pid], i) => prevRankMap.set(pid, i + 1));
   }
 
+  // Cup points standings (when the event uses per-round points)
+  const isCup = tournament.standingsMode === 'points';
+  const standingsRounds = rounds.filter(r => !r.isPracticeRound);
+  const cupOpts = { useNet: tournament.isNet, pointsTable: tournament.pointsTable, excludePlayerIds: withdrawnIds };
+  const cupStandings = isCup ? computeCupStandings(standingsRounds, scoresByRound, cupOpts) : [];
+  const cupPrevRank = new Map<string, number>();
+  if (isCup && lastScoredRound && scoredRoundsList.length > 1) {
+    computeCupStandings(standingsRounds.filter(r => r.id !== lastScoredRound.id), scoresByRound, cupOpts)
+      .forEach(e => cupPrevRank.set(e.playerId, e.rank));
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Info modal */}
@@ -158,6 +171,11 @@ export default function TournamentView() {
         <div className="flex flex-wrap gap-2 mt-3">
           {tournament.isGross && <span className="badge badge-gray">Gross</span>}
           {tournament.isNet && <span className="badge badge-green">Net</span>}
+          {isCup && <span className="badge badge-gold">Cup Points</span>}
+          {[...new Set(standingsRounds.map(r => r.format ?? 'stroke_play'))].length > 1 &&
+            [...new Set(standingsRounds.map(r => r.format ?? 'stroke_play'))].map(f => (
+              <span key={f} className="badge badge-gray">{ROUND_FORMAT_LABELS[f]}</span>
+            ))}
           {tournament.hasClosestToPin && <span className="badge badge-blue">Closest to Pin</span>}
           {tournament.hasLongestDrive && <span className="badge badge-blue">Longest Drive</span>}
         </div>
@@ -207,8 +225,22 @@ export default function TournamentView() {
         </Link>
       )}
 
+      {/* Cup standings (points mode) */}
+      {isCup && cupStandings.length > 0 && tournament.status !== 'completed' && (
+        <CupStandingsCard
+          standings={cupStandings}
+          rounds={standingsRounds}
+          prevRank={cupPrevRank}
+          players={players}
+          tournament={tournament}
+          totalPot={totalPot}
+          live={tournament.status === 'active'}
+          subtitle={completedRoundsCount > 0 ? `After ${completedRoundsCount} of ${standingsRoundsTotal} rounds` : undefined}
+        />
+      )}
+
       {/* Live leaderboard */}
-      {showLeaderboard && tournament.status !== 'completed' && (
+      {!isCup && showLeaderboard && tournament.status !== 'completed' && (
         <div className="card mb-6">
           <div className="px-5 py-3.5 border-b border-ep-silver/20 flex items-center justify-between">
             <div>
@@ -328,6 +360,8 @@ export default function TournamentView() {
                 onToggle={() => setExpandedRound(expandedRound === round.id ? null : round.id)}
                 isNet={tournament.isNet}
                 withdrawnIds={withdrawnIds}
+                pointsTable={tournament.pointsTable}
+                showCupPoints={isCup}
               />
             </div>
           ))}
@@ -345,6 +379,8 @@ function RoundCard({
   onToggle,
   isNet,
   withdrawnIds,
+  pointsTable,
+  showCupPoints,
 }: {
   round: Round;
   scores: Score[];
@@ -353,11 +389,19 @@ function RoundCard({
   onToggle: () => void;
   isNet: boolean;
   withdrawnIds: Set<string>;
+  pointsTable?: number[];
+  showCupPoints: boolean;
 }) {
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
-  const sorted = [...scores]
-    .filter(s => !withdrawnIds.has(s.playerId))
-    .sort((a, b) => isNet ? a.netTotal - b.netTotal : a.grossTotal - b.grossTotal);
+  const activeScores = scores.filter(s => !withdrawnIds.has(s.playerId));
+  const result = computeRoundResult(round, activeScores, { useNet: isNet, pointsTable });
+  const isStableford = result.format === 'stableford';
+  const stbl = (s: Score) => stablefordTotal(s, isNet);
+  const sorted = [...activeScores].sort((a, b) =>
+    isStableford ? stbl(b) - stbl(a) : isNet ? a.netTotal - b.netTotal : a.grossTotal - b.grossTotal
+  );
+  const showPts = showCupPoints && !round.isPracticeRound;
+  const colCount = 4 + (isNet ? 1 : 0) + (isStableford ? 1 : 0) + (showPts ? 1 : 0);
 
   return (
     <div className="card overflow-hidden">
@@ -369,6 +413,10 @@ function RoundCard({
           <div className="flex items-center gap-2 mb-0.5">
             <StatusBadge status={round.status} />
             <span className="text-xs text-ep-silver">{round.tee} tees</span>
+            <span className="text-xs bg-ep-orange/10 text-ep-orange font-medium px-1.5 py-0.5 rounded">
+              {ROUND_FORMAT_LABELS[round.format ?? 'stroke_play']}
+              {round.pointsMultiplier && round.pointsMultiplier !== 1 ? ` · ${round.pointsMultiplier}× pts` : ''}
+            </span>
             {round.isPracticeRound
               ? <span className="text-xs bg-ep-silver/20 text-ep-silver font-medium px-1.5 py-0.5 rounded">No leaderboard</span>
               : <span className="text-xs bg-ep-green/10 text-ep-green font-medium px-1.5 py-0.5 rounded">Leaderboard</span>
@@ -452,6 +500,41 @@ function RoundCard({
             </div>
           )}
 
+          <p className="px-4 pt-3 text-xs text-ep-silver">
+            {ROUND_FORMAT_DESCRIPTIONS[result.format]}
+            {isNet ? ' Net scores (handicap strokes applied).' : ''}
+          </p>
+          {result.warning && <p className="px-4 pt-1 text-xs text-ep-silver italic">{result.warning}</p>}
+
+          {round.format === 'best_ball' && (round.teams?.length ?? 0) > 0 && (
+            <div className="px-4 pt-3">
+              <h3 className="text-xs font-heading font-semibold text-ep-silver uppercase tracking-wider mb-2">Teams</h3>
+              <div className="rounded-lg border border-ep-silver/20 divide-y divide-ep-silver/10">
+                {(result.isTeam && result.standings.length > 0
+                  ? result.standings
+                  : (round.teams ?? []).map((t, i) => ({
+                      key: `t${i}`, rank: 0, tied: false, value: 0, toPar: undefined as number | undefined, holesPlayed: 0, playerIds: t.playerIds,
+                      label: t.name || t.playerIds.map(pid => players.find(p => p.id === pid)?.name ?? '?').join(' & '),
+                    }))
+                ).map(t => (
+                  <div key={t.key} className={`flex items-center px-3 py-2 text-sm ${t.rank === 1 ? 'bg-ep-orange/10' : ''}`}>
+                    <span className="w-8 font-bold text-ep-silver">{t.rank ? (t.tied ? `T${t.rank}` : t.rank) : '—'}</span>
+                    <span className="flex-1 font-medium text-ep-green">{t.label}</span>
+                    {t.holesPlayed > 0 && (
+                      <span className="text-right">
+                        <span className="font-semibold text-ep-green">{t.value}</span>
+                        <span className="text-xs text-ep-silver ml-2">
+                          {t.toPar === 0 ? 'E' : t.toPar! > 0 ? `+${t.toPar}` : t.toPar}
+                          {t.holesPlayed < 18 ? ` thru ${t.holesPlayed}` : ''}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {scores.length === 0 ? (
             <p className="text-sm text-ep-silver text-center py-6">No scores entered yet.</p>
           ) : (
@@ -464,6 +547,8 @@ function RoundCard({
                     <th className="text-center px-3 py-2 font-medium">Gross</th>
                     {isNet && <th className="text-center px-3 py-2 font-medium">Net</th>}
                     <th className="text-center px-3 py-2 font-medium">+/-</th>
+                    {isStableford && <th className="text-center px-3 py-2 font-medium">Pts</th>}
+                    {showPts && <th className="text-center px-3 py-2 font-medium">Cup</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-ep-silver/10">
@@ -505,10 +590,16 @@ function RoundCard({
                           <td className={`px-3 py-2.5 text-center font-medium ${toPar < 0 ? 'text-ep-orange' : toPar === 0 ? 'text-ep-green' : 'text-ep-green/70'}`}>
                             {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}
                           </td>
+                          {isStableford && <td className="px-3 py-2.5 text-center font-bold text-ep-orange">{stbl(score)}</td>}
+                          {showPts && (
+                            <td className="px-3 py-2.5 text-center text-ep-green/80">
+                              {result.pointsByPlayer[score.playerId] !== undefined ? formatPoints(result.pointsByPlayer[score.playerId]) : '—'}
+                            </td>
+                          )}
                         </tr>
                         {isPlayerExpanded && score.holeScores.length > 0 && (
                           <tr className="bg-ep-sand/50">
-                            <td colSpan={isNet ? 5 : 4} className="px-4 py-3 border-t border-ep-silver/20">
+                            <td colSpan={colCount} className="px-4 py-3 border-t border-ep-silver/20">
                               <HoleScorecard holeScores={score.holeScores} />
                             </td>
                           </tr>

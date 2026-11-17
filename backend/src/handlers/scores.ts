@@ -73,8 +73,9 @@ export async function submitScore(
     });
   }
 
-  // Apply ESC and compute hole scores
-  const processedHoles: RawHoleInput[] = [];
+  // ESC caps only the score used for the handicap differential. Competition
+  // gross/net use the strokes actually played.
+  const processedHoles: (RawHoleInput & { adjustedScore: number })[] = [];
   for (const h of body.holeScores) {
     const { adjusted, wasAdjusted, maxAllowed } = applyESC(h.strokes, h.par, effectiveCH);
     if (wasAdjusted) {
@@ -83,10 +84,10 @@ export async function submitScore(
         hole: h.hole,
         originalValue: h.strokes,
         adjustedValue: adjusted,
-        reason: `Equitable Stroke Control: Course handicap ${effectiveCH}, max allowed on hole = ${maxAllowed}`,
+        reason: `Equitable Stroke Control (handicap posting only): Course handicap ${effectiveCH}, max allowed on hole = ${maxAllowed}`,
       });
     }
-    processedHoles.push({ ...h, strokes: adjusted });
+    processedHoles.push({ ...h, adjustedScore: adjusted });
   }
 
   const holeScores: HoleScore[] = computeHoleScores(processedHoles, effectiveCH);
@@ -95,7 +96,7 @@ export async function submitScore(
   const netTotal = holeScores.reduce((s, h) => s + h.netStrokes, 0);
 
   // Handicap differential from adjusted gross
-  const adjustedGross = processedHoles.reduce((s, h) => s + h.strokes, 0);
+  const adjustedGross = processedHoles.reduce((s, h) => s + h.adjustedScore, 0);
   const differential = calcDifferential(adjustedGross, round.courseRating, round.slopeRating);
 
   adjustments.push({

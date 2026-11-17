@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getItem, putItem, deleteItem, scanTable, queryIndex } from '../lib/dynamo';
 import { ok, error, notFound } from '../lib/response';
 import { Tournament, Round, Score, Player, TournamentResults, LeaderboardEntry, PayoutResult } from '../types';
+import { computeCupStandings } from '../../../shared/src/formats';
 
 const T_TABLE = process.env.TOURNAMENTS_TABLE!;
 const R_TABLE = process.env.ROUNDS_TABLE!;
@@ -42,6 +43,8 @@ export async function createTournament(body: Partial<Tournament>) {
     format: body.format ?? 'stroke_play',
     isNet: body.isNet ?? true,
     isGross: body.isGross ?? true,
+    standingsMode: body.standingsMode,
+    pointsTable: body.pointsTable,
     hasClosestToPin: body.hasClosestToPin ?? false,
     hasLongestDrive: body.hasLongestDrive ?? false,
     closestToPinFee: body.closestToPinFee !== undefined ? Number(body.closestToPinFee) : undefined,
@@ -136,13 +139,34 @@ export async function getTournamentResults(id: string) {
     leaderboard.push({ rank: 0, player, scores, totalGross, totalNet, roundDifferentials });
   }
 
-  // Sort by net (primary) then gross
-  if (tournament.isNet) {
-    leaderboard.sort((a, b) => a.totalNet - b.totalNet);
+  if (tournament.standingsMode === 'points') {
+    // Cup points: per-round finish (by that round's format) earns placement points
+    const scoresByRound: Record<string, Score[]> = {};
+    for (const scores of scoresByPlayer.values()) {
+      for (const s of scores) (scoresByRound[s.roundId] ??= []).push(s);
+    }
+    const cup = computeCupStandings(completedRounds, scoresByRound, {
+      useNet: tournament.isNet,
+      pointsTable: tournament.pointsTable,
+      excludePlayerIds: new Set(tournament.withdrawnPlayerIds ?? []),
+    });
+    const order = new Map(cup.map((c, i) => [c.playerId, i]));
+    for (const e of leaderboard) {
+      const c = cup.find(x => x.playerId === e.player.id);
+      e.cupPoints = c?.total ?? 0;
+      e.pointsByRound = c?.byRound ?? {};
+      e.rank = c?.rank ?? leaderboard.length;
+    }
+    leaderboard.sort((a, b) => (order.get(a.player.id) ?? 999) - (order.get(b.player.id) ?? 999));
   } else {
-    leaderboard.sort((a, b) => a.totalGross - b.totalGross);
+    // Sort by net (primary) then gross
+    if (tournament.isNet) {
+      leaderboard.sort((a, b) => a.totalNet - b.totalNet);
+    } else {
+      leaderboard.sort((a, b) => a.totalGross - b.totalGross);
+    }
+    leaderboard.forEach((e, i) => (e.rank = i + 1));
   }
-  leaderboard.forEach((e, i) => (e.rank = i + 1));
 
   // Calculate payouts
   const playerCount = tournament.playerIds.length;

@@ -1,3 +1,6 @@
+import type { RoundFormat, RoundTeam, StandingsMode } from '../../../shared/src/formats';
+export type { RoundFormat, RoundTeam, StandingsMode };
+
 export interface Player {
   id: string;
   name: string;
@@ -57,6 +60,10 @@ export interface Tournament {
   format: TournamentFormat;
   isNet: boolean;
   isGross: boolean;
+  /** 'cumulative' (default): lowest total net/gross. 'points': cup points by per-round finish. */
+  standingsMode?: StandingsMode;
+  /** Cup points for 1st, 2nd, … in each round. Defaults to N…1. */
+  pointsTable?: number[];
   hasClosestToPin: boolean;
   hasLongestDrive: boolean;
   closestToPinFee?: number;
@@ -122,6 +129,12 @@ export interface Round {
   startFormat?: 'sequential' | 'shotgun';
   teeTimeGroups?: TeeTimeGroup[];
   isPracticeRound?: boolean;
+  /** Scoring format for this round (defaults to stroke play). */
+  format?: RoundFormat;
+  /** Teams for best-ball rounds. */
+  teams?: RoundTeam[];
+  /** Multiplies cup points earned in this round (e.g. 2 for a championship round). */
+  pointsMultiplier?: number;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -151,6 +164,8 @@ export interface HoleScore {
   strokes: number;
   netStrokes: number;
   receivesStroke: boolean;
+  /** Handicap strokes received on this hole (2+ for course handicaps over 18; negative for plus handicaps). */
+  strokesReceived?: number;
   adjustedScore?: number; // ESC adjusted
 }
 
@@ -181,6 +196,9 @@ export interface LeaderboardEntry {
   totalGross: number;
   totalNet: number;
   roundDifferentials: number[];
+  /** Present when tournament.standingsMode === 'points'. */
+  cupPoints?: number;
+  pointsByRound?: Record<string, number | undefined>;
   payout?: number;
 }
 

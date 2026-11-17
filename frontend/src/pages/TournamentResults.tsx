@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { tournamentsApi, TournamentResults } from '@shared/client';
 import { Trophy, Info, ArrowLeft } from 'lucide-react';
+import { formatPoints, ROUND_FORMAT_LABELS } from '@shared/formats';
+import { parseLocalDate } from '@shared/dates';
 
 export default function TournamentResultsPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +26,7 @@ export default function TournamentResultsPage() {
 
   const { tournament, leaderboard, payouts, totalPot, ctpPot, ldPot, closestToPin, longestDrive } = results;
   const isNet = tournament.isNet;
+  const isCup = tournament.standingsMode === 'points';
   const withdrawnIds = new Set(tournament.withdrawnPlayerIds ?? []);
   const activeLeaderboard = leaderboard
     .filter(e => !withdrawnIds.has(e.player.id))
@@ -99,7 +102,11 @@ export default function TournamentResultsPage() {
       <div className="card mb-6">
         <div className="px-5 py-4 border-b border-ep-silver/20">
           <h2 className="font-heading font-bold text-ep-green">Leaderboard</h2>
-          <p className="text-xs text-ep-silver mt-0.5">Sorted by {isNet ? 'net' : 'gross'} score (lowest wins)</p>
+          <p className="text-xs text-ep-silver mt-0.5">
+            {isCup
+              ? "Sorted by cup points (most wins). Points come from each round's finish."
+              : `Sorted by ${isNet ? 'net' : 'gross'} score (lowest wins)`}
+          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -107,6 +114,7 @@ export default function TournamentResultsPage() {
               <tr className="bg-ep-sand text-ep-silver text-xs">
                 <th className="text-left px-5 py-2.5 font-medium">Rank</th>
                 <th className="text-left px-3 py-2.5 font-medium">Player</th>
+                {isCup && <th className="text-center px-3 py-2.5 font-medium">Pts</th>}
                 <th className="text-center px-3 py-2.5 font-medium">HCP Idx</th>
                 {tournament.isGross && <th className="text-center px-3 py-2.5 font-medium">Gross</th>}
                 {tournament.isNet && <th className="text-center px-3 py-2.5 font-medium">Net</th>}
@@ -130,6 +138,7 @@ export default function TournamentResultsPage() {
                         {idx === 0 ? '🏆' : entry.rank}
                       </td>
                       <td className="px-3 py-3 font-medium text-ep-green">{entry.player.name}</td>
+                      {isCup && <td className="px-3 py-3 text-center font-bold text-ep-green">{formatPoints(entry.cupPoints ?? 0)}</td>}
                       <td className="px-3 py-3 text-center text-ep-silver">{entry.player.handicapIndex.toFixed(1)}</td>
                       {tournament.isGross && <td className="px-3 py-3 text-center">{entry.totalGross}</td>}
                       {tournament.isNet && <td className="px-3 py-3 text-center font-semibold">{entry.totalNet}</td>}
@@ -141,7 +150,7 @@ export default function TournamentResultsPage() {
                     </tr>
                     {isExpanded && (
                       <tr key={`${entry.player.id}-detail`}>
-                        <td colSpan={8} className="px-5 py-4 bg-ep-sand/50 border-t border-ep-silver/20">
+                        <td colSpan={isCup ? 9 : 8} className="px-5 py-4 bg-ep-sand/50 border-t border-ep-silver/20">
                           <ScoreBreakdown entry={entry} rounds={results.rounds} isNet={isNet} />
                         </td>
                       </tr>
@@ -153,6 +162,7 @@ export default function TournamentResultsPage() {
                 <tr key={entry.player.id} className="opacity-50">
                   <td className="px-5 py-3 text-xs font-semibold text-ep-silver">WD</td>
                   <td className="px-3 py-3 font-medium text-ep-green/60 line-through">{entry.player.name}</td>
+                  {isCup && <td className="px-3 py-3 text-center text-ep-silver">—</td>}
                   <td className="px-3 py-3 text-center text-ep-silver">{entry.player.handicapIndex.toFixed(1)}</td>
                   {tournament.isGross && <td className="px-3 py-3 text-center text-ep-silver">—</td>}
                   {tournament.isNet && <td className="px-3 py-3 text-center text-ep-silver">—</td>}
@@ -216,7 +226,9 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
                 <div>
                   <div className="font-medium text-sm text-ep-green">{round?.courseName ?? 'Unknown Course'}</div>
                   <div className="text-xs text-ep-silver">
-                    {round ? new Date(round.date).toLocaleDateString() : ''} · Par {round?.par} · Course HCP {score.courseHandicap}
+                    {round ? parseLocalDate(round.date).toLocaleDateString() : ''} · Par {round?.par} · Course HCP {score.courseHandicap}
+                    {round && ` · ${ROUND_FORMAT_LABELS[round.format ?? 'stroke_play']}`}
+                    {entry.pointsByRound?.[score.roundId] !== undefined && ` · ${formatPoints(entry.pointsByRound[score.roundId]!)} cup pts`}
                   </div>
                 </div>
                 <div className="text-right">
