@@ -9,3 +9,6 @@ cdk-outputs.json
 .cdk.staging/
 *.d.ts
 .claude/settings.local.json
+
+# Local end-to-end test script (hardcodes admin credentials)
+e2e_test.py
