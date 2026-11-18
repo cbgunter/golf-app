@@ -50,24 +50,24 @@ export default function ScoreHub() {
       </div>
 
       <div className="px-4 py-6 flex-1">
-      <p className="text-ep-silver text-sm mb-6">Tap your group below to start scoring.</p>
+      <p className="text-ep-muted text-sm mb-6">Tap your group below to start scoring.</p>
 
       {/* Active rounds / groups */}
       {loading ? (
-        <div className="flex justify-center py-8"><Loader2 className="animate-spin text-ep-silver" /></div>
+        <div className="flex justify-center py-8"><Loader2 className="animate-spin text-ep-muted" /></div>
       ) : rounds.length === 0 ? (
-        <p className="text-ep-silver text-sm text-center py-8">No active rounds right now.</p>
+        <p className="text-ep-muted text-sm text-center py-8">No active rounds right now.</p>
       ) : (
         <div className="space-y-4">
           {rounds.map(t => (
             <div key={t.tournamentId}>
-              <h2 className="text-xs font-heading font-semibold text-ep-silver uppercase tracking-wide mb-2">{t.tournamentName}</h2>
+              <h2 className="text-xs font-heading font-semibold text-ep-muted uppercase tracking-wide mb-2">{t.tournamentName}</h2>
               {t.rounds.map(r => {
                 const scores = roundScores[r.roundId] ?? [];
                 return (
                   <div key={r.roundId} className="card p-3 mb-2">
                     <div className="text-sm font-medium text-ep-green mb-0.5">{r.courseName}</div>
-                    <div className="text-xs text-ep-silver mb-2">
+                    <div className="text-xs text-ep-muted mb-2">
                       {parseLocalDate(r.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                     </div>
                     <div className="divide-y divide-ep-silver/20">
@@ -81,7 +81,7 @@ export default function ScoreHub() {
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm font-medium text-ep-green">Group {g.groupNumber}</span>
-                                  {g.teeTime && <span className="text-xs text-ep-silver">{g.teeTime}</span>}
+                                  {g.teeTime && <span className="text-xs text-ep-muted">{g.teeTime}</span>}
                                 </div>
                                 <span className="flex items-center gap-1 text-xs text-ep-orange font-medium">
                                   <CheckCircle size={13} /> Confirmed
@@ -89,11 +89,11 @@ export default function ScoreHub() {
                               </div>
                               <table className="w-full text-xs">
                                 <thead>
-                                  <tr className="text-ep-silver">
+                                  <tr className="text-ep-muted">
                                     <th className="text-left font-normal pb-1">Player</th>
                                     <th className="text-center font-normal pb-1 w-10">Out</th>
                                     <th className="text-center font-normal pb-1 w-10">In</th>
-                                    <th className="text-center font-semibold pb-1 w-10 text-ep-green/70">Tot</th>
+                                    <th className="text-center font-semibold pb-1 w-10 text-ep-green/80">Tot</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -103,8 +103,8 @@ export default function ScoreHub() {
                                     return (
                                       <tr key={s.playerId} className="border-t border-ep-silver/10">
                                         <td className="py-1.5 font-medium text-ep-green">{s.playerName}</td>
-                                        <td className="py-1.5 text-center text-ep-silver">{front || '—'}</td>
-                                        <td className="py-1.5 text-center text-ep-silver">{back || '—'}</td>
+                                        <td className="py-1.5 text-center text-ep-muted">{front || '—'}</td>
+                                        <td className="py-1.5 text-center text-ep-muted">{back || '—'}</td>
                                         <td className="py-1.5 text-center font-bold text-ep-green">{s.grossTotal}</td>
                                       </tr>
                                     );
@@ -123,8 +123,8 @@ export default function ScoreHub() {
                           >
                             <div>
                               <span className="text-sm font-medium text-ep-green">Group {g.groupNumber}</span>
-                              {g.teeTime && <span className="text-xs text-ep-silver ml-2">{g.teeTime}</span>}
-                              {g.startingHole && <span className="text-xs text-ep-silver ml-1">· Hole {g.startingHole}</span>}
+                              {g.teeTime && <span className="text-xs text-ep-muted ml-2">{g.teeTime}</span>}
+                              {g.startingHole && <span className="text-xs text-ep-muted ml-1">· Hole {g.startingHole}</span>}
                             </div>
                             <span className="flex items-center text-xs font-medium text-ep-orange">
                               Score <ChevronRight size={14} />
@@ -161,14 +161,14 @@ function ScorekeeperHelp({ onClose }: { onClose: () => void }) {
         <HelpStep n={2}>Tap <strong>Next</strong> to advance to the next hole — scores sync automatically.</HelpStep>
         <HelpStep n={3}>
           Use the <strong>hole dots</strong> at the top to jump to any hole:
-          <ul className="mt-1 ml-1 space-y-0.5 text-ep-silver">
+          <ul className="mt-1 ml-1 space-y-0.5 text-ep-muted">
             <li>• <span className="text-ep-green font-medium">Bright green</span> — all players scored</li>
             <li>• <span className="text-ep-green/60 font-medium">Dim green</span> — some players scored</li>
             <li>• Dark — not started</li>
           </ul>
         </HelpStep>
         <HelpStep n={4}>
-          Score badges show relative to par: <span className="text-ep-orange font-medium">Eagle+</span>, <span className="text-ep-orange/70 font-medium">Birdie</span>, <span className="text-ep-green font-medium">Par</span>, or <span className="text-ep-silver">+N</span> over.
+          Score badges show relative to par: <span className="text-ep-orange font-medium">Eagle+</span>, <span className="text-ep-orange/70 font-medium">Birdie</span>, <span className="text-ep-green font-medium">Par</span>, or <span className="text-ep-muted">+N</span> over.
         </HelpStep>
       </HelpSection>
 

@@ -48,13 +48,15 @@ The palette pairs midnight green with community orange. This combo delivers conf
 | Role | Name | Hex | Usage |
 |---|---|---|---|
 | Dark Surface | Deep Green | `#002B30` | Footer, dark sections, nav overlays. |
-| Neutral | Stadium Silver | `#B8B5AF` | Secondary text, captions, borders, metadata. |
+| Neutral | Stadium Silver | `#B8B5AF` | Borders, dividers, and secondary text on dark surfaces. |
+| Neutral (text) | Stadium Silver — Ink | `#6B675F` | Secondary text, captions, metadata on Cream/Sand. A darker tone of Stadium Silver so small text stays readable (≥4.5:1). |
 | Light Surface | Sand | `#EDE6DA` | Cards, callout boxes, alternating sections. Slightly darker than background. |
 
 ### Usage Rules
 - **Community Orange is the only "loud" color.** Use it for buttons, links, key data points. If everything is orange, nothing is.
 - **Midnight Green is the workhorse.** Headings, body text, dark surfaces, date blocks, stat bars.
-- **Stadium Silver handles utility** — borders, captions, secondary text. It never draws attention.
+- **Stadium Silver handles utility** — borders, captions, secondary text. It never draws attention. On light surfaces, set Silver *text* in the Ink tone (`#6B675F`); the base `#B8B5AF` is too faint for text on Cream/Sand.
+- **Keep text readable.** Body and caption text should meet 4.5:1 contrast. Avoid fading Midnight Green text below 80% opacity on light surfaces, or Cream text below 60% on dark surfaces.
 - **Deep Green only for dark sections** — footer, overlays, inverted hero sections.
 - **No additional colors.** If you need a status color (error, success), desaturate into the warm family.
 
@@ -86,7 +88,7 @@ Clean, neutral, highly readable. Complements Outfit without competing. Available
 | Event card title | 15px | 700 (Bold) | Outfit |
 | Card body / format | 14px | 400 | DM Sans |
 | Labels / tags | 12–13px | 600 | Outfit, uppercase, letterspaced |
-| Captions / meta | 13–14px | 400 | DM Sans, Stadium Silver color |
+| Captions / meta | 13–14px | 400 | DM Sans, Stadium Silver Ink (`#6B675F`) |
 
 ### Rules
 - **Minimum readable size: 12px.** Nothing on the site should be smaller.

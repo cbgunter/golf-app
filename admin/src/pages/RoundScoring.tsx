@@ -189,7 +189,7 @@ export default function AdminRoundScoring() {
     }
   }
 
-  if (loading) return <div className="text-ep-silver">Loading...</div>;
+  if (loading) return <div className="text-ep-muted">Loading...</div>;
   if (!round || !tournament) return <div className="text-red-500">Round not found.</div>;
 
   const withdrawnIds = new Set(tournament.withdrawnPlayerIds ?? []);
@@ -214,11 +214,11 @@ export default function AdminRoundScoring() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <Link to={`/tournaments/${round.tournamentId}`} className="text-xs text-ep-silver hover:text-ep-green">← Tournament</Link>
+        <Link to={`/tournaments/${round.tournamentId}`} className="text-xs text-ep-muted hover:text-ep-green">← Tournament</Link>
         <h1 className="page-header mt-1">{round.courseName}</h1>
-        <div className="text-sm text-ep-silver mt-0.5">
+        <div className="text-sm text-ep-muted mt-0.5">
           {round.tee} tees · Par {round.par} · {parseLocalDate(round.date).toLocaleDateString()} · {ROUND_FORMAT_LABELS[round.format ?? 'stroke_play']}
-          <span className="text-ep-silver/60"> · Rating {round.courseRating} / Slope {round.slopeRating}</span>
+          <span className="text-ep-muted"> · Rating {round.courseRating} / Slope {round.slopeRating}</span>
         </div>
       </div>
 
@@ -245,16 +245,16 @@ export default function AdminRoundScoring() {
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-ep-green">Pairing {draft.groupNumber}</span>
-                      {group?.teeTime && <span className="text-xs text-ep-silver">{group.teeTime}</span>}
+                      {group?.teeTime && <span className="text-xs text-ep-muted">{group.teeTime}</span>}
                       {alreadyConfirmed ? (
                         <span className="text-xs bg-ep-green/10 text-ep-green px-2 py-0.5 rounded-full">Confirmed</span>
                       ) : isSubmitted ? (
                         <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Submitted — awaiting review</span>
                       ) : (
-                        <span className="text-xs bg-ep-sand text-ep-silver px-2 py-0.5 rounded-full">In progress</span>
+                        <span className="text-xs bg-ep-sand text-ep-muted px-2 py-0.5 rounded-full">In progress</span>
                       )}
                     </div>
-                    {isExpanded ? <ChevronUp size={15} className="text-ep-silver" /> : <ChevronDown size={15} className="text-ep-silver" />}
+                    {isExpanded ? <ChevronUp size={15} className="text-ep-muted" /> : <ChevronDown size={15} className="text-ep-muted" />}
                   </button>
 
                   {isExpanded && (
@@ -263,13 +263,13 @@ export default function AdminRoundScoring() {
                         <table className="w-full text-xs">
                           <thead>
                             <tr className="bg-ep-sand/40">
-                              <th className="text-left px-2 py-1.5 font-medium text-ep-silver">Player</th>
+                              <th className="text-left px-2 py-1.5 font-medium text-ep-muted">Player</th>
                               {allHoleNums.slice(0, 9).map(n => (
-                                <th key={n} className="px-1 py-1.5 text-center text-ep-silver font-normal w-6">{n}</th>
+                                <th key={n} className="px-1 py-1.5 text-center text-ep-muted font-normal w-6">{n}</th>
                               ))}
                               <th className="px-2 py-1.5 text-center font-medium text-ep-green bg-ep-sand">Out</th>
                               {allHoleNums.slice(9).map(n => (
-                                <th key={n} className="px-1 py-1.5 text-center text-ep-silver font-normal w-6">{n}</th>
+                                <th key={n} className="px-1 py-1.5 text-center text-ep-muted font-normal w-6">{n}</th>
                               ))}
                               <th className="px-2 py-1.5 text-center font-medium text-ep-green bg-ep-sand">In</th>
                               <th className="px-2 py-1.5 text-center font-medium text-ep-green bg-ep-sand/70">Tot</th>
@@ -290,7 +290,7 @@ export default function AdminRoundScoring() {
                                     return (
                                       <td key={n} className="px-1 py-2 text-center">
                                         <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
-                                          s == null ? 'text-ep-silver/40' :
+                                          s == null ? 'text-ep-muted/80' :
                                           diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
                                           diff === -1 ? 'bg-red-200' :
                                           diff === 0 ? 'bg-green-100' : ''
@@ -308,7 +308,7 @@ export default function AdminRoundScoring() {
                                     return (
                                       <td key={n} className="px-1 py-2 text-center">
                                         <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
-                                          s == null ? 'text-ep-silver/40' :
+                                          s == null ? 'text-ep-muted/80' :
                                           diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
                                           diff === -1 ? 'bg-red-200' :
                                           diff === 0 ? 'bg-green-100' : ''
@@ -353,9 +353,9 @@ export default function AdminRoundScoring() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="font-semibold text-ep-green text-lg">{activePlayer.name}</h2>
-              <div className="text-xs text-ep-silver">HCP Index {activePlayer.handicapIndex.toFixed(1)}</div>
+              <div className="text-xs text-ep-muted">HCP Index {activePlayer.handicapIndex.toFixed(1)}</div>
             </div>
-            <button onClick={() => setActivePlayer(null)} className="text-ep-silver hover:text-ep-green p-1"><X size={18} /></button>
+            <button onClick={() => setActivePlayer(null)} className="text-ep-muted hover:text-ep-green p-1"><X size={18} /></button>
           </div>
 
           <form onSubmit={handleSubmitScore} className="space-y-4">
@@ -367,7 +367,7 @@ export default function AdminRoundScoring() {
                   onChange={e => setManualHCP(e.target.value)} placeholder="Auto-calculated" />
               </div>
               {!manualHCP && (
-                <p className="text-xs text-ep-silver pb-2">
+                <p className="text-xs text-ep-muted pb-2">
                   Auto: {activePlayer.handicapIndex.toFixed(1)} × ({round.slopeRating}/113) + ({round.courseRating}−{round.par})
                 </p>
               )}
@@ -393,9 +393,9 @@ export default function AdminRoundScoring() {
                 <tbody>
                   {/* Par row */}
                   <tr className="bg-ep-sand/30 border-b border-ep-silver/30">
-                    <td className="pl-5 pr-4 py-2 text-xs font-semibold text-ep-silver uppercase tracking-wide sticky left-0 bg-ep-sand/30 z-10">Par</td>
+                    <td className="pl-5 pr-4 py-2 text-xs font-semibold text-ep-muted uppercase tracking-wide sticky left-0 bg-ep-sand/30 z-10">Par</td>
                     {holeInputs.slice(0, 9).map((h, i) => (
-                      <td key={i} className="py-2 text-center text-sm text-ep-green/70">
+                      <td key={i} className="py-2 text-center text-sm text-ep-green/80">
                         {courseDataLoaded ? h.par : (
                           <input type="number" min="3" max="6"
                             className="w-9 text-center border border-ep-silver/30 rounded py-0.5 text-xs"
@@ -408,7 +408,7 @@ export default function AdminRoundScoring() {
                       {holeInputs.slice(0, 9).reduce((s, h) => s + h.par, 0)}
                     </td>
                     {holeInputs.slice(9).map((h, i) => (
-                      <td key={i + 9} className="py-2 text-center text-sm text-ep-green/70">
+                      <td key={i + 9} className="py-2 text-center text-sm text-ep-green/80">
                         {courseDataLoaded ? h.par : (
                           <input type="number" min="3" max="6"
                             className="w-9 text-center border border-ep-silver/30 rounded py-0.5 text-xs"
@@ -427,11 +427,11 @@ export default function AdminRoundScoring() {
 
                   {/* HCP / SI row */}
                   <tr className="border-b border-ep-silver/30">
-                    <td className="pl-5 pr-4 py-1.5 text-xs font-semibold text-ep-silver uppercase tracking-wide sticky left-0 bg-ep-cream z-10">HCP</td>
+                    <td className="pl-5 pr-4 py-1.5 text-xs font-semibold text-ep-muted uppercase tracking-wide sticky left-0 bg-ep-cream z-10">HCP</td>
                     {holeInputs.slice(0, 9).map((h, i) => (
                       <td key={i} className="py-1.5 text-center">
                         {courseDataLoaded ? (
-                          <span className="text-xs text-ep-silver">{h.handicap}</span>
+                          <span className="text-xs text-ep-muted">{h.handicap}</span>
                         ) : (
                           <input type="number" min="1" max="18"
                             className="w-9 text-center border border-ep-silver/30 rounded py-0.5 text-xs"
@@ -444,7 +444,7 @@ export default function AdminRoundScoring() {
                     {holeInputs.slice(9).map((h, i) => (
                       <td key={i + 9} className="py-1.5 text-center">
                         {courseDataLoaded ? (
-                          <span className="text-xs text-ep-silver">{h.handicap}</span>
+                          <span className="text-xs text-ep-muted">{h.handicap}</span>
                         ) : (
                           <input type="number" min="1" max="18"
                             className="w-9 text-center border border-ep-silver/30 rounded py-0.5 text-xs"
@@ -459,7 +459,7 @@ export default function AdminRoundScoring() {
 
                   {/* Score input row */}
                   <tr className="bg-ep-cream">
-                    <td className="pl-5 pr-4 py-2 text-xs font-semibold text-ep-silver uppercase tracking-wide sticky left-0 bg-ep-cream z-10">Score</td>
+                    <td className="pl-5 pr-4 py-2 text-xs font-semibold text-ep-muted uppercase tracking-wide sticky left-0 bg-ep-cream z-10">Score</td>
                     {holeInputs.slice(0, 9).map((h, i) => {
                       const strokes = Number(h.strokes) || 0;
                       const diff = strokes > 0 ? strokes - h.par : null;
@@ -506,7 +506,7 @@ export default function AdminRoundScoring() {
 
             {/* Score summary + actions */}
             <div className="flex items-center justify-between gap-4 pt-1">
-              <div className="text-sm text-ep-silver">
+              <div className="text-sm text-ep-muted">
                 {(() => {
                   const front = holeInputs.slice(0, 9).reduce((s, h) => s + (Number(h.strokes) || 0), 0);
                   const back = holeInputs.slice(9).reduce((s, h) => s + (Number(h.strokes) || 0), 0);
@@ -520,7 +520,7 @@ export default function AdminRoundScoring() {
                       {gross > 0 && (
                         <>
                           <span>Gross <strong className="text-ep-green">{gross}</strong></span>
-                          <span className={`font-semibold ${toPar < 0 ? 'text-red-500' : toPar === 0 ? 'text-green-600' : 'text-ep-green/70'}`}>
+                          <span className={`font-semibold ${toPar < 0 ? 'text-red-500' : toPar === 0 ? 'text-green-600' : 'text-ep-green/80'}`}>
                             {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}
                           </span>
                         </>
@@ -557,7 +557,7 @@ export default function AdminRoundScoring() {
                 }`}
               >
                 <span className="font-medium text-ep-green text-sm">{p.name}</span>
-                <span className={`text-xs mt-0.5 ${hasScore ? 'text-ep-orange' : 'text-ep-silver'}`}>
+                <span className={`text-xs mt-0.5 ${hasScore ? 'text-ep-orange' : 'text-ep-muted'}`}>
                   {hasScore ? '✓ Edit score' : `HCP ${p.handicapIndex.toFixed(1)}`}
                 </span>
               </button>
@@ -577,7 +577,7 @@ export default function AdminRoundScoring() {
                   if (groupPlayers.length === 0) return null;
                   return (
                     <div key={g.groupNumber}>
-                      <div className="text-xs font-semibold text-ep-silver uppercase tracking-wide mb-2">
+                      <div className="text-xs font-semibold text-ep-muted uppercase tracking-wide mb-2">
                         Pairing {g.groupNumber} · {g.teeTime}
                         {g.startingHole ? ` · Hole ${g.startingHole}` : ''}
                       </div>
@@ -589,7 +589,7 @@ export default function AdminRoundScoring() {
                 })}
                 {ungrouped.length > 0 && (
                   <div>
-                    <div className="text-xs font-semibold text-ep-silver uppercase tracking-wide mb-2">Unassigned</div>
+                    <div className="text-xs font-semibold text-ep-muted uppercase tracking-wide mb-2">Unassigned</div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {ungrouped.map(p => <PlayerBtn key={p.id} p={p} />)}
                     </div>
@@ -623,16 +623,16 @@ export default function AdminRoundScoring() {
               <h2 className="font-semibold text-ep-green flex items-center gap-2">
                 <Trophy size={15} className="text-ep-orange" /> Team Best Ball
               </h2>
-              <span className="text-xs text-ep-silver">{tournament.isNet ? 'Net' : 'Gross'} · better ball per hole</span>
+              <span className="text-xs text-ep-muted">{tournament.isNet ? 'Net' : 'Gross'} · better ball per hole</span>
             </div>
             <div className="divide-y divide-ep-silver/10">
               {roundResult.standings.map(t => (
                 <div key={t.key} className={`flex items-center px-5 py-3 ${t.rank === 1 ? 'bg-ep-orange/5' : ''}`}>
-                  <span className="w-8 text-sm font-bold text-ep-silver shrink-0">{t.tied ? `T${t.rank}` : t.rank}</span>
+                  <span className="w-8 text-sm font-bold text-ep-muted shrink-0">{t.tied ? `T${t.rank}` : t.rank}</span>
                   <div className="flex-1 min-w-0 text-sm font-medium text-ep-green">{t.label}</div>
                   <div className="text-right">
                     <div className="text-sm font-bold text-ep-green">{t.value}</div>
-                    <div className="text-xs text-ep-silver">
+                    <div className="text-xs text-ep-muted">
                       {t.toPar === 0 ? 'E' : t.toPar! > 0 ? `+${t.toPar}` : t.toPar} · {t.holesPlayed} holes
                     </div>
                   </div>
@@ -647,11 +647,11 @@ export default function AdminRoundScoring() {
               <h2 className="font-semibold text-ep-green flex items-center gap-2">
                 <Trophy size={15} className="text-ep-orange" />
                 Live Leaderboard
-                <span className="text-xs font-normal text-ep-silver">
+                <span className="text-xs font-normal text-ep-muted">
                   {scores.length}/{players.length} scores entered
                 </span>
               </h2>
-              <span className="text-xs text-ep-silver">{isStableford ? 'Stableford · ' : ''}{tournament.isNet ? 'Net' : 'Gross'}</span>
+              <span className="text-xs text-ep-muted">{isStableford ? 'Stableford · ' : ''}{tournament.isNet ? 'Net' : 'Gross'}</span>
             </div>
             <div className="divide-y divide-ep-silver/10">
               {sortedScores.map((s, i) => {
@@ -660,12 +660,12 @@ export default function AdminRoundScoring() {
                 return (
                   <div key={s.id}>
                     <div className={`flex items-center px-5 py-3 ${i === 0 ? 'bg-ep-orange/5' : ''}`}>
-                      <span className="w-6 text-sm font-bold text-ep-silver shrink-0">
+                      <span className="w-6 text-sm font-bold text-ep-muted shrink-0">
                         {i === 0 ? '🏆' : i + 1}
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-ep-green text-sm">{s.playerName}</div>
-                        <div className="text-xs text-ep-silver">
+                        <div className="text-xs text-ep-muted">
                           Course HCP {s.courseHandicap}
                           {s.handicapDifferential !== undefined && ` · Diff ${s.handicapDifferential}`}
                         </div>
@@ -676,17 +676,17 @@ export default function AdminRoundScoring() {
                             <div className="text-sm font-bold text-ep-orange">{stbl(s)} pts</div>
                           )}
                           {roundResult.pointsByPlayer[s.playerId] !== undefined && tournament.standingsMode === 'points' && (
-                            <div className="text-xs text-ep-silver">Cup +{formatPoints(roundResult.pointsByPlayer[s.playerId])}</div>
+                            <div className="text-xs text-ep-muted">Cup +{formatPoints(roundResult.pointsByPlayer[s.playerId])}</div>
                           )}
                           {tournament.isNet && (
                             <div className="text-sm font-bold text-ep-green">Net {s.netTotal}</div>
                           )}
                           {tournament.isGross && (
-                            <div className={`text-sm ${tournament.isNet ? 'text-xs text-ep-silver' : 'font-bold text-ep-green'}`}>
+                            <div className={`text-sm ${tournament.isNet ? 'text-xs text-ep-muted' : 'font-bold text-ep-green'}`}>
                               Gross {s.grossTotal}
                             </div>
                           )}
-                          <div className={`text-xs font-semibold ${toPar < 0 ? 'text-red-500' : toPar === 0 ? 'text-green-600' : 'text-ep-silver'}`}>
+                          <div className={`text-xs font-semibold ${toPar < 0 ? 'text-red-500' : toPar === 0 ? 'text-green-600' : 'text-ep-muted'}`}>
                             {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}
                           </div>
                         </div>
@@ -699,7 +699,7 @@ export default function AdminRoundScoring() {
                           </button>
                           <button
                             onClick={() => setExpandedScore(isExpanded ? null : s.id)}
-                            className="text-ep-silver/40 hover:text-ep-silver p-1"
+                            className="text-ep-muted/80 hover:text-ep-muted p-1"
                           >
                             {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                           </button>
@@ -709,17 +709,17 @@ export default function AdminRoundScoring() {
 
                     {isExpanded && (
                       <div className="px-5 pb-4 bg-ep-sand/30 border-t border-ep-silver/20">
-                        <p className="text-xs font-semibold text-ep-silver uppercase tracking-wider mb-2 mt-3">Adjustments</p>
+                        <p className="text-xs font-semibold text-ep-muted uppercase tracking-wider mb-2 mt-3">Adjustments</p>
                         {s.adjustments.length === 0 ? (
-                          <p className="text-xs text-ep-silver">No adjustments applied.</p>
+                          <p className="text-xs text-ep-muted">No adjustments applied.</p>
                         ) : (
                           <div className="space-y-1.5">
                             {s.adjustments.map((adj, j) => (
-                              <div key={j} className="text-xs bg-ep-cream rounded p-2.5 border border-ep-silver/30 text-ep-green/70">
+                              <div key={j} className="text-xs bg-ep-cream rounded p-2.5 border border-ep-silver/30 text-ep-green/80">
                                 <span className="font-semibold text-ep-green">[{adj.type.replace('_', ' ').toUpperCase()}]</span>
                                 {adj.hole ? ` Hole ${adj.hole}:` : ''} {adj.reason}
                                 {adj.originalValue !== adj.adjustedValue && (
-                                  <span className="text-ep-silver ml-1">({adj.originalValue} → {adj.adjustedValue})</span>
+                                  <span className="text-ep-muted ml-1">({adj.originalValue} → {adj.adjustedValue})</span>
                                 )}
                               </div>
                             ))}
@@ -740,7 +740,7 @@ export default function AdminRoundScoring() {
         <div className="card p-5">
           <div className="flex items-center gap-3 mb-4">
             <h2 className="font-semibold text-ep-green">Special Contests</h2>
-            {savingWinners && <span className="text-xs text-ep-silver">Saving…</span>}
+            {savingWinners && <span className="text-xs text-ep-muted">Saving…</span>}
             {winnersSaved && <span className="text-xs text-green-600 font-medium">Saved ✓</span>}
           </div>
           <div className="space-y-4">
@@ -781,7 +781,7 @@ export default function AdminRoundScoring() {
           <h2 className="font-semibold text-ep-green mb-1">
             {scores.length === players.length ? 'All scores entered!' : `${scores.length} of ${players.length} scores entered`}
           </h2>
-          <p className="text-sm text-ep-silver mb-4">Mark this round as complete to finalize scores and update the leaderboard.</p>
+          <p className="text-sm text-ep-muted mb-4">Mark this round as complete to finalize scores and update the leaderboard.</p>
           <button onClick={handleCompleteRound} className="btn-primary">
             <Check size={15} /> Complete Round
           </button>
@@ -791,7 +791,7 @@ export default function AdminRoundScoring() {
       {round.status === 'completed' && !activePlayer && (
         <div className="card p-5 border-l-4 border-ep-silver/30">
           <h2 className="font-semibold text-ep-green mb-1">Round Completed</h2>
-          <p className="text-sm text-ep-silver mb-4">Reopen to add or edit scores.</p>
+          <p className="text-sm text-ep-muted mb-4">Reopen to add or edit scores.</p>
           <button
             onClick={async () => {
               try {

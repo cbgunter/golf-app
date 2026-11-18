@@ -14,18 +14,18 @@ export default function Players() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="max-w-3xl mx-auto px-4 py-8 text-ep-silver">Loading...</div>;
+  if (loading) return <div className="max-w-3xl mx-auto px-4 py-8 text-ep-muted">Loading...</div>;
   if (error) return <div className="max-w-3xl mx-auto px-4 py-8 text-red-500">{error}</div>;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">Players</h1>
-        <p className="text-ep-silver mt-1">{players.length} registered players</p>
+        <p className="text-ep-muted mt-1">{players.length} registered players</p>
       </div>
 
       {players.length === 0 ? (
-        <div className="card p-10 text-center text-ep-silver text-sm">No players yet.</div>
+        <div className="card p-10 text-center text-ep-muted text-sm">No players yet.</div>
       ) : (
         <div className="card divide-y divide-ep-silver/20">
           {players.map(p => (
@@ -39,11 +39,11 @@ export default function Players() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-ep-green">{p.name}</div>
-                <div className="text-xs text-ep-silver">{p.handicapHistory.length} rounds recorded</div>
+                <div className="text-xs text-ep-muted">{p.handicapHistory.length} rounds recorded</div>
               </div>
               <div className="text-right shrink-0">
                 <div className="text-lg font-bold text-ep-green">{p.handicapIndex.toFixed(1)}</div>
-                <div className="text-xs text-ep-silver">HCP</div>
+                <div className="text-xs text-ep-muted">HCP</div>
               </div>
             </Link>
           ))}

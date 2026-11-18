@@ -224,10 +224,13 @@ Tailwind CSS with the **CH Tournaments** brand palette. Custom `ep-*` color toke
 | `ep-green` | `#004C54` | Primary text, headings, dark surfaces (Midnight Green) |
 | `ep-orange` | `#D4691C` | CTAs, links, highlights, accents (Community Orange) |
 | `ep-deep` | `#002B30` | Footer, dark nav, overlays (Deep Green) |
-| `ep-silver` | `#B8B5AF` | Secondary text, captions, borders (Stadium Silver) |
+| `ep-silver` | `#B8B5AF` | Borders, dividers; text only on dark surfaces (Stadium Silver) |
+| `ep-muted` | `#6B675F` | Secondary text/captions on cream/sand — text-weight Stadium Silver (≥4.5:1) |
 | `ep-sand` | `#EDE6DA` | Cards, callout boxes, alternating sections |
 
 **Typography:** Two fonts only — `font-heading` → Outfit (headings, ExtraBold), `font-sans` → DM Sans (body). The brand wordmark is "CH TOURNAMENTS" in Outfit ExtraBold, all caps, `tracking-[0.04em]`.
+
+**Readability:** use `text-ep-muted` (not `text-ep-silver`) for secondary text on light surfaces; don't fade `text-ep-green` below `/80` on light surfaces; keep text ≥12px (`text-xs`).
 
 **Never use** the legacy `sage-*`, `stone-*`, or `sand-[0-9]*` Tailwind classes — those tokens still exist in the config but are off-brand.
 

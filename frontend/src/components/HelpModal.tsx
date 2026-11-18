@@ -27,7 +27,7 @@ export default function HelpModal({ title, onClose, children }: HelpModalProps) 
           <h2 className="font-heading font-semibold text-ep-green text-base">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-ep-silver hover:text-ep-green hover:bg-ep-sand transition-colors"
+            className="p-1.5 rounded-lg text-ep-muted hover:text-ep-green hover:bg-ep-sand transition-colors"
           >
             <X size={18} />
           </button>

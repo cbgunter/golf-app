@@ -28,7 +28,7 @@ export default function AdminLogin() {
         <div className="text-center mb-8">
           <span className="text-5xl">⛳</span>
           <h1 className="text-2xl font-heading font-extrabold text-ep-green mt-3 tracking-tight">Admin Login</h1>
-          <p className="text-sm text-ep-silver mt-1">CH Tournaments</p>
+          <p className="text-sm text-ep-muted mt-1">CH Tournaments</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

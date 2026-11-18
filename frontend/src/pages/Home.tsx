@@ -37,14 +37,14 @@ export default function Home() {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">CH Tournaments</h1>
-        <p className="text-ep-silver mt-1">Active and upcoming tournaments</p>
+        <p className="text-ep-muted mt-1">Active and upcoming tournaments</p>
       </div>
 
       {tournaments.length === 0 ? (
         <div className="card p-12 text-center">
           <span className="text-5xl mb-4 block">⛳</span>
           <h2 className="text-lg font-heading font-semibold text-ep-green">No active tournaments</h2>
-          <p className="text-ep-silver text-sm mt-1">Check back soon, or view the <Link to="/history" className="text-ep-orange hover:underline">history</Link>.</p>
+          <p className="text-ep-muted text-sm mt-1">Check back soon, or view the <Link to="/history" className="text-ep-orange hover:underline">history</Link>.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -67,13 +67,13 @@ function TournamentCard({ tournament: t, rounds }: { tournament: Tournament; rou
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <StatusBadge status={t.status} />
-            {formatLabel && <span className="text-xs text-ep-silver">{formatLabel}</span>}
+            {formatLabel && <span className="text-xs text-ep-muted">{formatLabel}</span>}
           </div>
           <h2 className="text-lg font-heading font-semibold text-ep-green group-hover:text-ep-orange transition-colors">
             {t.name}
           </h2>
-          {t.description && <p className="text-sm text-ep-silver mt-0.5 truncate">{t.description}</p>}
-          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-ep-silver">
+          {t.description && <p className="text-sm text-ep-muted mt-0.5 truncate">{t.description}</p>}
+          <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-ep-muted">
             <span className="flex items-center gap-1">
               <Calendar size={14} />
               {new Date(t.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -95,10 +95,10 @@ function TournamentCard({ tournament: t, rounds }: { tournament: Tournament; rou
           </div>
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
-          {t.isNet && <span className="text-xs text-ep-silver">Net</span>}
-          {t.isGross && <span className="text-xs text-ep-silver">Gross</span>}
-          {t.hasClosestToPin && <span className="text-xs text-ep-silver">CTP</span>}
-          {t.hasLongestDrive && <span className="text-xs text-ep-silver">LD</span>}
+          {t.isNet && <span className="text-xs text-ep-muted">Net</span>}
+          {t.isGross && <span className="text-xs text-ep-muted">Gross</span>}
+          {t.hasClosestToPin && <span className="text-xs text-ep-muted">CTP</span>}
+          {t.hasLongestDrive && <span className="text-xs text-ep-muted">LD</span>}
         </div>
       </div>
     </Link>

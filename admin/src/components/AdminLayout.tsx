@@ -23,7 +23,7 @@ export default function AdminLayout() {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-ep-cream">
-        <div className="text-ep-silver text-sm">Verifying session…</div>
+        <div className="text-ep-muted text-sm">Verifying session…</div>
       </div>
     );
   }
@@ -35,7 +35,7 @@ export default function AdminLayout() {
 
   const navCls = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-      isActive ? 'bg-ep-green text-ep-cream' : 'text-ep-green/70 hover:bg-ep-sand'
+      isActive ? 'bg-ep-green text-ep-cream' : 'text-ep-green/80 hover:bg-ep-sand'
     }`;
 
   return (
@@ -44,8 +44,8 @@ export default function AdminLayout() {
       <header className="bg-ep-deep text-ep-cream sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 text-sm">
-            <a href="https://golf.caseyhunter.net" className="text-ep-cream/50 hover:text-ep-cream/80 transition-colors font-heading font-extrabold tracking-[0.04em] uppercase text-xs">CH Tournaments</a>
-            <span className="text-ep-cream/30">/</span>
+            <a href="https://golf.caseyhunter.net" className="text-ep-cream/70 hover:text-ep-cream/80 transition-colors font-heading font-extrabold tracking-[0.04em] uppercase text-xs">CH Tournaments</a>
+            <span className="text-ep-cream/70">/</span>
             <span className="font-medium text-ep-cream/80">Admin</span>
           </div>
           <div className="flex items-center gap-2">

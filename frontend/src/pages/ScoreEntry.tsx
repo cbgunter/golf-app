@@ -163,7 +163,7 @@ export default function ScoreEntry() {
 
   if (phase === 'loading') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-3 text-ep-silver">
+      <div className="flex flex-col items-center justify-center min-h-screen gap-3 text-ep-muted">
         <Loader2 className="animate-spin" size={32} />
         <p>Loading scorecard…</p>
       </div>
@@ -175,7 +175,7 @@ export default function ScoreEntry() {
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
         <AlertCircle size={40} className="text-red-400" />
         <h2 className="text-xl font-heading font-semibold text-ep-green">Scorecard unavailable</h2>
-        <p className="text-ep-silver text-sm">{errorMsg}</p>
+        <p className="text-ep-muted text-sm">{errorMsg}</p>
         <button onClick={() => navigate('/score')} className="btn-secondary">Back to Score Hub</button>
       </div>
     );
@@ -186,7 +186,7 @@ export default function ScoreEntry() {
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
         <CheckCircle size={48} className="text-ep-orange" />
         <h2 className="text-2xl font-heading font-extrabold text-ep-green">Scores Submitted!</h2>
-        <p className="text-ep-silver text-sm">
+        <p className="text-ep-muted text-sm">
           Your scorecard for Group {info?.groupNumber} has been submitted.<br />
           The tournament admin will review and confirm your scores.
         </p>
@@ -200,7 +200,7 @@ export default function ScoreEntry() {
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
         <CheckCircle size={48} className="text-ep-orange" />
         <h2 className="text-2xl font-heading font-extrabold text-ep-green">Scores Confirmed</h2>
-        <p className="text-ep-silver text-sm">
+        <p className="text-ep-muted text-sm">
           Your scorecard for Group {info?.groupNumber} has been reviewed and confirmed by the tournament admin.
           No further changes can be made.
         </p>
@@ -259,7 +259,7 @@ export default function ScoreEntry() {
                   ? 'bg-ep-green text-ep-cream'
                   : someScored
                   ? 'bg-ep-green/60 text-ep-cream/70'
-                  : 'bg-ep-green/30 text-ep-cream/50'
+                  : 'bg-ep-green/30 text-ep-cream/70'
               }`}
             >
               {n}
@@ -272,9 +272,9 @@ export default function ScoreEntry() {
       <div className="bg-ep-cream border-b border-ep-silver/20 px-4 py-3 flex items-center justify-between">
         <div>
           <div className="text-2xl font-heading font-extrabold text-ep-green">Hole {currentHole}</div>
-          <div className="text-sm text-ep-silver">Par {holeInfo.par} · HCP {holeInfo.handicap}</div>
+          <div className="text-sm text-ep-muted">Par {holeInfo.par} · HCP {holeInfo.handicap}</div>
         </div>
-        <div className="text-4xl font-light text-ep-silver/40">Par {holeInfo.par}</div>
+        <div className="text-4xl font-light text-ep-muted/80">Par {holeInfo.par}</div>
       </div>
 
       {/* Score inputs */}
@@ -286,7 +286,7 @@ export default function ScoreEntry() {
             <div key={player.id} className="card p-3 flex items-center gap-3">
               <div className="flex-1">
                 <div className="text-sm font-semibold text-ep-green">{player.name}</div>
-                <div className="text-xs text-ep-silver">HCP {player.handicapIndex}</div>
+                <div className="text-xs text-ep-muted">HCP {player.handicapIndex}</div>
               </div>
               <div className="flex items-center gap-2">
                 {diff != null && (
@@ -294,7 +294,7 @@ export default function ScoreEntry() {
                     diff <= -2 ? 'bg-ep-orange/30 text-ep-orange' :
                     diff === -1 ? 'bg-ep-orange/15 text-ep-orange/80' :
                     diff === 0 ? 'bg-ep-green/15 text-ep-green' :
-                    'bg-ep-silver/20 text-ep-silver'
+                    'bg-ep-silver/20 text-ep-muted'
                   }`}>
                     {diff <= -2 ? 'Eagle+' : diff === -1 ? 'Birdie' : diff === 0 ? 'Par' : `+${diff}`}
                   </span>
@@ -321,11 +321,11 @@ export default function ScoreEntry() {
         <div className="bg-ep-sand/60 border-t border-ep-silver/20 px-4 py-2">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-ep-silver">
+              <tr className="text-ep-muted">
                 <th className="text-left font-normal pb-0.5">Player</th>
                 <th className="text-center font-normal pb-0.5 w-10">Out</th>
                 <th className="text-center font-normal pb-0.5 w-10">In</th>
-                <th className="text-center font-semibold pb-0.5 w-10 text-ep-green/70">Tot</th>
+                <th className="text-center font-semibold pb-0.5 w-10 text-ep-green/80">Tot</th>
               </tr>
             </thead>
             <tbody>
@@ -337,8 +337,8 @@ export default function ScoreEntry() {
                 return (
                   <tr key={p.id}>
                     <td className="py-0.5 text-ep-green/80 font-medium">{p.name.split(' ')[0]}</td>
-                    <td className="py-0.5 text-center text-ep-silver">{hasFront ? front : '—'}</td>
-                    <td className="py-0.5 text-center text-ep-silver">{hasBack ? back : '—'}</td>
+                    <td className="py-0.5 text-center text-ep-muted">{hasFront ? front : '—'}</td>
+                    <td className="py-0.5 text-center text-ep-muted">{hasBack ? back : '—'}</td>
                     <td className="py-0.5 text-center font-bold text-ep-green">{hasFront || hasBack ? front + back : '—'}</td>
                   </tr>
                 );
@@ -422,11 +422,11 @@ function ReviewScreen({
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-ep-sand">
-                <th className="text-left px-3 py-2 font-medium text-ep-silver">Player</th>
+                <th className="text-left px-3 py-2 font-medium text-ep-muted">Player</th>
                 {allHoleNums.map(n => (
-                  <th key={n} className="px-1 py-2 text-center text-ep-silver font-normal">{n}</th>
+                  <th key={n} className="px-1 py-2 text-center text-ep-muted font-normal">{n}</th>
                 ))}
-                <th className="px-2 py-2 text-center font-medium text-ep-green/70">Tot</th>
+                <th className="px-2 py-2 text-center font-medium text-ep-green/80">Tot</th>
               </tr>
             </thead>
             <tbody>
@@ -444,7 +444,7 @@ function ReviewScreen({
                       return (
                         <td key={n} className="px-1 py-2 text-center">
                           <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
-                            s == null ? 'text-ep-silver/40' :
+                            s == null ? 'text-ep-muted/80' :
                             diff != null && diff <= -2 ? 'bg-ep-orange/30 font-bold' :
                             diff === -1 ? 'bg-ep-orange/15' :
                             diff === 0 ? 'bg-ep-green/10' :
@@ -463,18 +463,18 @@ function ReviewScreen({
               })}
               {/* Par row */}
               <tr className="border-t border-ep-silver/30 bg-ep-sand">
-                <td className="px-3 py-1 text-ep-silver text-xs">Par</td>
+                <td className="px-3 py-1 text-ep-muted text-xs">Par</td>
                 {allHoleNums.map(n => {
                   const hInfo = info.holes.find(h => h.number === n);
-                  return <td key={n} className="px-1 py-1 text-center text-ep-silver">{hInfo?.par ?? 4}</td>;
+                  return <td key={n} className="px-1 py-1 text-center text-ep-muted">{hInfo?.par ?? 4}</td>;
                 })}
-                <td className="px-2 py-1 text-center text-ep-green/70 font-medium">{info.par}</td>
+                <td className="px-2 py-1 text-center text-ep-green/80 font-medium">{info.par}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <p className="text-xs text-ep-silver text-center mb-1">
+        <p className="text-xs text-ep-muted text-center mb-1">
           Compare with your paper scorecard before submitting. The admin will do a final review.
         </p>
         {info.players.some(p => allHoleNums.some(n => holes[p.id]?.[String(n)] == null)) && (

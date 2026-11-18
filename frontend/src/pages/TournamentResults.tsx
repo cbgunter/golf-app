@@ -20,7 +20,7 @@ export default function TournamentResultsPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-ep-silver">Loading results...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-ep-muted">Loading results...</div>;
   if (error) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">{error}</div>;
   if (!results) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Results not found.</div>;
 
@@ -35,13 +35,13 @@ export default function TournamentResultsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link to={`/tournament/${id}`} className="inline-flex items-center gap-1 text-sm text-ep-silver hover:text-ep-green mb-4">
+      <Link to={`/tournament/${id}`} className="inline-flex items-center gap-1 text-sm text-ep-muted hover:text-ep-green mb-4">
         <ArrowLeft size={14} /> Back to tournament
       </Link>
 
       <div className="mb-6">
         <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">{tournament.name}</h1>
-        <p className="text-ep-silver mt-1">Final Results</p>
+        <p className="text-ep-muted mt-1">Final Results</p>
       </div>
 
       {/* Payouts */}
@@ -49,18 +49,18 @@ export default function TournamentResultsPage() {
         <div className="card p-5 mb-6 border-l-4 border-ep-orange">
           <h2 className="font-heading font-bold text-ep-green mb-4 flex items-center gap-2">
             <Trophy size={18} className="text-ep-orange" /> Payouts
-            {totalPot > 0 && <span className="text-sm font-normal text-ep-silver">— ${totalPot.toFixed(0)} pot</span>}
+            {totalPot > 0 && <span className="text-sm font-normal text-ep-muted">— ${totalPot.toFixed(0)} pot</span>}
           </h2>
           <div className="space-y-3">
             {payouts.map(p => (
               <div key={p.place} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${p.place === 1 ? 'bg-ep-orange/20 text-ep-orange' : p.place === 2 ? 'bg-ep-silver/30 text-ep-green' : 'bg-ep-sand text-ep-green/70'}`}>
+                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${p.place === 1 ? 'bg-ep-orange/20 text-ep-orange' : p.place === 2 ? 'bg-ep-silver/30 text-ep-green' : 'bg-ep-sand text-ep-green/80'}`}>
                     {p.place}
                   </span>
                   <div>
                     <div className="font-medium text-ep-green">{p.player?.name ?? 'TBD'}</div>
-                    <div className="text-xs text-ep-silver">{p.label}</div>
+                    <div className="text-xs text-ep-muted">{p.label}</div>
                   </div>
                 </div>
                 <span className="text-lg font-bold text-ep-orange">${p.amount.toFixed(0)}</span>
@@ -75,7 +75,7 @@ export default function TournamentResultsPage() {
                     <span className="w-7 h-7 flex items-center justify-center text-lg">📍</span>
                     <div>
                       <div className="font-medium text-ep-green">{c?.player?.name ?? 'TBD'}</div>
-                      <div className="text-xs text-ep-silver">
+                      <div className="text-xs text-ep-muted">
                         Closest to Pin{c ? ` · ${results.rounds.length > 1 && roundNo > 0 ? `R${roundNo} ` : ''}Hole ${c.hole}` : ''}
                       </div>
                     </div>
@@ -92,7 +92,7 @@ export default function TournamentResultsPage() {
                     <div className="font-medium text-ep-green">
                       {longestDrive?.[0]?.player?.name ?? 'TBD'}
                     </div>
-                    <div className="text-xs text-ep-silver">Longest Drive</div>
+                    <div className="text-xs text-ep-muted">Longest Drive</div>
                   </div>
                 </div>
                 <span className="text-lg font-bold text-ep-orange">${ldPot.toFixed(0)}</span>
@@ -106,7 +106,7 @@ export default function TournamentResultsPage() {
       <div className="card mb-6">
         <div className="px-5 py-4 border-b border-ep-silver/20">
           <h2 className="font-heading font-bold text-ep-green">Leaderboard</h2>
-          <p className="text-xs text-ep-silver mt-0.5">
+          <p className="text-xs text-ep-muted mt-0.5">
             {isCup
               ? "Sorted by cup points (most wins). Points come from each round's finish."
               : `Sorted by ${isNet ? 'net' : 'gross'} score (lowest wins)`}
@@ -115,7 +115,7 @@ export default function TournamentResultsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-ep-sand text-ep-silver text-xs">
+              <tr className="bg-ep-sand text-ep-muted text-xs">
                 <th className="text-left px-5 py-2.5 font-medium">Rank</th>
                 <th className="text-left px-3 py-2.5 font-medium">Player</th>
                 {isCup && <th className="text-center px-3 py-2.5 font-medium">Pts</th>}
@@ -143,14 +143,14 @@ export default function TournamentResultsPage() {
                       </td>
                       <td className="px-3 py-3 font-medium text-ep-green">{entry.player.name}</td>
                       {isCup && <td className="px-3 py-3 text-center font-bold text-ep-green">{formatPoints(entry.cupPoints ?? 0)}</td>}
-                      <td className="px-3 py-3 text-center text-ep-silver">{entry.player.handicapIndex.toFixed(1)}</td>
+                      <td className="px-3 py-3 text-center text-ep-muted">{entry.player.handicapIndex.toFixed(1)}</td>
                       {tournament.isGross && <td className="px-3 py-3 text-center">{entry.totalGross}</td>}
                       {tournament.isNet && <td className="px-3 py-3 text-center font-semibold">{entry.totalNet}</td>}
-                      <td className="px-3 py-3 text-center text-ep-silver">{entry.scores.length}</td>
+                      <td className="px-3 py-3 text-center text-ep-muted">{entry.scores.length}</td>
                       <td className="px-3 py-3 text-center font-semibold text-ep-orange">
                         {payout ? `$${payout.amount.toFixed(0)}` : '—'}
                       </td>
-                      <td className="px-3 py-3 text-ep-silver text-xs">{isExpanded ? '▲' : '▼'}</td>
+                      <td className="px-3 py-3 text-ep-muted text-xs">{isExpanded ? '▲' : '▼'}</td>
                     </tr>
                     {isExpanded && (
                       <tr key={`${entry.player.id}-detail`}>
@@ -164,14 +164,14 @@ export default function TournamentResultsPage() {
               })}
               {wdEntries.map(entry => (
                 <tr key={entry.player.id} className="opacity-50">
-                  <td className="px-5 py-3 text-xs font-semibold text-ep-silver">WD</td>
-                  <td className="px-3 py-3 font-medium text-ep-green/60 line-through">{entry.player.name}</td>
-                  {isCup && <td className="px-3 py-3 text-center text-ep-silver">—</td>}
-                  <td className="px-3 py-3 text-center text-ep-silver">{entry.player.handicapIndex.toFixed(1)}</td>
-                  {tournament.isGross && <td className="px-3 py-3 text-center text-ep-silver">—</td>}
-                  {tournament.isNet && <td className="px-3 py-3 text-center text-ep-silver">—</td>}
-                  <td className="px-3 py-3 text-center text-ep-silver">—</td>
-                  <td className="px-3 py-3 text-center text-ep-silver">—</td>
+                  <td className="px-5 py-3 text-xs font-semibold text-ep-muted">WD</td>
+                  <td className="px-3 py-3 font-medium text-ep-green/80 line-through">{entry.player.name}</td>
+                  {isCup && <td className="px-3 py-3 text-center text-ep-muted">—</td>}
+                  <td className="px-3 py-3 text-center text-ep-muted">{entry.player.handicapIndex.toFixed(1)}</td>
+                  {tournament.isGross && <td className="px-3 py-3 text-center text-ep-muted">—</td>}
+                  {tournament.isNet && <td className="px-3 py-3 text-center text-ep-muted">—</td>}
+                  <td className="px-3 py-3 text-center text-ep-muted">—</td>
+                  <td className="px-3 py-3 text-center text-ep-muted">—</td>
                   <td className="px-3 py-3" />
                 </tr>
               ))}
@@ -190,7 +190,7 @@ export default function TournamentResultsPage() {
                 <span className="text-ep-orange">📍</span>
                 <div>
                   <div className="text-sm font-medium text-ep-green">Closest to Pin — Hole {c.hole}</div>
-                  <div className="text-xs text-ep-silver">{c.player?.name ?? 'TBD'}</div>
+                  <div className="text-xs text-ep-muted">{c.player?.name ?? 'TBD'}</div>
                 </div>
               </div>
             ))}
@@ -199,7 +199,7 @@ export default function TournamentResultsPage() {
                 <span>🏌️</span>
                 <div>
                   <div className="text-sm font-medium text-ep-green">Longest Drive — Hole {l.hole}</div>
-                  <div className="text-xs text-ep-silver">{l.player?.name ?? 'TBD'}</div>
+                  <div className="text-xs text-ep-muted">{l.player?.name ?? 'TBD'}</div>
                 </div>
               </div>
             ))}
@@ -219,7 +219,7 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
 
   return (
     <div>
-      <p className="text-xs font-heading font-semibold text-ep-silver uppercase tracking-wider mb-2">Round Breakdown</p>
+      <p className="text-xs font-heading font-semibold text-ep-muted uppercase tracking-wider mb-2">Round Breakdown</p>
       <div className="space-y-2">
         {entry.scores.map(score => {
           const round = rounds.find(r => r.id === score.roundId);
@@ -229,7 +229,7 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-medium text-sm text-ep-green">{round?.courseName ?? 'Unknown Course'}</div>
-                  <div className="text-xs text-ep-silver">
+                  <div className="text-xs text-ep-muted">
                     {round ? parseLocalDate(round.date).toLocaleDateString() : ''} · Par {round?.par} · Course HCP {score.courseHandicap}
                     {round && ` · ${ROUND_FORMAT_LABELS[round.format ?? 'stroke_play']}`}
                     {entry.pointsByRound?.[score.roundId] !== undefined && ` · ${formatPoints(entry.pointsByRound[score.roundId]!)} cup pts`}
@@ -238,10 +238,10 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
                 <div className="text-right">
                   <div className="text-sm font-semibold text-ep-green">
                     {isNet ? `Net ${score.netTotal}` : `Gross ${score.grossTotal}`}
-                    {isNet && <span className="text-xs text-ep-silver ml-2">(Gross {score.grossTotal})</span>}
+                    {isNet && <span className="text-xs text-ep-muted ml-2">(Gross {score.grossTotal})</span>}
                   </div>
                   {score.handicapDifferential !== undefined && (
-                    <div className="text-xs text-ep-silver">Differential: {score.handicapDifferential}</div>
+                    <div className="text-xs text-ep-muted">Differential: {score.handicapDifferential}</div>
                   )}
                 </div>
               </div>
@@ -263,7 +263,7 @@ function ScoreBreakdown({ entry, rounds, isNet }: {
                       <span className="font-medium text-ep-green">[{adj.type.toUpperCase()}]</span>
                       {adj.hole ? ` Hole ${adj.hole}:` : ''} {adj.reason}
                       {adj.originalValue !== adj.adjustedValue && (
-                        <span className="ml-1 text-ep-silver">({adj.originalValue} → {adj.adjustedValue})</span>
+                        <span className="ml-1 text-ep-muted">({adj.originalValue} → {adj.adjustedValue})</span>
                       )}
                     </div>
                   ))}

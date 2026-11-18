@@ -57,7 +57,7 @@ export default function TournamentView() {
     return () => clearInterval(interval);
   }, [id]);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-ep-silver">Loading...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-ep-muted">Loading...</div>;
   if (!tournament) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Tournament not found.</div>;
 
   const playerCount = tournament.playerIds.length;
@@ -134,7 +134,7 @@ export default function TournamentView() {
           <StatusBadge status={tournament.status} />
           <button
             onClick={() => setShowInfo(true)}
-            className="flex items-center gap-1.5 text-xs text-ep-silver hover:text-ep-orange transition-colors"
+            className="flex items-center gap-1.5 text-xs text-ep-muted hover:text-ep-orange transition-colors"
             title="How scoring works"
           >
             <HelpCircle size={16} />
@@ -142,7 +142,7 @@ export default function TournamentView() {
           </button>
         </div>
         <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">{tournament.name}</h1>
-        {tournament.description && <p className="text-ep-silver mt-1">{tournament.description}</p>}
+        {tournament.description && <p className="text-ep-muted mt-1">{tournament.description}</p>}
 
         <div className="flex flex-wrap gap-6 mt-4 text-sm text-ep-green/80">
           <span className="flex items-center gap-1">
@@ -156,12 +156,12 @@ export default function TournamentView() {
             </span>
           )}
           {ctpPot > 0 && (
-            <span className="flex items-center gap-1 text-ep-silver text-xs font-medium">
+            <span className="flex items-center gap-1 text-ep-muted text-xs font-medium">
               📍 CTP ${ctpPot.toFixed(0)}
             </span>
           )}
           {ldPot > 0 && (
-            <span className="flex items-center gap-1 text-ep-silver text-xs font-medium">
+            <span className="flex items-center gap-1 text-ep-muted text-xs font-medium">
               🏌️ LD ${ldPot.toFixed(0)}
             </span>
           )}
@@ -195,7 +195,7 @@ export default function TournamentView() {
                   {p.payoutType === 'flat'
                     ? `$${(p.amount ?? 0).toFixed(0)}`
                     : `$${((p.percentage / 100) * totalPot).toFixed(0)}`}
-                  {p.payoutType !== 'flat' && <span className="text-ep-silver font-normal ml-1">({p.percentage}%)</span>}
+                  {p.payoutType !== 'flat' && <span className="text-ep-muted font-normal ml-1">({p.percentage}%)</span>}
                 </span>
               </div>
             ))}
@@ -249,7 +249,7 @@ export default function TournamentView() {
                 {tournament.status === 'active' ? 'Live Leaderboard' : 'Leaderboard'}
               </h2>
               {completedRoundsCount > 0 && standingsRoundsTotal > 0 && (
-                <p className="text-xs text-ep-silver mt-0.5">
+                <p className="text-xs text-ep-muted mt-0.5">
                   After {completedRoundsCount} of {standingsRoundsTotal} round{standingsRoundsTotal !== 1 ? 's' : ''}
                 </p>
               )}
@@ -261,13 +261,13 @@ export default function TournamentView() {
                   Live
                 </span>
               )}
-              <span className="text-xs text-ep-silver">{tournament.isNet ? 'Net' : 'Gross'}</span>
+              <span className="text-xs text-ep-muted">{tournament.isNet ? 'Net' : 'Gross'}</span>
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-ep-sand text-ep-silver text-xs">
+                <tr className="bg-ep-sand text-ep-muted text-xs">
                   <th className="text-left px-5 py-2 font-medium">Rank</th>
                   <th className="text-left px-3 py-2 font-medium">Player</th>
                   {tournament.isGross && <th className="text-center px-3 py-2 font-medium">Gross</th>}
@@ -292,7 +292,7 @@ export default function TournamentView() {
                   const back = entryTotal - leaderTotal;
                   return (
                     <tr key={entry.playerName} className={idx === 0 ? 'bg-ep-orange/10' : ''}>
-                      <td className="px-5 py-2.5 font-bold text-ep-silver">
+                      <td className="px-5 py-2.5 font-bold text-ep-muted">
                         <span className="flex items-center gap-1">
                           {idx === 0 ? '🏆' : idx + 1}
                           {movement !== null && (
@@ -300,7 +300,7 @@ export default function TournamentView() {
                               ? <span className="text-xs text-ep-green font-normal">▲</span>
                               : movement < 0
                               ? <span className="text-xs text-red-500 font-normal">▼</span>
-                              : <span className="text-xs text-ep-silver/40 font-normal">—</span>
+                              : <span className="text-xs text-ep-muted/80 font-normal">—</span>
                           )}
                         </span>
                       </td>
@@ -314,9 +314,9 @@ export default function TournamentView() {
                       <td className="px-3 py-2.5 text-center text-xs hidden sm:table-cell">
                         {idx === 0
                           ? <span className="text-ep-orange font-medium">Leader</span>
-                          : <span className="text-ep-silver">+{back}</span>}
+                          : <span className="text-ep-muted">+{back}</span>}
                       </td>
-                      <td className="px-3 py-2.5 text-center text-ep-silver">{entry.rounds}</td>
+                      <td className="px-3 py-2.5 text-center text-ep-muted">{entry.rounds}</td>
                       {totalPot > 0 && (
                         <td className="px-3 py-2.5 text-center font-semibold text-ep-orange">
                           {projectedPayout ? `$${projectedPayout}` : '—'}
@@ -327,15 +327,15 @@ export default function TournamentView() {
                 })}
                 {wdPlayers.map(p => (
                   <tr key={p.id} className="opacity-50">
-                    <td className="px-5 py-2.5 text-xs font-semibold text-ep-silver">WD</td>
-                    <td className="px-3 py-2.5 font-medium text-ep-green/60 line-through">
+                    <td className="px-5 py-2.5 text-xs font-semibold text-ep-muted">WD</td>
+                    <td className="px-3 py-2.5 font-medium text-ep-green/80 line-through">
                       <Link to={`/players/${p.id}`} className="hover:underline">{p.name}</Link>
                     </td>
-                    {tournament.isGross && <td className="px-3 py-2.5 text-center text-ep-silver">—</td>}
-                    {tournament.isNet && <td className="px-3 py-2.5 text-center text-ep-silver">—</td>}
+                    {tournament.isGross && <td className="px-3 py-2.5 text-center text-ep-muted">—</td>}
+                    {tournament.isNet && <td className="px-3 py-2.5 text-center text-ep-muted">—</td>}
                     <td className="px-3 py-2.5 hidden sm:table-cell" />
                     <td className="px-3 py-2.5" />
-                    {totalPot > 0 && <td className="px-3 py-2.5 text-center text-ep-silver">—</td>}
+                    {totalPot > 0 && <td className="px-3 py-2.5 text-center text-ep-muted">—</td>}
                   </tr>
                 ))}
               </tbody>
@@ -347,7 +347,7 @@ export default function TournamentView() {
       {/* Rounds */}
       <h2 className="text-xl font-heading font-extrabold text-ep-green mb-3">Rounds</h2>
       {rounds.length === 0 ? (
-        <div className="card p-8 text-center text-ep-silver text-sm">No rounds scheduled yet.</div>
+        <div className="card p-8 text-center text-ep-muted text-sm">No rounds scheduled yet.</div>
       ) : (
         <div className="space-y-3">
           {rounds.map(round => (
@@ -412,18 +412,18 @@ function RoundCard({
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <StatusBadge status={round.status} />
-            <span className="text-xs text-ep-silver">{round.tee} tees</span>
+            <span className="text-xs text-ep-muted">{round.tee} tees</span>
             <span className="text-xs bg-ep-orange/10 text-ep-orange font-medium px-1.5 py-0.5 rounded">
               {ROUND_FORMAT_LABELS[round.format ?? 'stroke_play']}
               {round.pointsMultiplier && round.pointsMultiplier !== 1 ? ` · ${round.pointsMultiplier}× pts` : ''}
             </span>
             {round.isPracticeRound
-              ? <span className="text-xs bg-ep-silver/20 text-ep-silver font-medium px-1.5 py-0.5 rounded">No leaderboard</span>
+              ? <span className="text-xs bg-ep-silver/20 text-ep-muted font-medium px-1.5 py-0.5 rounded">No leaderboard</span>
               : <span className="text-xs bg-ep-green/10 text-ep-green font-medium px-1.5 py-0.5 rounded">Leaderboard</span>
             }
           </div>
           <div className="font-heading font-semibold text-ep-green">{round.courseName}</div>
-          <div className="text-xs text-ep-silver mt-0.5 flex items-center gap-3">
+          <div className="text-xs text-ep-muted mt-0.5 flex items-center gap-3">
             <span className="flex items-center gap-1">
               <Calendar size={12} />
               {parseLocalDate(round.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -432,7 +432,7 @@ function RoundCard({
             <span>Rating {round.courseRating} / Slope {round.slopeRating}</span>
           </div>
           {(ctpContests(round).length > 0 || round.longestDriveHole) && (
-            <div className="flex flex-wrap gap-3 mt-1 text-xs text-ep-silver">
+            <div className="flex flex-wrap gap-3 mt-1 text-xs text-ep-muted">
               {ctpContests(round).map(c => (
                 <span key={c.hole}>
                   📍 CTP hole {c.hole}
@@ -453,7 +453,7 @@ function RoundCard({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {expanded ? <ChevronUp size={18} className="text-ep-silver" /> : <ChevronDown size={18} className="text-ep-silver" />}
+          {expanded ? <ChevronUp size={18} className="text-ep-muted" /> : <ChevronDown size={18} className="text-ep-muted" />}
         </div>
       </button>
 
@@ -463,10 +463,10 @@ function RoundCard({
           {round.teeTimeGroups && round.teeTimeGroups.length > 0 && (
             <div className="px-4 pt-4 pb-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-heading font-semibold text-ep-silver uppercase tracking-wider">
+                <h3 className="text-xs font-heading font-semibold text-ep-muted uppercase tracking-wider">
                   Tee Sheet
                   {round.startFormat === 'shotgun' && (
-                    <span className="ml-2 font-normal normal-case text-ep-silver">Shotgun</span>
+                    <span className="ml-2 font-normal normal-case text-ep-muted">Shotgun</span>
                   )}
                 </h3>
                 {round.status !== 'completed' && (
@@ -489,7 +489,7 @@ function RoundCard({
                           {group.teeTime || `Group ${group.groupNumber}`}
                         </span>
                         {round.startFormat === 'shotgun' && group.startingHole && (
-                          <span className="text-xs text-ep-silver w-14 shrink-0">Hole {group.startingHole}</span>
+                          <span className="text-xs text-ep-muted w-14 shrink-0">Hole {group.startingHole}</span>
                         )}
                         <span className="text-ep-green/80">{names || '—'}</span>
                       </div>
@@ -500,15 +500,15 @@ function RoundCard({
             </div>
           )}
 
-          <p className="px-4 pt-3 text-xs text-ep-silver">
+          <p className="px-4 pt-3 text-xs text-ep-muted">
             {ROUND_FORMAT_DESCRIPTIONS[result.format]}
             {isNet ? ' Net scores (handicap strokes applied).' : ''}
           </p>
-          {result.warning && <p className="px-4 pt-1 text-xs text-ep-silver italic">{result.warning}</p>}
+          {result.warning && <p className="px-4 pt-1 text-xs text-ep-muted italic">{result.warning}</p>}
 
           {round.format === 'best_ball' && (round.teams?.length ?? 0) > 0 && (
             <div className="px-4 pt-3">
-              <h3 className="text-xs font-heading font-semibold text-ep-silver uppercase tracking-wider mb-2">Teams</h3>
+              <h3 className="text-xs font-heading font-semibold text-ep-muted uppercase tracking-wider mb-2">Teams</h3>
               <div className="rounded-lg border border-ep-silver/20 divide-y divide-ep-silver/10">
                 {(result.isTeam && result.standings.length > 0
                   ? result.standings
@@ -518,12 +518,12 @@ function RoundCard({
                     }))
                 ).map(t => (
                   <div key={t.key} className={`flex items-center px-3 py-2 text-sm ${t.rank === 1 ? 'bg-ep-orange/10' : ''}`}>
-                    <span className="w-8 font-bold text-ep-silver">{t.rank ? (t.tied ? `T${t.rank}` : t.rank) : '—'}</span>
+                    <span className="w-8 font-bold text-ep-muted">{t.rank ? (t.tied ? `T${t.rank}` : t.rank) : '—'}</span>
                     <span className="flex-1 font-medium text-ep-green">{t.label}</span>
                     {t.holesPlayed > 0 && (
                       <span className="text-right">
                         <span className="font-semibold text-ep-green">{t.value}</span>
-                        <span className="text-xs text-ep-silver ml-2">
+                        <span className="text-xs text-ep-muted ml-2">
                           {t.toPar === 0 ? 'E' : t.toPar! > 0 ? `+${t.toPar}` : t.toPar}
                           {t.holesPlayed < 18 ? ` thru ${t.holesPlayed}` : ''}
                         </span>
@@ -536,12 +536,12 @@ function RoundCard({
           )}
 
           {scores.length === 0 ? (
-            <p className="text-sm text-ep-silver text-center py-6">No scores entered yet.</p>
+            <p className="text-sm text-ep-muted text-center py-6">No scores entered yet.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-ep-sand text-ep-silver text-xs">
+                  <tr className="bg-ep-sand text-ep-muted text-xs">
                     <th className="text-left px-4 py-2 font-medium">Player</th>
                     <th className="text-center px-3 py-2 font-medium">HCP</th>
                     <th className="text-center px-3 py-2 font-medium">Gross</th>
@@ -574,20 +574,20 @@ function RoundCard({
                               ? <Link to={`/players/${playerObj.id}`} onClick={e => e.stopPropagation()} className="hover:text-ep-orange hover:underline">{score.playerName}</Link>
                               : score.playerName}
                             {histEntry && (
-                              <span className="ml-2 text-xs text-ep-silver">
+                              <span className="ml-2 text-xs text-ep-muted">
                                 → {histEntry.handicapIndex.toFixed(1)}
                                 {hcpDelta !== null && (
-                                  <span className={hcpDelta < 0 ? 'text-ep-green' : 'text-ep-silver'}>
+                                  <span className={hcpDelta < 0 ? 'text-ep-green' : 'text-ep-muted'}>
                                     {' '}({hcpDelta > 0 ? '+' : ''}{hcpDelta.toFixed(1)})
                                   </span>
                                 )}
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-center text-ep-silver">{score.courseHandicap}</td>
+                          <td className="px-3 py-2.5 text-center text-ep-muted">{score.courseHandicap}</td>
                           <td className="px-3 py-2.5 text-center">{score.grossTotal}</td>
                           {isNet && <td className="px-3 py-2.5 text-center font-medium">{score.netTotal}</td>}
-                          <td className={`px-3 py-2.5 text-center font-medium ${toPar < 0 ? 'text-ep-orange' : toPar === 0 ? 'text-ep-green' : 'text-ep-green/70'}`}>
+                          <td className={`px-3 py-2.5 text-center font-medium ${toPar < 0 ? 'text-ep-orange' : toPar === 0 ? 'text-ep-green' : 'text-ep-green/80'}`}>
                             {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}
                           </td>
                           {isStableford && <td className="px-3 py-2.5 text-center font-bold text-ep-orange">{stbl(score)}</td>}
@@ -614,7 +614,7 @@ function RoundCard({
 
           {/* Special contests */}
           {(ctpContests(round).length > 0 || round.longestDriveHole) && (
-            <div className="px-4 pb-4 pt-2 flex flex-wrap gap-3 text-xs text-ep-silver border-t border-ep-silver/20 mt-2">
+            <div className="px-4 pb-4 pt-2 flex flex-wrap gap-3 text-xs text-ep-muted border-t border-ep-silver/20 mt-2">
               {ctpContests(round).map(c => (
                 <span key={c.hole} className="flex items-center gap-1">
                   <MapPin size={12} className="text-ep-orange" />
@@ -656,7 +656,7 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-ep-silver/20 shrink-0">
           <h2 className="font-heading font-bold text-ep-green text-lg">How Scoring Works</h2>
-          <button onClick={onClose} className="text-ep-silver hover:text-ep-green p-1 rounded-lg hover:bg-ep-sand">
+          <button onClick={onClose} className="text-ep-muted hover:text-ep-green p-1 rounded-lg hover:bg-ep-sand">
             <X size={18} />
           </button>
         </div>
@@ -677,7 +677,7 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
             <div className="mt-2 bg-ep-sand rounded-lg px-4 py-3 font-mono text-xs text-ep-green leading-relaxed">
               Differential = (Adjusted Gross − Course Rating) × 113 ÷ Slope Rating
             </div>
-            <p className="mt-2 text-ep-silver text-xs">
+            <p className="mt-2 text-ep-muted text-xs">
               The new index is derived from the <span className="font-medium">best differentials</span> across
               your last 20 rounds in this system. Your manually entered starting index is used for round 1
               scoring, then replaced once that round's differential is recorded.
@@ -696,7 +696,7 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
                 ['20+ rounds', 'Average of best 8 of last 20 × 0.96'],
               ].map(([rounds, rule]) => (
                 <div key={rounds} className="flex gap-3">
-                  <span className="w-28 shrink-0 text-ep-silver">{rounds}</span>
+                  <span className="w-28 shrink-0 text-ep-muted">{rounds}</span>
                   <span>{rule}</span>
                 </div>
               ))}
@@ -711,7 +711,7 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
             <div className="mt-2 bg-ep-sand rounded-lg px-4 py-3 font-mono text-xs text-ep-green">
               Course Handicap = Index × (Slope ÷ 113) + (Course Rating − Par)
             </div>
-            <p className="mt-2 text-ep-silver text-xs">
+            <p className="mt-2 text-ep-muted text-xs">
               This accounts for the difficulty of the specific course and tee you're playing from.
               A harder course (higher slope or rating) gives you more strokes.
             </p>
@@ -732,12 +732,12 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
                 ['40+', '10'],
               ].map(([hcp, max]) => (
                 <div key={hcp} className="flex gap-3">
-                  <span className="w-20 shrink-0 text-ep-silver">HCP {hcp}</span>
+                  <span className="w-20 shrink-0 text-ep-muted">HCP {hcp}</span>
                   <span>Max {max} per hole</span>
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-ep-silver text-xs">
+            <p className="mt-2 text-ep-muted text-xs">
               ESC only affects the handicap differential calculation — your gross score for the leaderboard
               uses the actual strokes you took.
             </p>
@@ -751,7 +751,7 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
                 <span className="font-medium">one stroke off</span> on holes whose Stroke Index (SI) is
                 less than or equal to your Course Handicap, starting from the hardest hole (SI 1).
               </p>
-              <p className="mt-2 text-ep-silver text-xs">
+              <p className="mt-2 text-ep-muted text-xs">
                 Example: Course Handicap 12 → you get a stroke on the 12 hardest holes (SI 1–12).
                 Net strokes on those holes = Gross strokes − 1.
               </p>
@@ -767,7 +767,7 @@ function HandicapInfoModal({ isNet, isGross, onClose }: { isNet: boolean; isGros
                 ? 'The leaderboard ranks players by total net score across all rounds. Lowest net score wins.'
                 : 'The leaderboard ranks players by total gross score across all rounds. Lowest gross score wins.'}
             </p>
-            <p className="mt-2 text-ep-silver text-xs">
+            <p className="mt-2 text-ep-muted text-xs">
               Multi-round tournaments accumulate scores across all rounds. The leaderboard updates live
               as scores are entered — projected payouts are shown until all rounds are complete.
             </p>
@@ -809,22 +809,22 @@ function HoleScorecard({ holeScores }: { holeScores: { hole: number; par: number
     <div className="overflow-x-auto">
       <table className="text-xs border-collapse min-w-max">
         <thead>
-          <tr className="text-ep-silver">
+          <tr className="text-ep-muted">
             <th className="pr-3 py-1 text-left font-medium w-10">Hole</th>
             {front.map(h => <th key={h.hole} className="w-7 text-center">{h.hole}</th>)}
-            <th className="w-8 text-center font-semibold text-ep-green/70 px-1">OUT</th>
+            <th className="w-8 text-center font-semibold text-ep-green/80 px-1">OUT</th>
             {back.map(h => <th key={h.hole} className="w-7 text-center">{h.hole}</th>)}
-            <th className="w-8 text-center font-semibold text-ep-green/70 px-1">IN</th>
+            <th className="w-8 text-center font-semibold text-ep-green/80 px-1">IN</th>
             <th className="w-8 text-center font-semibold text-ep-green px-1">TOT</th>
           </tr>
         </thead>
         <tbody>
-          <tr className="text-ep-silver">
+          <tr className="text-ep-muted">
             <td className="pr-3 py-0.5 text-left">Par</td>
             {front.map(h => <td key={h.hole} className="text-center">{h.par}</td>)}
-            <td className="text-center font-semibold text-ep-green/70">{outPar}</td>
+            <td className="text-center font-semibold text-ep-green/80">{outPar}</td>
             {back.map(h => <td key={h.hole} className="text-center">{h.par}</td>)}
-            <td className="text-center font-semibold text-ep-green/70">{inPar}</td>
+            <td className="text-center font-semibold text-ep-green/80">{inPar}</td>
             <td className="text-center font-semibold text-ep-green/80">{outPar + inPar}</td>
           </tr>
           <tr>

@@ -28,7 +28,7 @@
     @apply bg-ep-sand rounded-xl border border-ep-silver/30 shadow-sm;
   }
   .input {
-    @apply w-full px-3 py-2 border border-ep-silver/50 rounded-lg text-sm bg-ep-cream focus:outline-none focus:ring-2 focus:ring-ep-green focus:border-transparent placeholder:text-ep-silver;
+    @apply w-full px-3 py-2 border border-ep-silver/50 rounded-lg text-sm bg-ep-cream focus:outline-none focus:ring-2 focus:ring-ep-green focus:border-transparent placeholder:text-ep-muted/80;
   }
   .label {
     @apply block text-xs font-semibold font-heading text-ep-green mb-1 uppercase tracking-wide;
@@ -43,7 +43,7 @@
     @apply badge bg-ep-orange/20 text-ep-orange;
   }
   .badge-gray {
-    @apply badge bg-ep-silver/20 text-ep-green/70;
+    @apply badge bg-ep-silver/20 text-ep-green/80;
   }
   .badge-blue {
     @apply badge bg-ep-green/15 text-ep-green;
@@ -52,6 +52,6 @@
     @apply text-2xl font-extrabold font-heading text-ep-green tracking-tight;
   }
   .section-title {
-    @apply text-xs font-semibold font-heading text-ep-silver uppercase tracking-wider;
+    @apply text-xs font-semibold font-heading text-ep-muted uppercase tracking-wider;
   }
 }

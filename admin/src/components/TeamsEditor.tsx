@@ -115,10 +115,10 @@ export default function TeamsEditor({
           Set from standings (1st + last vs 2nd + 3rd)
         </button>
       </div>
-      {standingsNote && <p className="text-xs text-ep-silver">{standingsNote}</p>}
+      {standingsNote && <p className="text-xs text-ep-muted">{standingsNote}</p>}
 
       {teams.length === 0 && (
-        <p className="text-xs text-ep-silver italic">
+        <p className="text-xs text-ep-muted italic">
           No teams yet. Until teams are set, this round is scored as individual stroke play.
         </p>
       )}
@@ -136,7 +136,7 @@ export default function TeamsEditor({
               <button
                 type="button"
                 onClick={() => setTeams(ts => ts.filter((_, i) => i !== tIdx))}
-                className="p-1 text-ep-silver/40 hover:text-red-400"
+                className="p-1 text-ep-muted/80 hover:text-red-400"
                 title="Remove team"
               >
                 <X size={14} />

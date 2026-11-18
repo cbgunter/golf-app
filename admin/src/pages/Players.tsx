@@ -68,14 +68,14 @@ export default function AdminPlayers() {
     }
   }
 
-  if (loading) return <div className="text-ep-silver text-sm p-4">Loading…</div>;
+  if (loading) return <div className="text-ep-muted text-sm p-4">Loading…</div>;
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="page-header">Players</h1>
       </div>
-      <p className="text-sm text-ep-silver -mt-3">
+      <p className="text-sm text-ep-muted -mt-3">
         Add players from a tournament's Players section — they're looked up in GHIN first.{' '}
         <Link to="/tournaments" className="text-ep-orange hover:underline">Go to tournaments</Link>
       </p>
@@ -85,7 +85,7 @@ export default function AdminPlayers() {
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-ep-green">Edit Player</h2>
-            <button onClick={() => setShowForm(false)} className="text-ep-silver hover:text-ep-green p-1"><X size={18} /></button>
+            <button onClick={() => setShowForm(false)} className="text-ep-muted hover:text-ep-green p-1"><X size={18} /></button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -99,12 +99,12 @@ export default function AdminPlayers() {
             <div>
               <label className="label">GHIN Number</label>
               <input className="input" inputMode="numeric" value={form.ghinNumber} onChange={e => setForm(f => ({ ...f, ghinNumber: e.target.value.replace(/\D/g, '') }))} placeholder="Not linked" />
-              <p className="text-xs text-ep-silver mt-1">When linked, the official GHIN Handicap Index is used and kept in sync instead of the app's own calculation.</p>
+              <p className="text-xs text-ep-muted mt-1">When linked, the official GHIN Handicap Index is used and kept in sync instead of the app's own calculation.</p>
             </div>
             <div>
               <label className="label">Handicap Index *</label>
               <input className="input" type="number" step="0.1" min="-10" max="54" value={form.handicapIndex} onChange={e => setForm(f => ({ ...f, handicapIndex: e.target.value }))} required placeholder="12.4" />
-              <p className="text-xs text-ep-silver mt-1">{form.ghinNumber ? 'Overwritten on the next GHIN update.' : 'Enter current handicap index. It will auto-adjust after each round.'}</p>
+              <p className="text-xs text-ep-muted mt-1">{form.ghinNumber ? 'Overwritten on the next GHIN update.' : 'Enter current handicap index. It will auto-adjust after each round.'}</p>
             </div>
             <div className="flex gap-2 pt-1">
               <button type="submit" className="btn-primary flex-1 justify-center">
@@ -118,7 +118,7 @@ export default function AdminPlayers() {
 
       {/* List */}
       {players.length === 0 ? (
-        <div className="card p-10 text-center text-ep-silver text-sm">No players yet. Add them while setting up a tournament.</div>
+        <div className="card p-10 text-center text-ep-muted text-sm">No players yet. Add them while setting up a tournament.</div>
       ) : (
         <div className="card divide-y divide-ep-silver/20">
           {players.map(p => (
@@ -132,7 +132,7 @@ export default function AdminPlayers() {
                 {/* Name + email */}
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-ep-green truncate">{p.name}</div>
-                  <div className="text-xs text-ep-silver truncate">
+                  <div className="text-xs text-ep-muted truncate">
                     {[p.ghinNumber && `GHIN #${p.ghinNumber}`, p.email].filter(Boolean).join(' · ')}
                   </div>
                 </div>
@@ -141,21 +141,21 @@ export default function AdminPlayers() {
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="text-right">
                     <div className="text-base font-semibold text-ep-orange">{formatHandicap(p.handicapIndex)}</div>
-                    <div className="text-xs text-ep-silver leading-none">{p.ghinNumber ? 'GHIN HI' : 'HCP'}</div>
+                    <div className="text-xs text-ep-muted leading-none">{p.ghinNumber ? 'GHIN HI' : 'HCP'}</div>
                   </div>
                   {p.ghinNumber && (
                     <button onClick={() => handleRefresh(p)} disabled={refreshingId === p.id} title="Update from GHIN"
-                      className="p-1.5 text-ep-silver hover:text-ep-orange rounded-lg hover:bg-ep-sand">
+                      className="p-1.5 text-ep-muted hover:text-ep-orange rounded-lg hover:bg-ep-sand">
                       <RefreshCw size={15} className={refreshingId === p.id ? 'animate-spin' : ''} />
                     </button>
                   )}
-                  <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 text-ep-silver hover:text-ep-green rounded-lg hover:bg-ep-sand">
+                  <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 text-ep-muted hover:text-ep-green rounded-lg hover:bg-ep-sand">
                     {expanded === p.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                   </button>
-                  <button onClick={() => openEdit(p)} className="p-1.5 text-ep-silver hover:text-ep-orange rounded-lg hover:bg-ep-sand">
+                  <button onClick={() => openEdit(p)} className="p-1.5 text-ep-muted hover:text-ep-orange rounded-lg hover:bg-ep-sand">
                     <Pencil size={15} />
                   </button>
-                  <button onClick={() => handleDelete(p.id, p.name)} className="p-1.5 text-ep-silver hover:text-red-400 rounded-lg hover:bg-ep-sand">
+                  <button onClick={() => handleDelete(p.id, p.name)} className="p-1.5 text-ep-muted hover:text-red-400 rounded-lg hover:bg-ep-sand">
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -166,7 +166,7 @@ export default function AdminPlayers() {
                 <div className="bg-ep-sand/30 px-4 py-4 border-t border-ep-silver/20">
                   <p className="section-title mb-3">Handicap History</p>
                   {p.handicapHistory.length === 0 ? (
-                    <p className="text-sm text-ep-silver">No rounds recorded yet.</p>
+                    <p className="text-sm text-ep-muted">No rounds recorded yet.</p>
                   ) : (
                     <div className="space-y-2">
                       {[...p.handicapHistory].reverse().map((h, i) => (
@@ -174,11 +174,11 @@ export default function AdminPlayers() {
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <span className="font-medium text-ep-green text-sm">
                               HCP {h.handicapIndex.toFixed(1)}
-                              <span className="text-ep-silver font-normal ml-2 text-xs">diff {h.differential}</span>
+                              <span className="text-ep-muted font-normal ml-2 text-xs">diff {h.differential}</span>
                             </span>
-                            <span className="text-xs text-ep-silver">{new Date(h.date).toLocaleDateString()}</span>
+                            <span className="text-xs text-ep-muted">{new Date(h.date).toLocaleDateString()}</span>
                           </div>
-                          {h.notes && <p className="text-xs text-ep-green/70 mt-1.5 leading-relaxed">{h.notes}</p>}
+                          {h.notes && <p className="text-xs text-ep-green/80 mt-1.5 leading-relaxed">{h.notes}</p>}
                         </div>
                       ))}
                     </div>
@@ -190,7 +190,7 @@ export default function AdminPlayers() {
         </div>
       )}
 
-      <p className="text-xs text-ep-silver">{players.length} players</p>
+      <p className="text-xs text-ep-muted">{players.length} players</p>
     </div>
   );
 }

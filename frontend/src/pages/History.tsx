@@ -24,14 +24,14 @@ export default function History() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-ep-silver">Loading...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-ep-muted">Loading...</div>;
   if (error) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">{error}</div>;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-heading font-extrabold text-ep-green tracking-tight">History</h1>
-        <p className="text-ep-silver mt-1">Completed and archived tournaments</p>
+        <p className="text-ep-muted mt-1">Completed and archived tournaments</p>
       </div>
 
       {tournaments.length === 0 ? (
@@ -49,11 +49,11 @@ export default function History() {
                   <div className="flex items-center gap-2 mb-1">
                     <StatusBadge status={t.status} />
                     {t.status === 'archived' && (
-                      <span className="text-xs text-ep-silver italic">archived</span>
+                      <span className="text-xs text-ep-muted italic">archived</span>
                     )}
                   </div>
-                  <h2 className={`font-heading font-semibold truncate ${t.status === 'archived' ? 'text-ep-silver' : 'text-ep-green'}`}>{t.name}</h2>
-                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-ep-silver">
+                  <h2 className={`font-heading font-semibold truncate ${t.status === 'archived' ? 'text-ep-muted' : 'text-ep-green'}`}>{t.name}</h2>
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-ep-muted">
                     <span className="flex items-center gap-1">
                       <Calendar size={12} />
                       {parseLocalDate(t.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

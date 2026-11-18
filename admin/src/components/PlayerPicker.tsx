@@ -27,7 +27,7 @@ function GhinBadge({ player }: { player: Player }) {
   const synced = player.ghinSyncedAt ? new Date(player.ghinSyncedAt).toLocaleDateString() : null;
   return (
     <span
-      className="text-[10px] font-semibold uppercase tracking-wide bg-ep-green/10 text-ep-green px-1.5 py-0.5 rounded"
+      className="text-xs font-semibold uppercase tracking-wide bg-ep-green/10 text-ep-green px-1.5 py-0.5 rounded"
       title={`GHIN #${player.ghinNumber}${synced ? ` · synced ${synced}` : ''}`}
     >
       GHIN
@@ -221,25 +221,25 @@ export default function PlayerPicker({
           )}
         </div>
         {selectedPlayers.length === 0 ? (
-          <p className="text-sm text-ep-silver py-2">No players yet — look someone up below.</p>
+          <p className="text-sm text-ep-muted py-2">No players yet — look someone up below.</p>
         ) : (
           <div className="grid sm:grid-cols-2 gap-1">
             {selectedPlayers.map(p => {
               const isWD = withdrawnIds.includes(p.id);
               return (
                 <div key={p.id} className="flex items-center gap-2 p-2.5 rounded-lg border border-ep-silver/20 bg-ep-cream">
-                  <span className={`flex-1 min-w-0 truncate text-sm font-medium ${isWD ? 'line-through text-ep-silver' : 'text-ep-green'}`}>{p.name}</span>
+                  <span className={`flex-1 min-w-0 truncate text-sm font-medium ${isWD ? 'line-through text-ep-muted' : 'text-ep-green'}`}>{p.name}</span>
                   <GhinBadge player={p} />
-                  <span className="text-xs text-ep-silver shrink-0">HI {formatHandicap(p.handicapIndex)}</span>
+                  <span className="text-xs text-ep-muted shrink-0">HI {formatHandicap(p.handicapIndex)}</span>
                   {p.ghinNumber && (
                     <button type="button" onClick={() => refreshOne(p)} disabled={refreshing.has(p.id)}
-                      className="p-1 text-ep-silver hover:text-ep-orange shrink-0" title="Update handicap from GHIN">
+                      className="p-1 text-ep-muted hover:text-ep-orange shrink-0" title="Update handicap from GHIN">
                       <RefreshCw size={13} className={refreshing.has(p.id) ? 'animate-spin' : ''} />
                     </button>
                   )}
                   {renderActions?.(p)}
                   <button type="button" onClick={() => onRemove(p.id)}
-                    className="p-1 text-ep-silver/60 hover:text-red-500 shrink-0" title="Remove from tournament">
+                    className="p-1 text-ep-muted/80 hover:text-red-500 shrink-0" title="Remove from tournament">
                     <X size={14} />
                   </button>
                 </div>
@@ -279,14 +279,14 @@ export default function PlayerPicker({
         {/* Roster matches (instant, local) */}
         {rosterMatches.length > 0 && (
           <div>
-            <p className="text-xs text-ep-silver mb-1.5">{q ? 'Already on your roster' : 'Your roster — tap to add'}</p>
+            <p className="text-xs text-ep-muted mb-1.5">{q ? 'Already on your roster' : 'Your roster — tap to add'}</p>
             <div className="flex flex-wrap gap-1.5">
               {rosterMatches.slice(0, q ? 12 : 40).map(p => (
                 <button key={p.id} type="button" onClick={() => addExisting(p)}
                   className="flex items-center gap-1.5 bg-ep-cream border border-ep-silver/30 hover:border-ep-orange text-ep-green text-xs px-2.5 py-1 rounded-full transition-colors">
                   <Plus size={11} /> {p.name}
-                  <span className="text-ep-silver">{formatHandicap(p.handicapIndex)}</span>
-                  {p.ghinNumber && <span className="text-[9px] font-bold text-ep-green/60">GHIN</span>}
+                  <span className="text-ep-muted">{formatHandicap(p.handicapIndex)}</span>
+                  {p.ghinNumber && <span className="text-xs font-bold text-ep-green/80">GHIN</span>}
                 </button>
               ))}
             </div>
@@ -298,11 +298,11 @@ export default function PlayerPicker({
           <p className="text-xs text-red-500">GHIN lookup failed ({ghinError}). Enter the player manually below.</p>
         )}
         {ghinResults && ghinResults.length === 0 && (
-          <p className="text-xs text-ep-silver">No active GHIN golfers matched “{query.trim()}”{stateFilter ? ` in ${stateFilter.toUpperCase()}` : ''}. Enter them manually below.</p>
+          <p className="text-xs text-ep-muted">No active GHIN golfers matched “{query.trim()}”{stateFilter ? ` in ${stateFilter.toUpperCase()}` : ''}. Enter them manually below.</p>
         )}
         {ghinResults && ghinResults.length > 0 && (
           <div>
-            <p className="text-xs text-ep-silver mb-1.5">GHIN results ({ghinResults.length}{ghinTruncated ? '+ — add a first name or state to narrow' : ''})</p>
+            <p className="text-xs text-ep-muted mb-1.5">GHIN results ({ghinResults.length}{ghinTruncated ? '+ — add a first name or state to narrow' : ''})</p>
             <div className="border border-ep-silver/30 rounded-lg divide-y divide-ep-silver/20 max-h-72 overflow-y-auto bg-ep-cream">
               {ghinResults.map(g => {
                 const existing = byGhin.get(g.ghinNumber);
@@ -313,16 +313,16 @@ export default function PlayerPicker({
                     className="w-full flex items-center gap-3 text-left px-3 py-2.5 hover:bg-ep-sand transition-colors disabled:opacity-60 disabled:hover:bg-transparent">
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-ep-green truncate">{niceName(g.firstName)} {niceName(g.lastName)}</div>
-                      <div className="text-xs text-ep-silver truncate">
+                      <div className="text-xs text-ep-muted truncate">
                         {[g.clubName, g.state].filter(Boolean).join(' · ')}{g.clubName || g.state ? ' · ' : ''}GHIN #{g.ghinNumber}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-sm font-semibold text-ep-orange">{g.handicapDisplay}</div>
-                      <div className="text-[10px] text-ep-silver leading-none">HI</div>
+                      <div className="text-xs text-ep-muted leading-none">HI</div>
                     </div>
                     <span className="shrink-0 w-5 flex justify-center">
-                      {addingGhin === g.ghinNumber ? <Loader2 size={14} className="animate-spin text-ep-silver" />
+                      {addingGhin === g.ghinNumber ? <Loader2 size={14} className="animate-spin text-ep-muted" />
                         : already ? <Check size={14} className="text-ep-green" />
                         : <Plus size={14} className="text-ep-orange" />}
                     </span>
@@ -338,7 +338,7 @@ export default function PlayerPicker({
           <div className="rounded-lg border-l-4 border-ep-orange bg-ep-cream p-3 grid sm:grid-cols-4 gap-3">
             <div className="sm:col-span-4 flex items-center justify-between">
               <p className="font-semibold text-ep-green text-sm">Enter player manually</p>
-              <button type="button" onClick={() => setShowManual(false)} className="text-ep-silver hover:text-ep-green"><X size={16} /></button>
+              <button type="button" onClick={() => setShowManual(false)} className="text-ep-muted hover:text-ep-green"><X size={16} /></button>
             </div>
             <div className="sm:col-span-2">
               <label className="label">Name *</label>

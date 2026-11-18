@@ -75,12 +75,12 @@ function AccordionSection({
         <div className="flex items-center gap-2">
           <span className="font-semibold text-ep-green">{title}</span>
           {badge !== undefined && (
-            <span className="text-xs bg-ep-sand text-ep-silver px-1.5 py-0.5 rounded-full">{badge}</span>
+            <span className="text-xs bg-ep-sand text-ep-muted px-1.5 py-0.5 rounded-full">{badge}</span>
           )}
         </div>
         {open
-          ? <ChevronUp size={16} className="text-ep-silver shrink-0" />
-          : <ChevronDown size={16} className="text-ep-silver shrink-0" />}
+          ? <ChevronUp size={16} className="text-ep-muted shrink-0" />
+          : <ChevronDown size={16} className="text-ep-muted shrink-0" />}
       </button>
       {open && <div className="border-t border-ep-silver/20 px-4 py-4 sm:px-5 sm:py-5">{children}</div>}
     </div>
@@ -489,7 +489,7 @@ export default function AdminTournamentSetup() {
     }
   }
 
-  if (loading) return <div className="text-ep-silver text-sm p-4">Loading…</div>;
+  if (loading) return <div className="text-ep-muted text-sm p-4">Loading…</div>;
 
   const payoutPctRows = payoutRows.filter(r => r.payoutType === 'percentage');
   const payoutTotal = payoutPctRows.reduce((s, r) => s + Number(r.percentage || 0), 0);
@@ -534,13 +534,13 @@ export default function AdminTournamentSetup() {
           </div>
           <div className="sm:col-span-2">
             <label className="label">Overall Standings</label>
-            <p className="text-xs text-ep-silver mb-1">Each round's format (stroke play, Stableford, best ball) is chosen when you add the round.</p>
+            <p className="text-xs text-ep-muted mb-1">Each round's format (stroke play, Stableford, best ball) is chosen when you add the round.</p>
             <select className="input" value={form.standingsMode}
               onChange={e => setForm(f => ({ ...f, standingsMode: e.target.value as 'cumulative' | 'points' }))}>
               <option value="cumulative">Lowest total score across rounds</option>
               <option value="points">Cup points — earn points for your finish in each round</option>
             </select>
-            <p className="text-xs text-ep-silver mt-1">
+            <p className="text-xs text-ep-muted mt-1">
               {form.standingsMode === 'points'
                 ? 'Use this when rounds have different formats (stroke play, Stableford, best ball). Each round ranks players by its own format; ties split the points. Team rounds: both partners share their team\'s finish.'
                 : 'Adds up each player\'s net (or gross) score from every round.'}
@@ -566,9 +566,9 @@ export default function AdminTournamentSetup() {
                 </label>
                 {form.hasClosestToPin && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-ep-silver">Ante per player</span>
+                    <span className="text-xs text-ep-muted">Ante per player</span>
                     <div className="relative w-24">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ep-silver text-xs">$</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ep-muted text-xs">$</span>
                       <input className="input pl-5" type="number" min="0" step="1" value={form.closestToPinFee}
                         onChange={e => setForm(f => ({ ...f, closestToPinFee: e.target.value }))} placeholder="0" />
                     </div>
@@ -587,9 +587,9 @@ export default function AdminTournamentSetup() {
                 </label>
                 {form.hasLongestDrive && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-ep-silver">Ante per player</span>
+                    <span className="text-xs text-ep-muted">Ante per player</span>
                     <div className="relative w-24">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ep-silver text-xs">$</span>
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ep-muted text-xs">$</span>
                       <input className="input pl-5" type="number" min="0" step="1" value={form.longestDriveFee}
                         onChange={e => setForm(f => ({ ...f, longestDriveFee: e.target.value }))} placeholder="0" />
                     </div>
@@ -617,30 +617,30 @@ export default function AdminTournamentSetup() {
           </button>
         </div>
         {payoutRows.length === 0 ? (
-          <p className="text-sm text-ep-silver">No payouts configured.</p>
+          <p className="text-sm text-ep-muted">No payouts configured.</p>
         ) : (
           <div className="space-y-2">
             {payoutRows.map((row, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="w-5 text-xs text-ep-silver text-center shrink-0">{row.place}</span>
+                <span className="w-5 text-xs text-ep-muted text-center shrink-0">{row.place}</span>
                 <input className="input flex-1 min-w-0" value={row.label} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
                 <div className="flex rounded-md border border-ep-silver/30 overflow-hidden shrink-0 text-xs">
                   <button type="button"
-                    className={`px-2 py-1 ${row.payoutType === 'percentage' ? 'bg-ep-green text-ep-cream' : 'bg-ep-cream text-ep-silver hover:bg-ep-sand'}`}
+                    className={`px-2 py-1 ${row.payoutType === 'percentage' ? 'bg-ep-green text-ep-cream' : 'bg-ep-cream text-ep-muted hover:bg-ep-sand'}`}
                     onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'percentage' } : x))}>%</button>
                   <button type="button"
-                    className={`px-2 py-1 ${row.payoutType === 'flat' ? 'bg-ep-green text-ep-cream' : 'bg-ep-cream text-ep-silver hover:bg-ep-sand'}`}
+                    className={`px-2 py-1 ${row.payoutType === 'flat' ? 'bg-ep-green text-ep-cream' : 'bg-ep-cream text-ep-muted hover:bg-ep-sand'}`}
                     onClick={() => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, payoutType: 'flat' } : x))}>$</button>
                 </div>
                 {row.payoutType === 'flat' ? (
                   <div className="relative w-24 shrink-0">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ep-silver text-xs">$</span>
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-ep-muted text-xs">$</span>
                     <input className="input pl-5 text-right" type="number" min="0" step="1" value={row.flatAmount} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, flatAmount: e.target.value } : x))} placeholder="0" />
                   </div>
                 ) : (
                   <div className="relative w-24 shrink-0">
                     <input className="input pr-5 text-right" type="number" min="0" max="100" step="0.5" value={row.percentage} onChange={e => setPayoutRows(r => r.map((x, j) => j === i ? { ...x, percentage: e.target.value } : x))} placeholder="0" />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ep-silver text-xs">%</span>
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ep-muted text-xs">%</span>
                   </div>
                 )}
                 {Number(form.entryFee) > 0 && selectedPlayerIds.length > 0 && (
@@ -650,7 +650,7 @@ export default function AdminTournamentSetup() {
                       : `$${((Number(row.percentage || 0) / 100) * Number(form.entryFee) * selectedPlayerIds.length).toFixed(0)}`}
                   </span>
                 )}
-                <button type="button" onClick={() => setPayoutRows(r => r.filter((_, j) => j !== i))} className="text-ep-silver/40 hover:text-red-400 shrink-0"><X size={14} /></button>
+                <button type="button" onClick={() => setPayoutRows(r => r.filter((_, j) => j !== i))} className="text-ep-muted/80 hover:text-red-400 shrink-0"><X size={14} /></button>
               </div>
             ))}
             {payoutPctRows.length > 0 && (
@@ -679,7 +679,7 @@ export default function AdminTournamentSetup() {
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-ep-green">{editingRound ? 'Edit Round' : 'New Round'}</h3>
-            <button type="button" onClick={() => setShowRoundForm(false)} className="text-ep-silver hover:text-ep-green p-1"><X size={18} /></button>
+            <button type="button" onClick={() => setShowRoundForm(false)} className="text-ep-muted hover:text-ep-green p-1"><X size={18} /></button>
           </div>
           <form onSubmit={handleAddRound} className="space-y-4">
             <div>
@@ -702,7 +702,7 @@ export default function AdminTournamentSetup() {
                     <button key={i} type="button" onClick={() => selectCourseResult(c)}
                       className="w-full text-left px-3 py-2.5 hover:bg-ep-sand transition-colors">
                       <div className="text-sm font-medium text-ep-green">{c.CourseName ?? c.FacilityName ?? c.club_name ?? c.course_name}</div>
-                      <div className="text-xs text-ep-silver">{[c.City ?? c.location?.city, c.State ?? c.location?.state].filter(Boolean).join(', ')}</div>
+                      <div className="text-xs text-ep-muted">{[c.City ?? c.location?.city, c.State ?? c.location?.state].filter(Boolean).join(', ')}</div>
                     </button>
                   ))}
                 </div>
@@ -755,7 +755,7 @@ export default function AdminTournamentSetup() {
                     const options = roundForm.holes
                       .filter(h => h.par === 3 || roundForm.ctpHoles.includes(h.number))
                       .sort((a, b) => a.number - b.number);
-                    if (options.length === 0) return <p className="text-xs text-ep-silver">This course has no par 3s.</p>;
+                    if (options.length === 0) return <p className="text-xs text-ep-muted">This course has no par 3s.</p>;
                     return (
                       <div className="flex flex-wrap gap-2">
                         {options.map(h => {
@@ -773,8 +773,8 @@ export default function AdminTournamentSetup() {
                                 : 'bg-ep-cream border-ep-silver/40 text-ep-green hover:border-ep-orange'}`}
                             >
                               <span className="font-semibold">Hole {h.number}</span>
-                              {h.yardage ? <span className={`ml-1.5 text-xs ${on ? 'text-ep-cream/80' : 'text-ep-silver'}`}>{h.yardage} yds</span> : null}
-                              {h.par !== 3 && <span className={`ml-1.5 text-xs ${on ? 'text-ep-cream/80' : 'text-ep-silver'}`}>par {h.par}</span>}
+                              {h.yardage ? <span className={`ml-1.5 text-xs ${on ? 'text-ep-cream/80' : 'text-ep-muted'}`}>{h.yardage} yds</span> : null}
+                              {h.par !== 3 && <span className={`ml-1.5 text-xs ${on ? 'text-ep-cream/80' : 'text-ep-muted'}`}>par {h.par}</span>}
                             </button>
                           );
                         })}
@@ -819,7 +819,7 @@ export default function AdminTournamentSetup() {
                     onChange={e => setRoundForm(f => ({ ...f, pointsMultiplier: e.target.value }))} />
                 </div>
               )}
-              <p className="col-span-2 text-xs text-ep-silver -mt-1">
+              <p className="col-span-2 text-xs text-ep-muted -mt-1">
                 {ROUND_FORMAT_DESCRIPTIONS[roundForm.format]}
                 {roundForm.format === 'best_ball' && ' Set teams from the round\'s Pairings panel.'}
               </p>
@@ -831,7 +831,7 @@ export default function AdminTournamentSetup() {
                   checked={roundForm.isPracticeRound}
                   onChange={e => setRoundForm(f => ({ ...f, isPracticeRound: e.target.checked }))} />
                 Practice Round
-                <span className="text-xs text-ep-silver">(counts toward handicap, excluded from standings)</span>
+                <span className="text-xs text-ep-muted">(counts toward handicap, excluded from standings)</span>
               </label>
             </div>
 
@@ -844,7 +844,7 @@ export default function AdminTournamentSetup() {
       )}
 
       {rounds.length === 0 ? (
-        <div className="card p-8 text-center text-ep-silver text-sm">No rounds yet.</div>
+        <div className="card p-8 text-center text-ep-muted text-sm">No rounds yet.</div>
       ) : (
         <div className="card divide-y divide-ep-silver/20">
           {rounds.map(r => {
@@ -859,7 +859,7 @@ export default function AdminTournamentSetup() {
                   <Link to={`/rounds/${r.id}/scoring`} className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <StatusBadge status={r.status} />
-                      <span className="text-xs text-ep-silver">{r.tee}</span>
+                      <span className="text-xs text-ep-muted">{r.tee}</span>
                       {r.isPracticeRound && (
                         <span className="text-xs bg-ep-sand text-ep-green font-medium px-1.5 py-0.5 rounded">Practice</span>
                       )}
@@ -877,7 +877,7 @@ export default function AdminTournamentSetup() {
                       )}
                     </div>
                     <div className="font-medium text-ep-green group-hover:text-ep-orange transition-colors">{r.courseName}</div>
-                    <div className="text-xs text-ep-silver mt-0.5">
+                    <div className="text-xs text-ep-muted mt-0.5">
                       {parseLocalDate(r.date).toLocaleDateString()} · Par {r.par} · {r.courseRating}/{r.slopeRating}
                     </div>
                   </Link>
@@ -887,7 +887,7 @@ export default function AdminTournamentSetup() {
                       className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
                         isExpanded
                           ? 'bg-ep-green/10 text-ep-green'
-                          : 'text-ep-silver hover:text-ep-orange hover:bg-ep-sand/50'
+                          : 'text-ep-muted hover:text-ep-orange hover:bg-ep-sand/50'
                       }`}
                       title="Manage tee time pairings"
                     >
@@ -915,7 +915,7 @@ export default function AdminTournamentSetup() {
                         });
                         setShowRoundForm(true);
                       }}
-                      className="p-1.5 text-ep-silver hover:text-ep-orange transition-colors rounded"
+                      className="p-1.5 text-ep-muted hover:text-ep-orange transition-colors rounded"
                       title="Edit round"
                     >
                       <Pencil size={15} />
@@ -930,12 +930,12 @@ export default function AdminTournamentSetup() {
                           toast.success('Round deleted');
                         } catch (e: any) { toast.error(e.message); }
                       }}
-                      className="p-1.5 text-ep-silver/40 hover:text-red-400 transition-colors rounded"
+                      className="p-1.5 text-ep-muted/80 hover:text-red-400 transition-colors rounded"
                       title="Delete round"
                     >
                       <Trash2 size={15} />
                     </button>
-                    <ChevronRight size={15} className="text-ep-silver/40" />
+                    <ChevronRight size={15} className="text-ep-muted/80" />
                   </div>
                 </div>
 
@@ -965,7 +965,7 @@ export default function AdminTournamentSetup() {
                             className={`px-4 py-1.5 font-medium capitalize transition-colors ${
                               editGroups.startFormat === fmt
                                 ? 'bg-ep-green text-ep-cream'
-                                : 'bg-ep-cream text-ep-silver hover:bg-ep-sand'
+                                : 'bg-ep-cream text-ep-muted hover:bg-ep-sand'
                             }`}
                           >
                             {fmt}
@@ -1019,7 +1019,7 @@ export default function AdminTournamentSetup() {
                                   if (!g) return g;
                                   return { ...g, groups: g.groups.filter((_, i) => i !== gIdx).map((grp, i) => ({ ...grp, groupNumber: i + 1 })) };
                                 })}
-                                className="p-1 text-ep-silver/40 hover:text-red-400"
+                                className="p-1 text-ep-muted/80 hover:text-red-400"
                               >
                                 <X size={14} />
                               </button>
@@ -1047,7 +1047,7 @@ export default function AdminTournamentSetup() {
                               );
                             })}
                             {group.playerIds.length === 0 && (
-                              <span className="text-xs text-ep-silver italic">No players yet</span>
+                              <span className="text-xs text-ep-muted italic">No players yet</span>
                             )}
                           </div>
                         </div>
@@ -1113,7 +1113,7 @@ export default function AdminTournamentSetup() {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <Link to="/tournaments" className="text-xs text-ep-silver hover:text-ep-green">← Tournaments</Link>
+          <Link to="/tournaments" className="text-xs text-ep-muted hover:text-ep-green">← Tournaments</Link>
           <h1 className="page-header mt-1">{creating ? 'New Tournament' : tournament?.name}</h1>
           {tournament && <div className="mt-1"><StatusBadge status={tournament.status} /></div>}
         </div>
@@ -1159,7 +1159,7 @@ export default function AdminTournamentSetup() {
             }`}>
               <div className="flex-1 min-w-0">
                 <div className={`text-xs font-semibold uppercase tracking-widest mb-1 ${
-                  eventState.urgent ? 'text-amber-600' : 'text-ep-silver'
+                  eventState.urgent ? 'text-amber-600' : 'text-ep-muted'
                 }`}>
                   {eventState.label}
                 </div>
@@ -1207,20 +1207,20 @@ export default function AdminTournamentSetup() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-ep-green">Pairing {draft.groupNumber}</span>
                           {rounds.length > 1 && round && (
-                            <span className="text-xs text-ep-silver">{round.courseName}</span>
+                            <span className="text-xs text-ep-muted">{round.courseName}</span>
                           )}
-                          {group?.teeTime && <span className="text-xs text-ep-silver">{group.teeTime}</span>}
+                          {group?.teeTime && <span className="text-xs text-ep-muted">{group.teeTime}</span>}
                           {isConfirmed ? (
                             <span className="text-xs bg-ep-green/10 text-ep-green px-2 py-0.5 rounded-full">Confirmed</span>
                           ) : isSubmitted ? (
                             <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Submitted — awaiting review</span>
                           ) : (
-                            <span className="text-xs bg-ep-sand text-ep-silver px-2 py-0.5 rounded-full">In progress</span>
+                            <span className="text-xs bg-ep-sand text-ep-muted px-2 py-0.5 rounded-full">In progress</span>
                           )}
                         </div>
                         {isExpanded
-                          ? <ChevronUp size={15} className="text-ep-silver shrink-0" />
-                          : <ChevronDown size={15} className="text-ep-silver shrink-0" />}
+                          ? <ChevronUp size={15} className="text-ep-muted shrink-0" />
+                          : <ChevronDown size={15} className="text-ep-muted shrink-0" />}
                       </button>
 
                       {isExpanded && (
@@ -1229,15 +1229,15 @@ export default function AdminTournamentSetup() {
                             <table className="w-full text-xs">
                               <thead>
                                 <tr className="bg-ep-sand/50">
-                                  <th className="text-left px-2 py-1.5 font-medium text-ep-green/70">Player</th>
+                                  <th className="text-left px-2 py-1.5 font-medium text-ep-green/80">Player</th>
                                   {allHoleNums.slice(0, 9).map(n => (
-                                    <th key={n} className="px-1 py-1.5 text-center text-ep-silver font-normal w-6">{n}</th>
+                                    <th key={n} className="px-1 py-1.5 text-center text-ep-muted font-normal w-6">{n}</th>
                                   ))}
-                                  <th className="px-2 py-1.5 text-center font-medium text-ep-green/70 bg-ep-sand">Out</th>
+                                  <th className="px-2 py-1.5 text-center font-medium text-ep-green/80 bg-ep-sand">Out</th>
                                   {allHoleNums.slice(9).map(n => (
-                                    <th key={n} className="px-1 py-1.5 text-center text-ep-silver font-normal w-6">{n}</th>
+                                    <th key={n} className="px-1 py-1.5 text-center text-ep-muted font-normal w-6">{n}</th>
                                   ))}
-                                  <th className="px-2 py-1.5 text-center font-medium text-ep-green/70 bg-ep-sand">In</th>
+                                  <th className="px-2 py-1.5 text-center font-medium text-ep-green/80 bg-ep-sand">In</th>
                                   <th className="px-2 py-1.5 text-center font-medium text-ep-green bg-ep-sand/70">Tot</th>
                                 </tr>
                               </thead>
@@ -1256,7 +1256,7 @@ export default function AdminTournamentSetup() {
                                         return (
                                           <td key={n} className="px-1 py-2 text-center">
                                             <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
-                                              s == null ? 'text-ep-silver/50' :
+                                              s == null ? 'text-ep-muted/80' :
                                               diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
                                               diff === -1 ? 'bg-red-200' :
                                               diff === 0 ? 'bg-green-100' : ''
@@ -1272,7 +1272,7 @@ export default function AdminTournamentSetup() {
                                         return (
                                           <td key={n} className="px-1 py-2 text-center">
                                             <span className={`inline-block w-5 h-5 rounded text-center leading-5 ${
-                                              s == null ? 'text-ep-silver/50' :
+                                              s == null ? 'text-ep-muted/80' :
                                               diff != null && diff <= -2 ? 'bg-yellow-200 font-bold' :
                                               diff === -1 ? 'bg-red-200' :
                                               diff === 0 ? 'bg-green-100' : ''
@@ -1346,7 +1346,7 @@ export default function AdminTournamentSetup() {
                         setTournament(t);
                       } catch (err: any) { toast.error(err.message); }
                     }}
-                    className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${isWD ? 'bg-ep-sand text-ep-green hover:bg-ep-sand/70' : 'bg-ep-silver/20 text-ep-silver hover:bg-red-100 hover:text-red-600'}`}
+                    className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${isWD ? 'bg-ep-sand text-ep-green hover:bg-ep-sand/70' : 'bg-ep-silver/20 text-ep-muted hover:bg-red-100 hover:text-red-600'}`}
                     title={isWD ? 'Remove WD' : 'Mark as withdrawn'}
                   >
                     {isWD ? 'WD ✕' : 'WD'}
@@ -1379,7 +1379,7 @@ function UnassignedChip({
 }) {
   const [open, setOpen] = useState(false);
   if (groups.length === 0) {
-    return <span className="text-xs text-ep-silver bg-ep-sand px-2 py-0.5 rounded-full">{name}</span>;
+    return <span className="text-xs text-ep-muted bg-ep-sand px-2 py-0.5 rounded-full">{name}</span>;
   }
   return (
     <div className="relative">

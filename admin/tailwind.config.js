@@ -10,6 +10,8 @@ export default {
         'ep-orange': '#D4691C',
         'ep-deep': '#002B30',
         'ep-silver': '#B8B5AF',
+        // Stadium Silver at text weight — secondary text on cream/sand (4.5:1+)
+        'ep-muted': '#6B675F',
         'ep-sand': '#EDE6DA',
         // Legacy palette — retained for admin pages
         sage: {

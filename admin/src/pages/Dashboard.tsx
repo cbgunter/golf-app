@@ -18,7 +18,7 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="text-ep-silver">Loading...</div>;
+  if (loading) return <div className="text-ep-muted">Loading...</div>;
 
   const active = tournaments.filter(t => t.status === 'active');
   const upcoming = tournaments.filter(t => t.status === 'upcoming');
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
         <h1 className="page-header">Dashboard</h1>
         <button
           onClick={() => setShowHelp(true)}
-          className="flex items-center gap-1.5 text-xs text-ep-silver hover:text-ep-orange transition-colors"
+          className="flex items-center gap-1.5 text-xs text-ep-muted hover:text-ep-orange transition-colors"
         >
           <HelpCircle size={15} />
           Admin Guide
@@ -49,7 +49,7 @@ export default function AdminDashboard() {
         ].map(s => (
           <Link key={s.label} to={s.to} className={`card p-4 ${s.bg} hover:shadow-md transition-shadow`}>
             <div className={`text-2xl font-bold ${s.color}`}>{s.count}</div>
-            <div className="text-sm text-ep-green/70 mt-1">{s.label}</div>
+            <div className="text-sm text-ep-green/80 mt-1">{s.label}</div>
           </Link>
         ))}
       </div>
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
             </div>
             <h2 className="font-semibold text-ep-green group-hover:text-ep-orange transition-colors">Tournaments</h2>
           </div>
-          <p className="text-sm text-ep-silver">Create and manage tournaments, rounds, and scoring</p>
+          <p className="text-sm text-ep-muted">Create and manage tournaments, rounds, and scoring</p>
           <span className="mt-3 inline-flex items-center gap-1 text-xs text-ep-orange font-medium">
             <Plus size={12} /> New Tournament
           </span>
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
             </div>
             <h2 className="font-semibold text-ep-green group-hover:text-ep-orange transition-colors">Players</h2>
           </div>
-          <p className="text-sm text-ep-silver">Manage player profiles and handicap indexes</p>
+          <p className="text-sm text-ep-muted">Manage player profiles and handicap indexes</p>
           <span className="mt-3 inline-flex items-center gap-1 text-xs text-ep-orange font-medium">
             <Plus size={12} /> Add Player
           </span>
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
               >
                 <div>
                   <div className="font-medium text-sm text-ep-green">{t.name}</div>
-                  <div className="text-xs text-ep-silver mt-0.5">
+                  <div className="text-xs text-ep-muted mt-0.5">
                     {parseLocalDate(t.startDate).toLocaleDateString()} · {t.playerIds.length} players
                   </div>
                 </div>

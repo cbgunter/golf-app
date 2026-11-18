@@ -27,7 +27,7 @@ export default function PlayerProfilePage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="max-w-3xl mx-auto px-4 py-8 text-ep-silver">Loading...</div>;
+  if (loading) return <div className="max-w-3xl mx-auto px-4 py-8 text-ep-muted">Loading...</div>;
   if (error) return <div className="max-w-3xl mx-auto px-4 py-8 text-red-500">{error}</div>;
   if (!profile) return null;
 
@@ -53,7 +53,7 @@ export default function PlayerProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <Link to="/players" className="inline-flex items-center gap-1 text-sm text-ep-silver hover:text-ep-green mb-6">
+      <Link to="/players" className="inline-flex items-center gap-1 text-sm text-ep-muted hover:text-ep-green mb-6">
         <ArrowLeft size={14} /> All Players
       </Link>
 
@@ -68,15 +68,15 @@ export default function PlayerProfilePage() {
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-1">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-bold text-ep-green">{player.handicapIndex.toFixed(1)}</span>
-                <span className="text-sm text-ep-silver">current HCP</span>
+                <span className="text-sm text-ep-muted">current HCP</span>
               </div>
               {hcpChange !== null && (
                 <div className={`flex items-center gap-1 text-sm font-medium ${
-                  hcpChange < 0 ? 'text-ep-green' : hcpChange > 0 ? 'text-red-500' : 'text-ep-silver'
+                  hcpChange < 0 ? 'text-ep-green' : hcpChange > 0 ? 'text-red-500' : 'text-ep-muted'
                 }`}>
                   {hcpChange < 0 ? <TrendingDown size={15} /> : hcpChange > 0 ? <TrendingUp size={15} /> : <Minus size={15} />}
                   {hcpChange < 0 ? `${Math.abs(hcpChange).toFixed(1)} pts improved` : hcpChange > 0 ? `${hcpChange.toFixed(1)} pts higher` : 'No change'}
-                  <span className="text-ep-silver font-normal">since first round</span>
+                  <span className="text-ep-muted font-normal">since first round</span>
                 </div>
               )}
             </div>
@@ -96,9 +96,9 @@ export default function PlayerProfilePage() {
       {chartPoints.length >= 2 && (
         <div className="card p-5 mb-6">
           <h2 className="font-heading font-semibold text-ep-green mb-1">Handicap Trend</h2>
-          <p className="text-xs text-ep-silver mb-4">Index after each recorded round — lower is better</p>
+          <p className="text-xs text-ep-muted mb-4">Index after each recorded round — lower is better</p>
           <HcpChart points={chartPoints} />
-          <div className="flex justify-between text-xs text-ep-silver mt-1 px-1">
+          <div className="flex justify-between text-xs text-ep-muted mt-1 px-1">
             <span>Round 1</span>
             <span>Round {chartPoints.length}</span>
           </div>
@@ -110,7 +110,7 @@ export default function PlayerProfilePage() {
         <div className="card mb-6">
           <div className="px-5 py-4 border-b border-ep-silver/20">
             <h2 className="font-heading font-semibold text-ep-green">Tournaments</h2>
-            <p className="text-xs text-ep-silver mt-0.5">Currently enrolled</p>
+            <p className="text-xs text-ep-muted mt-0.5">Currently enrolled</p>
           </div>
           <div className="divide-y divide-ep-silver/10">
             {upcomingTournaments.map(t => (
@@ -122,12 +122,12 @@ export default function PlayerProfilePage() {
                 <div className={`w-2 h-2 rounded-full shrink-0 ${t.status === 'active' ? 'bg-ep-orange' : 'bg-ep-silver/50'}`} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-ep-green text-sm">{t.name}</div>
-                  <div className="text-xs text-ep-silver flex items-center gap-1 mt-0.5">
+                  <div className="text-xs text-ep-muted flex items-center gap-1 mt-0.5">
                     <Calendar size={11} />
                     {parseLocalDate(t.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${t.status === 'active' ? 'bg-ep-orange/15 text-ep-orange' : 'bg-ep-silver/20 text-ep-green/60'}`}>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${t.status === 'active' ? 'bg-ep-orange/15 text-ep-orange' : 'bg-ep-silver/20 text-ep-green/80'}`}>
                   {t.status === 'active' ? 'Live' : 'Upcoming'}
                 </span>
               </Link>
@@ -140,12 +140,12 @@ export default function PlayerProfilePage() {
         <div className="card">
           <div className="px-5 py-4 border-b border-ep-silver/20">
             <h2 className="font-heading font-semibold text-ep-green">Round History</h2>
-            <p className="text-xs text-ep-silver mt-0.5">Most recent first</p>
+            <p className="text-xs text-ep-muted mt-0.5">Most recent first</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-ep-sand text-ep-silver text-xs">
+                <tr className="bg-ep-sand text-ep-muted text-xs">
                   <th className="text-left px-5 py-2.5 font-medium">Date</th>
                   <th className="text-left px-3 py-2.5 font-medium">Course</th>
                   <th className="text-left px-3 py-2.5 font-medium hidden sm:table-cell">Tournament</th>
@@ -166,20 +166,20 @@ export default function PlayerProfilePage() {
                         {parseLocalDate(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
                       <td className="px-3 py-3 text-ep-green font-medium max-w-[160px] truncate">{r.courseName}</td>
-                      <td className="px-3 py-3 text-ep-silver hidden sm:table-cell max-w-[140px] truncate">
+                      <td className="px-3 py-3 text-ep-muted hidden sm:table-cell max-w-[140px] truncate">
                         <Link to={`/tournament/${r.tournamentId}`} className="hover:text-ep-orange hover:underline">
                           {r.tournamentName}
                         </Link>
                       </td>
                       <td className="px-3 py-3 text-center">
                         <span className="font-semibold text-ep-green">{r.grossTotal}</span>
-                        <span className={`ml-1 text-xs ${toPar < 0 ? 'text-ep-orange' : toPar === 0 ? 'text-ep-green' : 'text-ep-silver'}`}>
+                        <span className={`ml-1 text-xs ${toPar < 0 ? 'text-ep-orange' : toPar === 0 ? 'text-ep-green' : 'text-ep-muted'}`}>
                           {toPar === 0 ? 'E' : toPar > 0 ? `+${toPar}` : toPar}
                         </span>
                       </td>
                       <td className="px-3 py-3 text-center text-ep-green/80">{r.netTotal}</td>
                       <td className="px-3 py-3 text-center">
-                        <span className={`font-medium ${r.handicapDifferential < 0 ? 'text-ep-green' : 'text-ep-green/70'}`}>
+                        <span className={`font-medium ${r.handicapDifferential < 0 ? 'text-ep-green' : 'text-ep-green/80'}`}>
                           {r.handicapDifferential.toFixed(1)}
                         </span>
                       </td>
@@ -194,7 +194,7 @@ export default function PlayerProfilePage() {
           </div>
         </div>
       ) : (
-        <div className="card p-10 text-center text-ep-silver text-sm">
+        <div className="card p-10 text-center text-ep-muted text-sm">
           No rounds recorded yet.
         </div>
       )}
@@ -206,7 +206,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="text-center">
       <div className="text-xl font-bold text-ep-green">{value}</div>
-      <div className="text-xs text-ep-silver mt-0.5">{label}</div>
+      <div className="text-xs text-ep-muted mt-0.5">{label}</div>
     </div>
   );
 }

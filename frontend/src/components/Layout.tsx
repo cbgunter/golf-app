@@ -11,19 +11,19 @@ export default function Layout() {
             </span>
           </Link>
           <nav className="flex items-center gap-5 text-sm">
-            <NavLink to="/" end className={({ isActive }) => isActive ? 'text-ep-orange font-medium' : 'text-ep-green/60 hover:text-ep-green transition-colors'}>
+            <NavLink to="/" end className={({ isActive }) => isActive ? 'text-ep-orange font-medium' : 'text-ep-green/80 hover:text-ep-green transition-colors'}>
               Active
             </NavLink>
-            <NavLink to="/history" className={({ isActive }) => isActive ? 'text-ep-orange font-medium' : 'text-ep-green/60 hover:text-ep-green transition-colors'}>
+            <NavLink to="/history" className={({ isActive }) => isActive ? 'text-ep-orange font-medium' : 'text-ep-green/80 hover:text-ep-green transition-colors'}>
               History
             </NavLink>
-            <NavLink to="/players" className={({ isActive }) => isActive ? 'text-ep-orange font-medium' : 'text-ep-green/60 hover:text-ep-green transition-colors'}>
+            <NavLink to="/players" className={({ isActive }) => isActive ? 'text-ep-orange font-medium' : 'text-ep-green/80 hover:text-ep-green transition-colors'}>
               Players
             </NavLink>
             <NavLink to="/score" className={({ isActive }) => isActive ? 'bg-ep-orange text-ep-cream px-2.5 py-1 rounded-full text-xs font-medium' : 'bg-ep-green/10 hover:bg-ep-green/20 text-ep-green text-xs px-2.5 py-1 rounded-full transition-colors'}>
               Score
             </NavLink>
-            <a href="https://admin.golf.caseyhunter.net" className="text-ep-green/40 hover:text-ep-green/70 text-xs border border-ep-silver/40 px-2.5 py-1 rounded-full transition-colors">
+            <a href="https://admin.golf.caseyhunter.net" className="text-ep-green/70 hover:text-ep-green/80 text-xs border border-ep-silver/40 px-2.5 py-1 rounded-full transition-colors">
               Admin
             </a>
           </nav>
